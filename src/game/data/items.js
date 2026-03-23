@@ -30,6 +30,20 @@ export const FORMATIONS = [
     mods: { atkMult: 1.35, defMult: 0.70, spdMult: 1.05 },
     tag: 'Muy ofensiva',
   },
+  {
+    id: 'tridente', n: 'Tridente (1-1-2-3)', i: '🔱',
+    slots: ['GK','DEF','MID','MID','FWD','FWD','FWD'],
+    desc: 'Presión ofensiva extrema. Un solo defensa.',
+    mods: { atkMult: 1.45, defMult: 0.55, spdMult: 1.10 },
+    tag: 'Ultra ofensiva',
+  },
+  {
+    id: 'cadena', n: 'Cadena (1-3-3-0)', i: '🔗',
+    slots: ['GK','DEF','DEF','DEF','MID','MID','MID'],
+    desc: 'Control total. Sin delantero fijo.',
+    mods: { atkMult: 0.80, defMult: 1.20, spdMult: 1.15 },
+    tag: 'Posesión extrema',
+  },
 ];
 
 // ── RELICS ──
@@ -51,6 +65,7 @@ export const RELICS = [
   { id:'muro_cement', n:'Cemento Táctico',      i:'🧱', d:'Con formación Muro: goles recibidos -1 (mín 0) por partido.', rarity:'uncommon',fx:'formation_muro',val:1 },
   { id:'diamante_key',n:'Llave de Diamante',    i:'💎', d:'Con formación Diamante: +5% posesión y evento extra.', rarity:'uncommon',fx:'formation_diamante',val:0.05 },
   { id:'scouting',    n:'Red de Ojeadores',     i:'🔭', d:'El mercado muestra 2 jugadores extra.',        rarity:'uncommon',fx:'market_extra',  val:2 },
+  { id:'pizarron',    n:'Pizarrón Mágico',      i:'📝', d:'Permite 2 sustituciones por partido.',         rarity:'uncommon',fx:'extra_sub',     val:1 },
 
   // ── Rare ──
   { id:'guantes',     n:'Guantes de Hierro',    i:'🧤', d:'Si pierdes 1-0 al 90\', el portero anula el gol.', rarity:'rare', fx:'gk_last_min', val:1 },
