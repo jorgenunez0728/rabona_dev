@@ -38,18 +38,36 @@ export const FORMATIONS = [
 
 // ── RELICS ──
 export const RELICS = [
-  { id:'botines94',   n:'Botines del 94',      i:'👟', d:'Cada victoria da +3💰 extra.',          rarity:'common',  fx:'win_coins',    val:3 },
-  { id:'guantes',     n:'Guantes de Hierro',   i:'🧤', d:'El portero nunca concede en el 90\'.',   rarity:'rare',    fx:'gk_last_min',  val:1 },
-  { id:'cuaderno',    n:'Cuaderno del Profeta', i:'📋', d:'Ves stats del rival antes del partido.', rarity:'rare',    fx:'scout_rival',  val:1 },
-  { id:'corazon',     n:'Corazón de Barrio',   i:'❤️', d:'Si vas 0-1 al 45\', +10% chance de gol.', rarity:'common',  fx:'comeback',     val:0.10 },
-  { id:'mendez',      n:'Doctora Méndez',      i:'🩹', d:'Lesiones duran 1 partido menos.',        rarity:'common',  fx:'heal_fast',    val:1 },
-  { id:'vestuario',   n:'Vestuario Unido',     i:'🔗', d:'La química nunca baja de 30.',           rarity:'common',  fx:'chem_floor',   val:30 },
-  { id:'megafono',    n:'Megáfono de Don Miguel', i:'📣', d:'Moral mínima garantizada en 40.',     rarity:'common',  fx:'morale_floor', val:40 },
-  { id:'prensa',      n:'Rueda de Prensa',     i:'📰', d:'+5💰 por cada objetivo completado.',     rarity:'rare',    fx:'obj_bonus',    val:5 },
-  { id:'mochila',     n:'Mochila del Barrio',  i:'🎒', d:'Inicias cada partido con +5 moral.',     rarity:'uncommon',fx:'match_morale',  val:5 },
-  { id:'reloj',       n:'Reloj del 94',        i:'⏱', d:'Siempre tienes 1 evento táctico extra.', rarity:'rare',    fx:'extra_event',  val:1 },
-  { id:'amuleto',     n:'Amuleto de la Abuela',i:'📿', d:'10% menos de lesiones.',                rarity:'uncommon',fx:'injury_reduce', val:0.10 },
-  { id:'trofeo',      n:'Mini Trofeo',         i:'🏆', d:'+2💰 por cada partido de racha.',        rarity:'uncommon',fx:'streak_coins',  val:2 },
+  // ── Common ──
+  { id:'botines94',   n:'Botines del 94',       i:'👟', d:'Cada victoria da +3💰 extra.',               rarity:'common',  fx:'win_coins',     val:3 },
+  { id:'corazon',     n:'Corazón de Barrio',    i:'❤️', d:'Si vas perdiendo al 45\', +10% gol en 2ª.',  rarity:'common',  fx:'comeback',      val:0.10 },
+  { id:'mendez',      n:'Doctora Méndez',       i:'🩹', d:'Lesiones duran 1 partido menos.',             rarity:'common',  fx:'heal_fast',     val:1 },
+  { id:'vestuario',   n:'Vestuario Unido',      i:'🔗', d:'La química nunca baja de 30.',               rarity:'common',  fx:'chem_floor',    val:30 },
+  { id:'megafono',    n:'Megáfono de Don Miguel',i:'📣', d:'Moral mínima garantizada en 40.',           rarity:'common',  fx:'morale_floor',  val:40 },
+  { id:'amuleto',     n:'Amuleto de la Abuela', i:'📿', d:'10% menos de lesiones.',                     rarity:'common',  fx:'injury_reduce', val:0.10 },
+  { id:'trofeo',      n:'Mini Trofeo',          i:'🏆', d:'+2💰 por cada partido de racha.',             rarity:'common',  fx:'streak_coins',  val:2 },
+  { id:'mochila',     n:'Mochila del Barrio',   i:'🎒', d:'Inicias cada partido con +5 moral.',          rarity:'common',  fx:'match_morale',  val:5 },
+
+  // ── Uncommon ──
+  { id:'prensa',      n:'Rueda de Prensa',      i:'📰', d:'+5💰 por cada objetivo completado.',          rarity:'uncommon',fx:'obj_bonus',     val:5 },
+  { id:'reloj',       n:'Reloj del 94',         i:'⏱', d:'Siempre tienes 1 evento táctico extra.',       rarity:'uncommon',fx:'extra_event',   val:1 },
+  { id:'blitz_boots', n:'Botas Relámpago',      i:'⚡', d:'Con formación Blitz: +8% chance de gol.',     rarity:'uncommon',fx:'formation_blitz',val:0.08 },
+  { id:'muro_cement', n:'Cemento Táctico',      i:'🧱', d:'Con formación Muro: goles recibidos -1 (mín 0) por partido.', rarity:'uncommon',fx:'formation_muro',val:1 },
+  { id:'diamante_key',n:'Llave de Diamante',    i:'💎', d:'Con formación Diamante: +5% posesión y evento extra.', rarity:'uncommon',fx:'formation_diamante',val:0.05 },
+  { id:'scouting',    n:'Red de Ojeadores',     i:'🔭', d:'El mercado muestra 2 jugadores extra.',        rarity:'uncommon',fx:'market_extra',  val:2 },
+
+  // ── Rare ──
+  { id:'guantes',     n:'Guantes de Hierro',    i:'🧤', d:'Si pierdes 1-0 al 90\', el portero anula el gol.', rarity:'rare', fx:'gk_last_min', val:1 },
+  { id:'cuaderno',    n:'Cuaderno del Profeta', i:'📋', d:'Ves stats del rival antes del partido.',      rarity:'rare',    fx:'scout_rival',   val:1 },
+  { id:'clasico',     n:'El Clásico',           i:'🏟', d:'Al enfrentar al némesis: +15 moral inicial.',  rarity:'rare',    fx:'nemesis_boost', val:15 },
+  { id:'doblaje',     n:'Doblete Legendario',   i:'🌟', d:'Si ganas 3-0 o más, un jugador aleatorio sube +1 en todas las stats.', rarity:'rare', fx:'blowout_boost', val:1 },
+  { id:'sangre',      n:'Sangre y Arena',       i:'🩸', d:'Perder un partido otorga el doble de XP.',    rarity:'rare',    fx:'loss_xp',       val:2 },
+  { id:'capitania',   n:'Brazalete Mágico',     i:'💛', d:'El capitán tiene +3 ATK/DEF/VEL en todo partido.', rarity:'rare', fx:'captain_boost', val:3 },
+
+  // ── Cursed (starting relics — powerful but with a cost) ──
+  { id:'maldicion',   n:'La Maldición del 94',  i:'💀', d:'Inicio: -10💰, pero +5 OVR a todos tus titulares.', rarity:'cursed', fx:'cursed_start',  val:5, cursed:true },
+  { id:'doble_filo',  n:'Doble Filo',           i:'⚔️', d:'Cada gol que haces también sube la moral rival en 5.', rarity:'cursed', fx:'cursed_atk', val:5, cursed:true },
+  { id:'pacto',       n:'Pacto del Barrio',     i:'🤝', d:'+20💰 de inicio, pero perder siempre roba 2 jugadores.', rarity:'cursed', fx:'cursed_steal', val:20, cursed:true },
 ];
 
 export const FN='Memo,Chuy,Beto,Nacho,Paco,Rafa,Toño,Pipe,Lalo,Hugo,Iker,Leo,Gael,Said,Omar,Diego,Alan,Erik,Joel,Ivan,Santiago,Patricio,Emilio,Rodrigo,Fernando,Arturo,Salvador,Margarito,Valentín,Ulises,Néstor,Damián,Rubén,Gonzalo,Édgar,Adrián,Ismael,Saúl,Gerardo,Ezequiel,Armando,Raúl,Víctor,Gilberto,Sebastián,Mateo,Dante,Héctor,Cristian,Josué,Esteban,Ramiro,Tadeo,Fabian,Marcelo,Octavio,Renato,Bruno,Axel,Aldo,Benito,Camilo,Darío,Elías'.split(',');
