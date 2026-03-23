@@ -302,7 +302,7 @@ export default function Rabona() {
             <button onClick={() => go('training')} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, padding: '7px 14px', border: `1.5px solid ${T.win}`, background: `${T.win}0F`, color: T.win, borderRadius: 4, cursor: 'pointer', textTransform: 'uppercase' }}>🏋️ Entrenar</button>
             <button onClick={openMarket} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, padding: '7px 14px', border: `1.5px solid ${T.gold}`, background: `${T.gold}0F`, color: T.gold, borderRadius: 4, cursor: 'pointer', textTransform: 'uppercase' }}>🏪 Mercado</button>
             <button onClick={() => {
-              if (starters.length < 5 && !done) return;
+              if (starters.length < 6 && !done) return;
               if (done) {
                 if (myPos < 2) { const nL = game.league + 1; if (nL >= LEAGUES.length) { go('champion'); return; } setPendingLeague(nL); go('ascension'); }
                 else go('death');
