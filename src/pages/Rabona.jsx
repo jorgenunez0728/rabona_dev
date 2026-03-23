@@ -1124,9 +1124,16 @@ export default function Rabona() {
         }
       }
 
+      // Copa check BEFORE steal — losing in Copa ends the run immediately
+      const isCopaLoss = matchType === 'copa' && game.copa && lost;
+      if (matchType === 'copa' && game.copa) {
+        if (won) { setGame(g => { const copa = { ...g.copa }; copa.bracket[copa.round].beaten = true; copa.round++; if (copa.round >= copa.maxRounds) { copa.won = true; copa.active = false; } return { ...g, copa, coins: g.coins + 15 * copa.round }; }); }
+        else { setGame(g => ({ ...g, copa: { ...g.copa, eliminated: true, active: false } })); setTimeout(() => go('death'), 1500); return; }
+      }
+
       let stolen = null;
       const hasCursedSteal = simRelics.includes('pacto');
-      if (lost) {
+      if (lost && !isCopaLoss) {
         const stealCount = hasCursedSteal ? 2 : 1;
         const stealable = allRoster.filter(p => p.id !== game.captain && p.role === 'st');
         for (let si = 0; si < stealCount && stealable.length > si; si++) {
@@ -1139,11 +1146,6 @@ export default function Rabona() {
       const goals = S.log.filter(e => e.type === 'goal' || e.type === 'goalRival');
       const cards = S.log.filter(e => e.type === 'card');
       const socialPosts = generateSocialPosts(game.league, won, drew, S.rivalName, ps, rs, game.streak);
-
-      if (matchType === 'copa' && game.copa) {
-        if (won) { setGame(g => { const copa = { ...g.copa }; copa.bracket[copa.round].beaten = true; copa.round++; if (copa.round >= copa.maxRounds) { copa.won = true; copa.active = false; } return { ...g, copa, coins: g.coins + 15 * copa.round }; }); }
-        else { setGame(g => ({ ...g, copa: { ...g.copa, eliminated: true, active: false } })); setTimeout(() => go('death'), 1500); return; }
-      }
 
       setRewards({ options: rwOptions, selected: null, stolen, xpGain, result: { ps, rs, won, drew, lost, xpGain, coinGain: coinGain + objCoins, rivalName: S.rivalName, rosterSnapshot: snapRoster, rivalPlayers: S.rivalPlayers, starters: allRoster.filter(p => p.role === 'st'), goals, cards, possPct, shots: S.shots, morale: S.morale, objResults, personalityEvents, injuryList, socialPosts, matchType } });
       setMatch(m => ({ ...m, running: false })); simRef.current = false; setRewardsTab('summary'); setScreen('rewards');
