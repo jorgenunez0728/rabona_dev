@@ -973,6 +973,11 @@ export default function Rabona() {
         addLog('event', `🧤 ¡Los Guantes de Hierro salvan el marcador al final!`);
         S.rs = Math.max(S.ps, S.rs - 1);
       }
+      // muro_cement relic: reduce goals conceded by 1 (min 0)
+      if (hasMuroCement && S.rs > 0) {
+        S.rs = Math.max(0, S.rs - 1);
+        addLog('event', `🧱 Cemento Táctico: gol rival anulado por la muralla.`);
+      }
       SFX.play('whistle_double'); addLog('event', `🏁 ¡Final! Halcones ${S.ps}-${S.rs} ${S.rivalName}`);
       Crowd.stop();
       await sleep(sp() === 0 ? 600 : 2500); S.done = true;
