@@ -37,17 +37,57 @@ export default function RewardsScreen() {
       <div style={{ width: '100%', maxWidth: 420, padding: 8, flex: 1 }}>
         {tab === 'summary' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {/* Man of the Match */}
+            {r.manOfTheMatch && (
+              <div style={{ background: 'linear-gradient(135deg,rgba(240,192,64,0.08),rgba(240,192,64,0.02))', borderRadius: 6, padding: 10, border: '1px solid rgba(240,192,64,0.2)', textAlign: 'center' }}>
+                <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 11, color: T.gold, textTransform: 'uppercase', marginBottom: 2 }}>⭐ Figura del Partido</div>
+                <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 16, color: '#fff' }}>{r.manOfTheMatch.name}</div>
+                <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#607d8b' }}>{PN[r.manOfTheMatch.pos]} · OVR {calcOvr(r.manOfTheMatch)}</div>
+              </div>
+            )}
+            {/* Match Statistics */}
             <div style={{ background: T.bg1, borderRadius: 6, padding: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
               <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: '#607d8b', textTransform: 'uppercase', marginBottom: 4 }}>Estadísticas</div>
-              {[{ l: 'Posesión', h: `${r.possPct || 50}%`, a: `${100 - (r.possPct || 50)}%`, hp: r.possPct || 50 }, { l: 'Tiros', h: r.shots || 0, a: rnd(2, 6), hp: 60 }, { l: 'Moral final', h: r.morale || 50, a: '-', hp: r.morale || 50 }].map((s, i) => (
-                <div key={i} style={{ marginBottom: 4 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#e8eaf6', marginBottom: 2 }}><span>{s.h}</span><span style={{ color: '#607d8b', fontSize: 10 }}>{s.l}</span><span>{s.a}</span></div>
-                  <div style={{ display: 'flex', height: 3, borderRadius: 2, overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
-                    <div style={{ width: `${s.hp}%`, background: '#42a5f5', borderRadius: 2 }} /><div style={{ flex: 1, background: 'rgba(239,83,80,0.3)', borderRadius: 2 }} />
+              {(() => {
+                const es = r.engineStats;
+                const statRows = es ? [
+                  { l: 'Posesión', h: `${es.possessionPct?.home || 50}%`, a: `${es.possessionPct?.away || 50}%`, hp: es.possessionPct?.home || 50 },
+                  { l: 'Tiros', h: es.shots?.home || 0, a: es.shots?.away || 0, hp: es.shots?.home ? Math.round(es.shots.home / Math.max(1, es.shots.home + es.shots.away) * 100) : 50 },
+                  { l: 'A puerta', h: es.shotsOnTarget?.home || 0, a: es.shotsOnTarget?.away || 0, hp: es.shotsOnTarget?.home ? Math.round(es.shotsOnTarget.home / Math.max(1, es.shotsOnTarget.home + es.shotsOnTarget.away) * 100) : 50 },
+                  { l: 'Córners', h: es.corners?.home || 0, a: es.corners?.away || 0, hp: 50 },
+                  { l: 'Faltas', h: es.fouls?.home || 0, a: es.fouls?.away || 0, hp: 50 },
+                  { l: 'Moral final', h: r.morale || 50, a: '-', hp: r.morale || 50 },
+                ] : [
+                  { l: 'Posesión', h: `${r.possPct || 50}%`, a: `${100 - (r.possPct || 50)}%`, hp: r.possPct || 50 },
+                  { l: 'Tiros', h: r.shots || 0, a: rnd(2, 6), hp: 60 },
+                  { l: 'Moral final', h: r.morale || 50, a: '-', hp: r.morale || 50 },
+                ];
+                return statRows.map((s, i) => (
+                  <div key={i} style={{ marginBottom: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#e8eaf6', marginBottom: 2 }}><span>{s.h}</span><span style={{ color: '#607d8b', fontSize: 10 }}>{s.l}</span><span>{s.a}</span></div>
+                    <div style={{ display: 'flex', height: 3, borderRadius: 2, overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
+                      <div style={{ width: `${s.hp}%`, background: '#42a5f5', borderRadius: 2 }} /><div style={{ flex: 1, background: 'rgba(239,83,80,0.3)', borderRadius: 2 }} />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ));
+              })()}
             </div>
+            {/* Scorers with assists */}
+            {r.engineStats?.goals?.filter(g => g.team === 'home').length > 0 && (
+              <div style={{ background: T.bg1, borderRadius: 6, padding: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: T.gold, textTransform: 'uppercase', marginBottom: 4 }}>⚽ Goles</div>
+                {r.engineStats.goals.filter(g => g.team === 'home').map((g, i) => (
+                  <div key={i} style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: '#e8eaf6', padding: '2px 0' }}>
+                    ⚽ {g.minute}' {g.scorer || 'Gol'}{g.assister ? ` (asist. ${g.assister})` : ''}
+                  </div>
+                ))}
+                {r.engineStats.goals.filter(g => g.team === 'away').map((g, i) => (
+                  <div key={`a${i}`} style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: '#ef5350', padding: '2px 0' }}>
+                    💀 {g.minute}' Gol rival
+                  </div>
+                ))}
+              </div>
+            )}
             {r.injuryList?.length > 0 && (
               <div style={{ background: 'rgba(255,23,68,0.04)', borderRadius: 6, padding: 10, border: '1px solid rgba(255,23,68,0.1)' }}>
                 <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: '#ff1744', textTransform: 'uppercase', marginBottom: 4 }}>🏥 Lesiones</div>

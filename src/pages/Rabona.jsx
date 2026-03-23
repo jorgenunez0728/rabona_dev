@@ -3,11 +3,12 @@ import { SFX, Crowd } from "@/game/audio";
 import {
   TACTICS, POS_ORDER, T, PERSONALITIES,
   rnd, pick, calcOvr,
-  avgStat, teamGKRating, teamPower, narrate, randomizeEvent,
+  avgStat, teamGKRating, teamPower, narrate as legacyNarrate, randomizeEvent,
   generateLivePosts, generateSocialPosts, getRivalKit, drawSprite,
   FORMATIONS, getLevelUpChoices, applyRelicEffects,
-  getRelicDraftOptions, PN, LEAGUES,
+  getRelicDraftOptions, PN, LEAGUES, genPlayer, TRAITS,
 } from "@/game/data";
+import { simulateMatch, PLAY_STYLES, INTENSITIES, getManOfTheMatch } from "@/game/engine";
 import { PlayerDetailModal, ParticleSystem } from "@/game/components";
 import { CareerCreateScreen, CareerCardScreen, CareerMatchScreen, CareerSeasonEnd, CareerEndScreen } from "@/game/CareerScreens";
 import useGameStore from "@/game/store";
@@ -68,14 +69,13 @@ export default function Rabona() {
     useEffect(() => {
       if (!match.running || simRef.current) return;
       simRef.current = true;
-      const nemesisBoost = (game.relics||[]).includes('clasico') && matchType === 'nemesis' ? 15 : 0;
-      sim.current = { ps: 0, rs: 0, minute: 0, speed: 2, ballX: .5, ballY: .5, possession: true, log: [{ type: 'normal', text: `⚽ Arranca — Halcones vs ${match.rival?.name} [${formation.n}]` }], done: false, rivalName: match.rival?.name || 'Rival', rivalPlayers: match.rivalPlayers || [], morale: 50 + (applyRelicEffects(game, 'match_morale_bonus').moraleBonus || 0) + nemesisBoost, strategy: 'balanced', shots: 0, possCount: 0, totalTicks: 0, pendingEvent: null, halftimeShown: false, goalEffect: 0, pendingPenalty: null };
+      sim.current = { ps: 0, rs: 0, minute: 0, speed: 2, ballX: .5, ballY: .5, possession: true, log: [], done: false, rivalName: match.rival?.name || 'Rival', rivalPlayers: match.rivalPlayers || [], morale: 50, strategy: 'balanced', shots: 0, possCount: 0, totalTicks: 0, pendingEvent: null, halftimeShown: false, goalEffect: 0, pendingPenalty: null };
       hpxRef.current = []; hpyRef.current = []; apxRef.current = []; apyRef.current = [];
       Crowd.start();
       const di = setInterval(() => { const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: s.done, morale: s.morale, pendingEvent: s.pendingEvent, strategy: s.strategy, pendingPenalty: s.pendingPenalty }); }, 150);
       const ci = setInterval(() => { const s = sim.current; Crowd.setIntensity(s.morale / 100); }, 1000);
       let animId; function dl() { frameRef.current++; drawPitch(); animId = requestAnimationFrame(dl); } dl();
-      runSim().then(() => { clearInterval(di); clearInterval(ci); cancelAnimationFrame(animId); const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: true, morale: s.morale, pendingEvent: null, strategy: s.strategy }); });
+      runEngineLoop().then(() => { clearInterval(di); clearInterval(ci); cancelAnimationFrame(animId); const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: true, morale: s.morale, pendingEvent: null, strategy: s.strategy }); });
       return () => { clearInterval(di); clearInterval(ci); cancelAnimationFrame(animId); Crowd.stop(); };
     }, [match.running]);
 
@@ -127,134 +127,159 @@ export default function Rabona() {
       }
     }
 
-    async function runSim() {
+    async function runEngineLoop() {
       const S = sim.current;
       const starters = game.roster.filter(p => p.role === 'st');
       const allRoster = game.roster.map(p => ({ ...p, trait: { ...p.trait } }));
-      const stealBonus = game.coach?.fx === 'steal' ? .15 : 0;
-      const noFouls = game.coach?.fx === 'nofoul';
       const simRelics = game.relics || [];
-      const moraleFloor = simRelics.includes('megafono') ? 40 : 0;
-      const chemFloor = simRelics.includes('vestuario') ? 30 : 0;
-      const hasGkLastMin = simRelics.includes('guantes');
-      const hasScoutRival = simRelics.includes('cuaderno');
-      const hasBlitzBoots = simRelics.includes('blitz_boots') && game.formation === 'blitz';
-      const hasMuroCement = simRelics.includes('muro_cement') && game.formation === 'muro';
-      const hasDiamanteKey = simRelics.includes('diamante_key') && game.formation === 'diamante';
-      const hasCaptainBoost = simRelics.includes('capitania');
-      const captain = game.roster.find(p => p.id === game.captain);
-      // Apply captain boost globally if relic active
-      const captainBoostVal = (hasCaptainBoost && captain) ? 3 : 0;
-      const chemBonus = game.chemistry * .001;
-      const diffMod = game.league <= 1 ? 0.005 : game.league * 0.008;
-      let lastEventMin = -10;
-      let tacticalEventsShown = 0;
-      const extraEvents = (simRelics.includes('reloj') ? 1 : 0) + (hasDiamanteKey ? 1 : 0);
-      const MAX_TACTICAL_EVENTS = 2 + extraEvents;
       const sp = () => S.speed;
       function addLog(t, x) { S.log.push({ type: t, text: x }); if (S.log.length > 25) S.log.shift(); }
+      function narrate(type) { return legacyNarrate(type, 'Halcones', S.rivalName, starters); }
 
-      while (S.minute < 90) {
-        S.minute += rnd(2, 4); if (S.minute > 90) S.minute = 90; S.totalTicks++;
+      // Create the engine generator
+      const engine = simulateMatch({
+        starters,
+        roster: game.roster,
+        formation: game.formation,
+        relics: simRelics,
+        coach: game.coach,
+        rival: { name: match.rival?.name || 'Rival', players: match.rivalPlayers || [] },
+        league: game.league,
+        chemistry: game.chemistry,
+        captain: game.roster.find(p => p.id === game.captain),
+        matchType,
+      });
 
-        // Halftime — simplified, no prompt: auto apply balanced, show in log
-        if (S.minute >= 45 && !S.halftimeShown) {
-          S.halftimeShown = true;
-          SFX.play('halftime');
-          addLog('event', `🕐 Descanso: ${S.ps}-${S.rs} · Elige táctica para 2ª parte`);
-          // Show halftime strategy picker inline (via pending event with isHalftime flag)
-          const htEvent = { n: '🕐 MEDIO TIEMPO', d: `${S.ps}-${S.rs} · ¿Cómo encaras la 2ª parte?`, isHalftime: true, o: [{ n: 'Ofensiva', d: '+Ataque, -Defensa', i: '⚔' }, { n: 'Equilibrada', d: 'Balance', i: '⚖' }, { n: 'Defensiva', d: '+Defensa, -Ataque', i: '🛡' }] };
-          const choice = await showTacticalEvent(htEvent);
-          S.strategy = ['offensive', 'balanced', 'defensive'][choice] || 'balanced';
-          S.morale = Math.min(99, S.morale + 5);
-          await sleep(200);
-        }
+      let result = engine.next();
+      let engineResult = null;
 
-        // Tactical events: max MAX_TACTICAL_EVENTS per match (excluding halftime and penalties)
-        if (tacticalEventsShown < MAX_TACTICAL_EVENTS && S.minute - lastEventMin >= rnd(20, 30) && sp() > 0 && S.minute < 85 && S.minute > 10) {
-          lastEventMin = S.minute;
-          tacticalEventsShown++;
-          const ev = randomizeEvent(pick(TACTICS.filter(e => !e.n.includes('PENAL') && !e.n.includes('LESIÓN'))));
-          const choice = await showTacticalEvent(ev);
-          const eff = ev.o[choice]?.e || {};
-          S.morale = Math.max(0, Math.min(99, S.morale + (eff.morale || 0)));
-          if (eff.cardRisk && Math.random() < eff.cardRisk) { SFX.play('card'); addLog('card', `🟨 ${S.minute}' ¡Tarjeta!`); }
-          const atkB = eff.atkBonus || 0; const defP = eff.defPenalty || 0;
-          if (atkB > 0 && Math.random() < atkB) { S.ps++; S.goalEffect = 1; shakeRef.current = 15; S.ballY = .05; SFX.play('goal'); addLog('goal', `⚽ ${S.minute}' ${narrate('goalHome', 'Halcones', S.rivalName, starters)}`); S.morale = Math.min(99, S.morale + 10); await sleep(sp() >= 2 ? 2500 : 200); S.ballX = .5; S.ballY = .5; }
-          else if (defP > 0 && Math.random() < defP) { S.rs++; S.goalEffect = -1; shakeRef.current = 10; S.ballY = .95; SFX.play('goal_rival'); addLog('goalRival', `💀 ${S.minute}' ${narrate('goalAway', 'Halcones', S.rivalName, starters)}`); S.morale = Math.max(0, S.morale - 8); await sleep(sp() >= 2 ? 2500 : 200); S.ballX = .5; S.ballY = .5; }
-          await sleep(sp() >= 2 ? 400 : 100);
-          continue;
-        }
+      while (!result.done) {
+        const ev = result.value;
+        S.minute = ev.minute || S.minute;
+        if (ev.homeScore !== undefined) S.ps = ev.homeScore;
+        if (ev.awayScore !== undefined) S.rs = ev.awayScore;
+        if (ev.morale !== undefined) S.morale = ev.morale;
+        if (ev.ballX !== undefined) S.ballX = ev.ballX;
+        if (ev.ballY !== undefined) S.ballY = ev.ballY;
+        if (ev.possession) S.possession = ev.possession === 'home';
 
-        const moraleMod = ((Math.max(moraleFloor, S.morale) - 50) / 200);
-        const stratMod = S.strategy === 'offensive' ? .03 : S.strategy === 'defensive' ? -.02 : 0;
-        const tM = avgStat(starters, 'spd', formMods) + avgStat(starters, 'atk', formMods) * .5 + chemBonus * 10;
-        const rM = avgStat(S.rivalPlayers, 'spd') + avgStat(S.rivalPlayers, 'atk') * .5;
-        const scoutBonus = hasScoutRival ? 0.05 : 0;
-        S.possession = Math.random() < (tM / (tM + rM) + stealBonus + moraleMod + stratMod + scoutBonus);
-        if (S.possession) S.possCount++;
-        const clutch = S.ps < S.rs && starters.some(p => p.trait.fx === 'clutch');
-        const stratAtk = S.strategy === 'offensive' ? .015 : S.strategy === 'defensive' ? -.01 : 0;
-        const stratDef = S.strategy === 'defensive' ? .015 : S.strategy === 'offensive' ? -.008 : 0;
+        switch (ev.type) {
+          case 'kickoff':
+            addLog('event', ev.text);
+            break;
 
-        if (S.possession) {
-          const aP = avgStat(starters, 'atk', formMods) + (clutch ? 5 : 0) + captainBoostVal;
-          const rD = avgStat(S.rivalPlayers, 'def');
-          const blitzBonus = hasBlitzBoots ? 0.08 : 0;
-          const diamanteBonus = hasDiamanteKey ? 0.03 : 0;
-          const gc = (aP - rD * .6) * .015 + .03 + moraleMod * .02 + stratAtk - diffMod * .5 + blitzBonus + diamanteBonus;
-          S.shots++;
-          if (Math.random() < Math.max(.02, Math.min(.14, gc))) {
-            S.ps++; S.goalEffect = 1; shakeRef.current = 15; S.ballX = .5; S.ballY = .05; S.morale = Math.min(99, S.morale + 10);
-            SFX.play('goal'); addLog('goal', `⚽ ${S.minute}' ${narrate('goalHome', 'Halcones', S.rivalName, starters)}`);
-            await sleep(sp() >= 2 ? 2500 : sp() === 1 ? 800 : 200); S.ballX = .5; S.ballY = .5;
-          } else if (sp() >= 2 && Math.random() < .3) { SFX.play('kick'); addLog('normal', `${S.minute}' ${narrate('atkBuild', 'Halcones', S.rivalName, starters)}`); await sleep(700); }
-        } else {
-          const rA = avgStat(S.rivalPlayers, 'atk');
-          const tD = avgStat(starters, 'def', formMods) + (noFouls ? 2 : 0) + captainBoostVal * 0.5;
-          const gkRating = teamGKRating(starters);
-          const gkPenalty = gkRating < 3 ? 0.04 : gkRating < 5 ? 0.02 : 0;
-          const muroBonus = hasMuroCement ? 0.04 : 0;
-          const gc = (rA - tD * .6) * .015 + .02 - moraleMod * .01 - stratDef + diffMod + gkPenalty - muroBonus;
-          if (Math.random() < Math.max(.015, Math.min(.13, gc))) {
-            S.rs++; S.goalEffect = -1; shakeRef.current = 10; S.ballX = .5; S.ballY = .95; S.morale = Math.max(0, S.morale - 8);
-            SFX.play('goal_rival'); addLog('goalRival', `💀 ${S.minute}' ${narrate('goalAway', 'Halcones', S.rivalName, starters)}`);
-            await sleep(sp() >= 2 ? 2500 : sp() === 1 ? 800 : 200); S.ballX = .5; S.ballY = .5;
-          } else if (sp() >= 2 && Math.random() < .2) { SFX.play('kick'); addLog('normal', `${S.minute}' ${narrate('defGood', 'Halcones', S.rivalName, starters)}`); await sleep(600); }
-        }
-        // Random penalty event (attack or defense)
-        if (Math.random() < .025 && sp() > 0) {
-          if (S.possession) {
-            addLog('event', `‼ ${S.minute}' ¡PENAL a favor!`);
-            const penResult = await showPenaltyMinigame('shoot');
-            if (penResult.scored) { S.ps++; S.goalEffect = 1; shakeRef.current = 15; SFX.play('goal'); addLog('goal', `⚽ ${S.minute}' ¡GOOOL de penal!`); S.morale = Math.min(99, S.morale + 12); }
-            else { addLog('normal', `${S.minute}' Penal fallado...`); S.morale = Math.max(0, S.morale - 5); }
-          } else {
-            addLog('event', `‼ ${S.minute}' ¡Penal en contra!`);
-            const penResult = await showPenaltyMinigame('save');
-            if (!penResult.scored) { S.rs++; S.goalEffect = -1; shakeRef.current = 10; SFX.play('goal_rival'); addLog('goalRival', `💀 ${S.minute}' Penal encajado.`); S.morale = Math.max(0, S.morale - 10); }
-            else { addLog('event', `🧤 ${S.minute}' ¡¡ATAJADA HEROICA!!`); S.morale = Math.min(99, S.morale + 8); }
+          case 'goal':
+            if (ev.team === 'home') {
+              S.goalEffect = 1; shakeRef.current = 15; S.ballX = .5; S.ballY = .05;
+              SFX.play('goal');
+              addLog('goal', ev.text || `⚽ ${ev.minute}' ${narrate('goalHome')}`);
+              S.morale = Math.min(99, (S.morale || 50) + 10);
+              await sleep(sp() >= 2 ? 2500 : sp() === 1 ? 800 : 200);
+            } else {
+              S.goalEffect = -1; shakeRef.current = 10; S.ballX = .5; S.ballY = .95;
+              SFX.play('goal_rival');
+              addLog('goalRival', ev.text || `💀 ${ev.minute}' ${narrate('goalAway')}`);
+              S.morale = Math.max(0, (S.morale || 50) - 8);
+              await sleep(sp() >= 2 ? 2500 : sp() === 1 ? 800 : 200);
+            }
+            S.ballX = .5; S.ballY = .5;
+            S.shots++;
+            break;
+
+          case 'chance':
+            if (ev.team === 'home') {
+              if (sp() >= 2) { SFX.play('kick'); addLog('normal', ev.text || `${ev.minute}' ${narrate('atkBuild')}`); await sleep(700); }
+            }
+            S.shots++;
+            break;
+
+          case 'miss':
+            if (ev.team === 'home' && sp() >= 2) {
+              addLog('normal', ev.text || `${ev.minute}' ${narrate('atkFail')}`);
+            }
+            break;
+
+          case 'save':
+            addLog('event', ev.text);
+            S.morale = Math.min(99, (S.morale || 50) + 8);
+            break;
+
+          case 'halftime': {
+            SFX.play('halftime');
+            S.halftimeShown = true;
+            addLog('event', ev.text || `🕐 Descanso: ${S.ps}-${S.rs}`);
+            const htEvent = {
+              n: '🕐 MEDIO TIEMPO', d: `${S.ps}-${S.rs} · ¿Cómo encaras la 2ª parte?`, isHalftime: true,
+              o: [{ n: 'Ofensiva', d: '+Ataque, -Defensa', i: '⚔' }, { n: 'Equilibrada', d: 'Balance', i: '⚖' }, { n: 'Defensiva', d: '+Defensa, -Ataque', i: '🛡' }],
+            };
+            const htChoice = await showTacticalEvent(htEvent);
+            S.strategy = ['offensive', 'balanced', 'defensive'][htChoice] || 'balanced';
+            await sleep(200);
+            result = engine.next(htChoice);
+            continue;
           }
-          await sleep(sp() >= 2 ? 600 : 150); S.ballX = .5; S.ballY = .5;
+
+          case 'tactical_event': {
+            const choice = await showTacticalEvent(ev.event);
+            await sleep(sp() >= 2 ? 400 : 100);
+            result = engine.next(choice);
+            continue;
+          }
+
+          case 'penalty': {
+            const mode = ev.mode;
+            addLog('event', `‼ ${ev.minute}' ${mode === 'shoot' ? '¡PENAL a favor!' : '¡Penal en contra!'}`);
+            const penResult = await showPenaltyMinigame(mode);
+            await sleep(sp() >= 2 ? 600 : 150);
+            S.ballX = .5; S.ballY = .5;
+            result = engine.next(penResult);
+            continue;
+          }
+
+          case 'card':
+            if (sp() >= 2) { SFX.play('card'); addLog('card', ev.text || `🟨 ${ev.minute}' ¡Tarjeta!`); }
+            break;
+
+          case 'steal':
+            if (sp() >= 2) { SFX.play('tick'); addLog('steal', ev.text || `🔥 ${ev.minute}' ${narrate('steal')}`); S.morale = Math.min(99, (S.morale || 50) + 2); }
+            break;
+
+          case 'injury':
+            addLog('event', ev.text || `🏥 ${ev.minute}' Lesión`);
+            break;
+
+          case 'momentum_shift':
+            addLog('normal', ev.text);
+            break;
+
+          case 'rival_strategy':
+            if (sp() >= 2) addLog('normal', ev.text);
+            break;
+
+          case 'relic_effect':
+            addLog('event', ev.text);
+            break;
+
+          case 'whistle':
+            SFX.play('whistle_double');
+            addLog('event', ev.text || `🏁 ¡Final! Halcones ${S.ps}-${S.rs} ${S.rivalName}`);
+            Crowd.stop();
+            await sleep(sp() === 0 ? 600 : 2500);
+            S.done = true;
+            break;
+
+          case 'tick':
+            if (S.possession) S.possCount++;
+            S.totalTicks++;
+            await sleep(sp() >= 2 ? 600 : sp() === 1 ? 180 : 100);
+            break;
         }
-        if (sp() >= 2 && Math.random() < .04) { SFX.play('card'); addLog('card', `🟨 ${S.minute}' Tarjeta`); }
-        if (sp() >= 2 && Math.random() < .05) { SFX.play('tick'); addLog('steal', `🔥 ${S.minute}' ${narrate('steal', 'Halcones', S.rivalName, starters)}`); S.morale = Math.min(99, S.morale + 2); }
-        await sleep(sp() >= 2 ? 600 : sp() === 1 ? 180 : 100);
+
+        result = engine.next();
       }
 
-      // gk_last_min relic: if losing by 1 at 90', block the final concede chance
-      if (hasGkLastMin && S.ps < S.rs && S.rs - S.ps === 1) {
-        addLog('event', `🧤 ¡Los Guantes de Hierro salvan el marcador al final!`);
-        S.rs = Math.max(S.ps, S.rs - 1);
-      }
-      // muro_cement relic: reduce goals conceded by 1 (min 0)
-      if (hasMuroCement && S.rs > 0) {
-        S.rs = Math.max(0, S.rs - 1);
-        addLog('event', `🧱 Cemento Táctico: gol rival anulado por la muralla.`);
-      }
-      SFX.play('whistle_double'); addLog('event', `🏁 ¡Final! Halcones ${S.ps}-${S.rs} ${S.rivalName}`);
-      Crowd.stop();
-      await sleep(sp() === 0 ? 600 : 2500); S.done = true;
+      // Engine returned final result
+      engineResult = result.value;
 
       // End of match processing
       const ps = S.ps, rs = S.rs;
@@ -309,8 +334,16 @@ export default function Rabona() {
         if (won) cs.wins++; else if (drew) cs.draws++; else cs.losses++;
         cs.bestStreak = Math.max(cs.bestStreak, newStreak);
         const scorers = { ...cs.scorers || {} };
-        const fwdMid = roster.filter(p => p.role === 'st' && (p.pos === 'FWD' || p.pos === 'MID'));
-        for (let i = 0; i < ps; i++) { const scorer = fwdMid.length ? fwdMid[Math.floor(Math.random() * fwdMid.length)] : roster[0]; if (scorer) scorers[scorer.name] = (scorers[scorer.name] || 0) + 1; }
+        // Use engine stats for goal attribution (weighted by position/stats, not random)
+        const engineGoals = engineResult?.stats?.goals || [];
+        const homeGoals = engineGoals.filter(g => g.team === 'home');
+        if (homeGoals.length > 0) {
+          homeGoals.forEach(g => { if (g.scorer) scorers[g.scorer] = (scorers[g.scorer] || 0) + 1; });
+        } else {
+          // Fallback: attribute goals randomly to FWD/MID
+          const fwdMid = roster.filter(p => p.role === 'st' && (p.pos === 'FWD' || p.pos === 'MID'));
+          for (let i = 0; i < ps; i++) { const scorer = fwdMid.length ? fwdMid[Math.floor(Math.random() * fwdMid.length)] : roster[0]; if (scorer) scorers[scorer.name] = (scorers[scorer.name] || 0) + 1; }
+        }
         cs.scorers = scorers;
         const newState = { ...g, table, roster, matchNum: g.matchNum + 1, matchesTogether: mt, chemistry: chem, lastLineup: lineupKey, coins: g.coins + coinGain + objCoins, streak: newStreak, rivalMemory: rivalMem, careerStats: cs, trainedIds: [] };
         setTimeout(() => autoSave(newState), 100);
@@ -404,7 +437,11 @@ export default function Rabona() {
       const cards = S.log.filter(e => e.type === 'card');
       const socialPosts = generateSocialPosts(game.league, won, drew, S.rivalName, ps, rs, game.streak);
 
-      setRewards({ options: rwOptions, selected: null, stolen, xpGain, result: { ps, rs, won, drew, lost, xpGain, coinGain: coinGain + objCoins, rivalName: S.rivalName, rosterSnapshot: snapRoster, rivalPlayers: S.rivalPlayers, starters: allRoster.filter(p => p.role === 'st'), goals, cards, possPct, shots: S.shots, morale: S.morale, objResults, personalityEvents, injuryList, socialPosts, matchType } });
+      // Engine-enhanced stats
+      const engStats = engineResult?.stats || null;
+      const motm = engStats ? getManOfTheMatch(engStats, starters) : null;
+
+      setRewards({ options: rwOptions, selected: null, stolen, xpGain, result: { ps, rs, won, drew, lost, xpGain, coinGain: coinGain + objCoins, rivalName: S.rivalName, rosterSnapshot: snapRoster, rivalPlayers: S.rivalPlayers, starters: allRoster.filter(p => p.role === 'st'), goals, cards, possPct, shots: S.shots, morale: S.morale, objResults, personalityEvents, injuryList, socialPosts, matchType, engineStats: engStats, manOfTheMatch: motm } });
       setMatch(m => ({ ...m, running: false })); simRef.current = false; setRewardsTab('summary'); setScreen('rewards');
     }
 
