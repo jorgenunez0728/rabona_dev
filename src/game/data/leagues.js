@@ -4,7 +4,7 @@ export const STADIUMS=[
   {n:'Estadio "El Coloso del Norte"',d:'15,000 localidades. Pasto sintético de segunda.',x:'📺 Transmisión local · Hay tienda de playeras pirata',c:'#5c6bc0'},
   {n:'Estadio Nacional',d:'65,000 almas rugiendo. Pasto impecable.',x:'🏟 Cobertura nacional · VAR activo · Mosca con el offside',c:'#43a047'},
   {n:'Arena Continental',d:'Techo retráctil. Pantallas LED perimetrales.',x:'🌎 Transmisión continental · Camerinos de lujo',c:'#1e88e5'},
-  {n:'World Stadium Tokyo',d:'Tecnología holográfica. 90,000 asientos flotantes.',x:'🌍 500M espectadores · Drones de cámara · Repetición 360°',c:'#ffd600'},
+  {n:'World Arena',d:'Tecnología holográfica. 90,000 asientos flotantes.',x:'🌍 500M espectadores · Drones de cámara · Repetición 360°',c:'#ffd600'},
   {n:'Nebula Arena — Estación Orbital',d:'Gravedad artificial al 95%. El balón flota ligeramente.',x:'🛸 Oxígeno incluido · Sin viento · Espectadores de 47 galaxias',c:'#e040fb'},
 ];
 

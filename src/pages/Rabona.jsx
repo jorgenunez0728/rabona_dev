@@ -8,6 +8,7 @@ import {
   FORMATIONS, getLevelUpChoices, applyRelicEffects,
   getRelicDraftOptions, PN, LEAGUES, genPlayer, TRAITS,
 } from "@/game/data";
+import { getStadiumPitch } from "@/assets/stadiums";
 import { simulateMatch, PLAY_STYLES, INTENSITIES, getManOfTheMatch } from "@/game/engine";
 import { PlayerDetailModal, ParticleSystem } from "@/game/components";
 import { CareerCreateScreen, CareerCardScreen, CareerMatchScreen, CareerSeasonEnd, CareerEndScreen } from "@/game/CareerScreens";
@@ -60,6 +61,7 @@ export default function Rabona() {
     const hpxRef = useRef([]), hpyRef = useRef([]), apxRef = useRef([]), apyRef = useRef([]);
     const eventResolveRef = useRef(null);
     const penaltyResolveRef = useRef(null);
+    const pitchImgRef = useRef(null);
     const sim = useRef({ ps: 0, rs: 0, minute: 0, speed: 2, ballX: .5, ballY: .5, possession: true, log: [], done: false, rivalName: '', rivalPlayers: [], morale: 50, strategy: 'balanced', shots: 0, possCount: 0, totalTicks: 0, pendingEvent: null, halftimeShown: false, goalEffect: 0, pendingPenalty: null });
     const [display, setDisplay] = useState({ ps: 0, rs: 0, minute: 0, speed: 2, log: [], done: false, morale: 50, pendingEvent: null, strategy: 'balanced', pendingPenalty: null });
 
@@ -78,6 +80,12 @@ export default function Rabona() {
       runEngineLoop().then(() => { clearInterval(di); clearInterval(ci); cancelAnimationFrame(animId); const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: true, morale: s.morale, pendingEvent: null, strategy: s.strategy }); });
       return () => { clearInterval(di); clearInterval(ci); cancelAnimationFrame(animId); Crowd.stop(); };
     }, [match.running]);
+
+    useEffect(() => {
+      const src = getStadiumPitch(game.league);
+      if (src) { const img = new Image(); img.src = src; img.onload = () => { pitchImgRef.current = img; }; }
+      else { pitchImgRef.current = null; }
+    }, [game.league]);
 
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
     function waitForChoice() { return new Promise(resolve => { eventResolveRef.current = resolve; }); }
@@ -454,19 +462,23 @@ export default function Rabona() {
       if (!W || !H) return;
       ctx.save();
       if (shakeRef.current > 0) { const s = shakeRef.current; ctx.translate(Math.sin(f * 0.5) * s * 0.3, Math.cos(f * 0.7) * s * 0.2); shakeRef.current = Math.max(0, shakeRef.current - 0.5); }
-      for (let i = 0; i < 16; i++) {
-        const t = i / 16;
-        ctx.fillStyle = i % 2 === 0 ? `rgb(${Math.floor(38 + t * 12)},${Math.floor(96 + t * 20)},${Math.floor(21 + t * 10)})` : `rgb(${Math.floor(43 + t * 12)},${Math.floor(104 + t * 20)},${Math.floor(26 + t * 10)})`;
-        ctx.fillRect(0, i * H / 16, W, H / 16 + 1);
-      }
       const m = 10, fw = W - m * 2, fh = H - m * 2;
-      ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1.5;
-      ctx.strokeRect(m, m, fw, fh);
-      ctx.beginPath(); ctx.moveTo(m, H / 2); ctx.lineTo(W - m, H / 2); ctx.stroke();
-      ctx.beginPath(); ctx.arc(W / 2, H / 2, Math.min(fw, fh) * .08, 0, Math.PI * 2); ctx.stroke();
-      const gpw = fw * .14, gph = 4;
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      ctx.fillRect(W / 2 - gpw / 2, m - 1, gpw, gph); ctx.fillRect(W / 2 - gpw / 2, H - m - gph + 1, gpw, gph);
+      if (pitchImgRef.current) {
+        ctx.drawImage(pitchImgRef.current, 0, 0, W, H);
+      } else {
+        for (let i = 0; i < 16; i++) {
+          const t = i / 16;
+          ctx.fillStyle = i % 2 === 0 ? `rgb(${Math.floor(38 + t * 12)},${Math.floor(96 + t * 20)},${Math.floor(21 + t * 10)})` : `rgb(${Math.floor(43 + t * 12)},${Math.floor(104 + t * 20)},${Math.floor(26 + t * 10)})`;
+          ctx.fillRect(0, i * H / 16, W, H / 16 + 1);
+        }
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1.5;
+        ctx.strokeRect(m, m, fw, fh);
+        ctx.beginPath(); ctx.moveTo(m, H / 2); ctx.lineTo(W - m, H / 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(W / 2, H / 2, Math.min(fw, fh) * .08, 0, Math.PI * 2); ctx.stroke();
+        const gpw = fw * .14, gph = 4;
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.fillRect(W / 2 - gpw / 2, m - 1, gpw, gph); ctx.fillRect(W / 2 - gpw / 2, H - m - gph + 1, gpw, gph);
+      }
       const bpx = m + fw * S.ballX, bpy = m + fh * S.ballY;
       const homeFormation = [{ bx: .5, by: .88, pull: .005, minY: .78, maxY: .95 }, { bx: .25, by: .70, pull: .02, minY: .55, maxY: .82 }, { bx: .75, by: .70, pull: .02, minY: .55, maxY: .82 }, { bx: .5, by: .52, pull: .06, minY: .35, maxY: .70 }, { bx: .5, by: .35, pull: .08, minY: .15, maxY: .60 }];
       const awayFormation = [{ bx: .5, by: .12, pull: .005, minY: .05, maxY: .22 }, { bx: .3, by: .28, pull: .02, minY: .18, maxY: .45 }, { bx: .7, by: .28, pull: .02, minY: .18, maxY: .45 }, { bx: .5, by: .42, pull: .06, minY: .30, maxY: .60 }, { bx: .5, by: .55, pull: .08, minY: .35, maxY: .80 }];

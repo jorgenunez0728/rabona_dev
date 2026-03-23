@@ -6,6 +6,7 @@ import {
   PN, POS_COLORS, POS_ORDER, T,
   genPlayer, pick, effectiveOvr, teamPower,
 } from "@/game/data";
+import { getStadiumFront } from "@/assets/stadiums";
 import useGameStore from "@/game/store";
 
 export default function PrematchScreen() {
@@ -54,9 +55,19 @@ export default function PrematchScreen() {
         </div>
         {isCopaMatch && <div style={{ fontSize: 12, color: '#fff', marginTop: 4, background: 'rgba(255,0,0,0.3)', padding: '3px 10px', borderRadius: 4, fontWeight: 700 }}>💀 PERDER = FIN DE LA CARRERA</div>}
       </div>
-      <div style={{ background: T.bg1, padding: '8px 16px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: st.c, textTransform: 'uppercase' }}>{st.n}</div>
-      </div>
+      {getStadiumFront(game.league) ? (
+        <div style={{ position: 'relative', overflow: 'hidden', maxHeight: 140 }}>
+          <img src={getStadiumFront(game.league)} alt={st.n} style={{ width: '100%', display: 'block', objectFit: 'cover', objectPosition: 'top' }} />
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.85))', padding: '16px 16px 6px' }}>
+            <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: st.c, textTransform: 'uppercase', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{st.n}</div>
+            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{st.d}</div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ background: T.bg1, padding: '8px 16px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: st.c, textTransform: 'uppercase' }}>{st.n}</div>
+        </div>
+      )}
       {/* Formation Selector */}
       <div style={{ padding: '8px 12px', background: T.bg1, borderBottom: `1px solid ${T.border}` }}>
         <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 5 }}>Formación</div>
