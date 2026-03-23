@@ -692,6 +692,7 @@ export default function Rabona() {
         if (ascMods.includes('killer_fwd') && p === 'FWD') rp.atk += 5;
         if (isNemesisMatch && nem.boost) { rp.atk += (nem.boost.atk || 0); rp.def += (nem.boost.def || 0); rp.spd += (nem.boost.spd || 0); }
         if (isCopaMatch) { rp.atk += 1; rp.def += 1; }
+        if (matchType === 'elite') { rp.atk += 3; rp.def += 3; rp.spd += 2; }
         return rp;
       });
       rcRef.current = isNemesisMatch ? { n: nem.n, i: nem.i, a: nem.a } : pick(RIVAL_COACHES);
