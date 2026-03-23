@@ -868,7 +868,7 @@ export default function Rabona() {
         const stratDef = S.strategy === 'defensive' ? .015 : S.strategy === 'offensive' ? -.008 : 0;
 
         if (S.possession) {
-          const aP = avgStat(starters, 'atk') + (clutch ? 5 : 0);
+          const aP = avgStat(starters, 'atk', formMods) + (clutch ? 5 : 0);
           const rD = avgStat(S.rivalPlayers, 'def');
           const gc = (aP - rD * .6) * .015 + .03 + moraleMod * .02 + stratAtk - diffMod * .5;
           S.shots++;
