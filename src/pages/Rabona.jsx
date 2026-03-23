@@ -991,7 +991,8 @@ export default function Rabona() {
         + (won && simRelics.includes('trofeo') ? 2 * Math.max(0, game.streak) : 0)
         + (simRelics.includes('prensa') ? 5 : 0);
       const coinGain = (won ? 25 : drew ? 12 : 5) + streakBonus + leagueBonus + relicCoinBonus;
-      const xpGain = won ? 18 : drew ? 12 : 8;
+      const hasLossXp = simRelics.includes('sangre');
+      const xpGain = won ? 18 : drew ? 12 : (hasLossXp ? 16 : 8);
       const possPct = Math.round(S.possCount / Math.max(1, S.totalTicks) * 100);
       const objData = { wentBehind: S.log.some(e => e.type === 'goalRival'), fatiguedCount: 0, finalMorale: S.morale, possPct };
       const objResults = (game.currentObjectives || []).map(o => ({ ...o, completed: o.check ? o.check(ps, rs, objData) : false }));
