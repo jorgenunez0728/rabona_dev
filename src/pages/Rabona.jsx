@@ -389,15 +389,17 @@ export default function Rabona() {
 
     function optimizeRoster() {
       setGame(g => {
+        const formation = FORMATIONS.find(f => f.id === g.formation) || FORMATIONS[1];
         const roster = [...g.roster];
         roster.forEach(p => p.role = 'rs');
         const sorted = [...roster].sort((a, b) => calcOvr(b) - calcOvr(a));
         const picked = [];
-        for (const pos of ['GK', 'DEF', 'DEF', 'MID', 'FWD']) {
+        for (const pos of formation.slots) {
           const best = sorted.find(p => p.pos === pos && !picked.includes(p));
           if (best) { best.role = 'st'; picked.push(best); }
         }
-        if (picked.length < 5) sorted.filter(p => p.role === 'rs').slice(0, 5 - picked.length).forEach(p => { p.role = 'st'; });
+        // Fill remaining slots with best available if not enough positional matches
+        if (picked.length < 6) sorted.filter(p => p.role === 'rs').slice(0, 6 - picked.length).forEach(p => { p.role = 'st'; });
         return { ...g, roster };
       });
     }
