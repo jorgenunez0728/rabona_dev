@@ -316,10 +316,10 @@ export default function Rabona() {
               background: (starters.length < 6 && !done) ? '#333' : done ? (myPos < 2 ? 'linear-gradient(135deg,#d4a017,#f0c040)' : 'linear-gradient(135deg,#c62828,#ff1744)') : 'linear-gradient(135deg,#00c853,#00e676)',
               color: (starters.length < 6 && !done) ? '#666' : done && myPos >= 2 ? '#fff' : '#0b1120',
               clipPath: 'polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)',
-              cursor: (starters.length < 5 && !done) ? 'not-allowed' : 'pointer', textTransform: 'uppercase',
-              opacity: (starters.length < 5 && !done) ? 0.4 : 1,
+              cursor: (starters.length < 6 && !done) ? 'not-allowed' : 'pointer', textTransform: 'uppercase',
+              opacity: (starters.length < 6 && !done) ? 0.4 : 1,
             }}>
-              {starters.length < 5 && !done ? `⚠ ${starters.length}/5` : done ? (myPos < 2 ? 'Ascender' : '💀 Resumen') : 'Siguiente'}
+              {starters.length < 6 && !done ? `⚠ ${starters.length}/6` : done ? (myPos < 2 ? 'Ascender' : '💀 Resumen') : 'Siguiente'}
             </button>
           </div>
         </div>
