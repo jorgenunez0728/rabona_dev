@@ -336,7 +336,15 @@ export default function Rabona() {
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx2 }}>🔗 Química: <span style={{ color: T.gold, fontFamily: "'Oswald'", fontWeight: 700 }}>{game.chemistry}</span></div>
                     <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: game.streak > 0 ? T.win : game.streak < 0 ? T.lose : T.tx3 }}>{game.streak > 0 ? `🔥 Racha: ${game.streak}` : game.streak < 0 ? `💀 ${Math.abs(game.streak)}` : '—'}</div>
-                    {(game.relics||[]).length > 0 && <div style={{ fontSize: 11, marginTop: 2 }}>{(game.relics||[]).map(rid => { const r = RELICS.find(x=>x.id===rid); return r ? <span key={rid} title={r.d}>{r.i}</span> : null; })}</div>}
+                    {(game.relics||[]).length > 0 && (
+                      <div style={{ display: 'flex', gap: 3, marginTop: 3, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        {(game.relics||[]).map(rid => { const r = RELICS.find(x=>x.id===rid); return r ? (
+                          <div key={rid} title={r.d} style={{ display:'flex', alignItems:'center', gap:2, background:`rgba(168,85,247,0.1)`, border:`1px solid rgba(168,85,247,0.2)`, borderRadius:4, padding:'1px 5px', fontSize:9 }}>
+                            <span>{r.i}</span><span style={{ fontFamily:"'Oswald'", fontSize:8, color:T.purple }}>{r.n.split(' ').slice(0,2).join(' ')}</span>
+                          </div>
+                        ) : null; })}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
@@ -1305,6 +1313,22 @@ export default function Rabona() {
                 <div style={{ background: T.bg1, borderRadius: 6, padding: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
                   <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: T.gold, textTransform: 'uppercase', marginBottom: 4 }}>🎯 Objetivos</div>
                   {r.objResults.map((o, i) => (<div key={i} style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: o.completed ? '#00e676' : '#607d8b', padding: '1px 0' }}>{o.completed ? '✅' : '❌'} {o.n} {o.completed ? `(+${o.r.coins}💰)` : ''}</div>))}
+                </div>
+              )}
+              {(game.relics||[]).length > 0 && (
+                <div style={{ background: `rgba(168,85,247,0.05)`, borderRadius: 6, padding: 10, border: `1px solid rgba(168,85,247,0.15)` }}>
+                  <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: T.purple, textTransform: 'uppercase', marginBottom: 5 }}>📿 Reliquias Activas</div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                    {(game.relics||[]).map(rid => { const r = RELICS.find(x=>x.id===rid); return r ? (
+                      <div key={rid} style={{ display:'flex', alignItems:'center', gap:6 }}>
+                        <span style={{ fontSize:16 }}>{r.i}</span>
+                        <div>
+                          <div style={{ fontFamily:"'Oswald'", fontSize:11, color:T.tx }}>{r.n}</div>
+                          <div style={{ fontFamily:"'Barlow Condensed'", fontSize:10, color:T.tx3 }}>{r.d}</div>
+                        </div>
+                      </div>
+                    ) : null; })}
+                  </div>
                 </div>
               )}
             </div>
