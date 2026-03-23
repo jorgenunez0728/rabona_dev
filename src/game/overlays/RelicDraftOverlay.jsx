@@ -1,5 +1,6 @@
 import { SFX } from '@/game/audio';
 import { T } from '@/game/data';
+import { RelicIcon } from '@/game/data/chibiAssets';
 import useGameStore from '@/game/store';
 
 export default function RelicDraftOverlay() {
@@ -22,7 +23,7 @@ export default function RelicDraftOverlay() {
                 setGame(g => ({ ...g, relics: [...(g.relics || []), relic.id] }));
                 setPendingRelicDraft(null);
               }} style={{ background: `${rarityColor}08`, border: `1.5px solid ${rarityColor}30`, borderRadius: 10, padding: '12px 14px', cursor: 'pointer', display: 'flex', gap: 12, alignItems: 'center' }}>
-                <div style={{ fontSize: 28, minWidth: 36, textAlign: 'center' }}>{relic.i}</div>
+                <div style={{ minWidth: 36, textAlign: 'center' }}><RelicIcon id={relic.id} size={32} /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 2 }}>
                     <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 14, color: rarityColor, textTransform: 'uppercase' }}>{relic.n}</div>

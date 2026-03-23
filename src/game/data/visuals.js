@@ -177,9 +177,9 @@ export const _pitchImgs = [];
 
 // Legends pool
 export const LEGENDS = [
-  {name:'El Maestro Pelé',pos:'FWD',trait:{n:'Legendario',d:'Clase mundial',fx:'atk'},bonus:{atk:8,def:3,spd:5},story:'Una aparición sobrenatural en tu cancha.'},
-  {name:'La Muralla Beckenbauer',pos:'DEF',trait:{n:'Kaiser',d:'Domina la defensa',fx:'def'},bonus:{atk:2,def:9,spd:3},story:'El kaiser apareció para una última batalla.'},
-  {name:'El Maradona del Barrio',pos:'MID',trait:{n:'Dios',d:'El mejor de todos',fx:'ghost'},bonus:{atk:7,def:4,spd:8},story:'Dicen que jugó en el barrio hace 30 años.'},
+  {name:'El Maestro Pelé',pos:'FWD',img:'maestro',trait:{n:'Legendario',d:'Clase mundial',fx:'atk'},bonus:{atk:8,def:3,spd:5},story:'Una aparición sobrenatural en tu cancha.'},
+  {name:'La Muralla Beckenbauer',pos:'DEF',img:'muralla',trait:{n:'Kaiser',d:'Domina la defensa',fx:'def'},bonus:{atk:2,def:9,spd:3},story:'El kaiser apareció para una última batalla.'},
+  {name:'El Maradona del Barrio',pos:'MID',img:'dios',trait:{n:'Dios',d:'El mejor de todos',fx:'ghost'},bonus:{atk:7,def:4,spd:8},story:'Dicen que jugó en el barrio hace 30 años.'},
 ];
 
 // Canvas sprite drawing

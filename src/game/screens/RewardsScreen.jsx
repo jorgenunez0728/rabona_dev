@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { SFX } from "@/game/audio";
 import { T, PN, POS_COLORS, RELICS, calcOvr, rnd } from "@/game/data";
+import { RelicIcon } from "@/game/data/chibiAssets";
 import useGameStore from "@/game/store";
 
 export default function RewardsScreen() {
@@ -106,7 +107,7 @@ export default function RewardsScreen() {
                 <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
                   {(game.relics||[]).map(rid => { const r = RELICS.find(x=>x.id===rid); return r ? (
                     <div key={rid} style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <span style={{ fontSize:16 }}>{r.i}</span>
+                      <RelicIcon id={r.id} size={24} />
                       <div>
                         <div style={{ fontFamily:"'Oswald'", fontSize:11, color:T.tx }}>{r.n}</div>
                         <div style={{ fontFamily:"'Barlow Condensed'", fontSize:11, color:T.tx3 }}>{r.d}</div>

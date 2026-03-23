@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { T, PN, POS_COLORS, ACHIEVEMENTS } from "@/game/data";
+import { AchIcon } from "@/game/data/chibiAssets";
 import useGameStore from "@/game/store";
 
 export default function StatsScreen() {
@@ -73,7 +74,7 @@ export default function StatsScreen() {
               const done = (gs.achievements || []).includes(a.id);
               return (
                 <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: done ? `${T.win}08` : T.bg1, borderRadius: 6, border: `1px solid ${done ? T.win + '20' : T.border}` }}>
-                  <div style={{ fontSize: 20, minWidth: 28, textAlign: 'center', opacity: done ? 1 : 0.3 }}>{a.i}</div>
+                  <div style={{ minWidth: 28, textAlign: 'center', opacity: done ? 1 : 0.3 }}><AchIcon id={a.id} size={28} /></div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, color: done ? T.tx : T.tx3 }}>{a.n}</div>
                     <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: done ? T.tx2 : T.tx3 }}>{a.d}</div>
