@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { SFX, Crowd } from "./game/audio";
+import { SFX, Crowd } from "@/game/audio";
 import {
   COACHES, ASCENSION_MODS, ACHIEVEMENTS, STADIUMS, LEAGUES, RIVAL_NAMES, RIVAL_COACHES,
   NEMESIS, getNemesis, COPA_NAMES, initCopaState, CUTSCENES, EVENTS, TACTICS,
@@ -11,14 +11,14 @@ import {
   LEGENDS, CAREER_CAST, CAREER_TEAMS, ALL_CAREER_CARDS, CAREER_CARDS_MIGUEL,
   MATCH_CARDS, BAR_NAMES, BAR_ICONS, BAR_COLORS, CUP_RIVAL_NAMES, TRAITS,
   FN, LN, _usedNames,
-} from "./game/data";
+} from "@/game/data";
 import {
   saveGame, loadGame, saveGlobalStats, loadGlobalStats, deleteSave,
-} from "./game/save";
+} from "@/game/save";
 import {
   CoachPortrait, NemesisPortrait, PosIcon, PlayerCard, PlayerDetailModal,
   CareerBars, ParticleSystem,
-} from "./game/components";
+} from "@/game/components";
 
 export default function Rabona() {
   const [screen, setScreen] = useState('loading');
