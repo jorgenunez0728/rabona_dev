@@ -913,11 +913,19 @@ export default function Rabona() {
             await sleep(sp() >= 2 ? 2500 : sp() === 1 ? 800 : 200); S.ballX = .5; S.ballY = .5;
           } else if (sp() >= 2 && Math.random() < .2) { SFX.play('kick'); addLog('normal', `${S.minute}' ${narrate('defGood', 'Halcones', S.rivalName, starters)}`); await sleep(600); }
         }
-        if (S.possession && Math.random() < .03 && sp() > 0) {
-          addLog('event', `‼ ${S.minute}' ¡PENAL!`);
-          const penResult = await showPenaltyMinigame();
-          if (penResult.scored) { S.ps++; S.goalEffect = 1; shakeRef.current = 15; addLog('goal', `⚽ ${S.minute}' ¡PENAL!`); S.morale = Math.min(99, S.morale + 12); }
-          else { addLog('normal', `${S.minute}' Fallado...`); }
+        // Random penalty event (attack or defense)
+        if (Math.random() < .025 && sp() > 0) {
+          if (S.possession) {
+            addLog('event', `‼ ${S.minute}' ¡PENAL a favor!`);
+            const penResult = await showPenaltyMinigame('shoot');
+            if (penResult.scored) { S.ps++; S.goalEffect = 1; shakeRef.current = 15; SFX.play('goal'); addLog('goal', `⚽ ${S.minute}' ¡GOOOL de penal!`); S.morale = Math.min(99, S.morale + 12); }
+            else { addLog('normal', `${S.minute}' Penal fallado...`); S.morale = Math.max(0, S.morale - 5); }
+          } else {
+            addLog('event', `‼ ${S.minute}' ¡Penal en contra!`);
+            const penResult = await showPenaltyMinigame('save');
+            if (!penResult.scored) { S.rs++; S.goalEffect = -1; shakeRef.current = 10; SFX.play('goal_rival'); addLog('goalRival', `💀 ${S.minute}' Penal encajado.`); S.morale = Math.max(0, S.morale - 10); }
+            else { addLog('event', `🧤 ${S.minute}' ¡¡ATAJADA HEROICA!!`); S.morale = Math.min(99, S.morale + 8); }
+          }
           await sleep(sp() >= 2 ? 600 : 150); S.ballX = .5; S.ballY = .5;
         }
         if (sp() >= 2 && Math.random() < .04) { SFX.play('card'); addLog('card', `🟨 ${S.minute}' Tarjeta`); }
