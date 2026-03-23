@@ -813,9 +813,9 @@ export default function Rabona() {
       const allRoster = game.roster.map(p => ({ ...p, trait: { ...p.trait } }));
       const stealBonus = game.coach?.fx === 'steal' ? .15 : 0;
       const noFouls = game.coach?.fx === 'nofoul';
-      const relics = game.relics || [];
-      const moraleFloor = relics.includes('megafono') ? 40 : 0;
-      const chemFloor = relics.includes('vestuario') ? 30 : 0;
+      const simRelics = game.relics || [];
+      const moraleFloor = simRelics.includes('megafono') ? 40 : 0;
+      const chemFloor = simRelics.includes('vestuario') ? 30 : 0;
       const chemBonus = game.chemistry * .001;
       const diffMod = game.league <= 1 ? 0.005 : game.league * 0.008;
       let lastEventMin = -10;
