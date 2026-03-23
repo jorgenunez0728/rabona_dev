@@ -195,12 +195,13 @@ export default function Rabona() {
       const ascLevel = Math.min(selectedAsc, maxAsc);
       const ascMods = ASCENSION_MODS[Math.min(ascLevel, ASCENSION_MODS.length - 1)].mods;
       const isAlien = coach.fx === 'alien';
-      const positions = isAlien ? ['DEF', 'DEF', 'MID', 'MID', 'FWD', 'MID', 'FWD', 'DEF'] : ['GK', 'DEF', 'DEF', 'MID', 'MID', 'FWD', 'MID', 'FWD'];
-      const roster = positions.map((p, i) => {
-        const pl = genPlayer(p, 1, 3); pl.role = i < 5 ? 'st' : 'rs';
-        if (coach.fx === 'boost') pl.lv++;
-        return pl;
-      });
+      // Fut 7: 7 starters (GK + 6), 3 reserves = 10 total
+      const starterPositions = isAlien ? ['DEF','DEF','DEF','MID','FWD','FWD','FWD'] : ['GK','DEF','DEF','MID','MID','FWD','FWD'];
+      const reservePositions = ['DEF','MID','FWD'];
+      const roster = [
+        ...starterPositions.map(p => { const pl = genPlayer(p, 1, 3); pl.role = 'st'; if (coach.fx === 'boost') pl.lv++; return pl; }),
+        ...reservePositions.map(p => { const pl = genPlayer(p, 1, 2); pl.role = 'rs'; return pl; }),
+      ];
       const rns = RIVAL_NAMES[0];
       const table = [{ name: 'Halcones', you: true, w: 0, d: 0, l: 0, gf: 0, ga: 0 }, ...rns.map(n => ({ name: n, you: false, w: 0, d: 0, l: 0, gf: 0, ga: 0 }))];
       let startCoins = 50;
