@@ -936,9 +936,15 @@ export default function Rabona() {
           if (p.role === 'st') { p.fatigue = Math.min(100, (p.fatigue || 0) + rnd(20, 30)); p.gamesPlayed = (p.gamesPlayed || 0) + 1; }
           else p.fatigue = Math.max(0, (p.fatigue || 0) - rnd(12, 18));
         });
+        const hasAmuleto = (g.relics || []).includes('amuleto');
+        const hasMendez = (g.relics || []).includes('mendez');
         roster.filter(p => p.role === 'st').forEach(p => {
-          const risk = p.fatigue > 90 ? .25 : p.fatigue > 70 ? .1 : .02;
-          if (Math.random() < risk && (p.injuredFor || 0) <= 0) { p.injuredFor = rnd(1, 3); p.role = 'rs'; injuryList.push({ name: p.name, pos: p.pos, games: p.injuredFor }); }
+          const baseRisk = p.fatigue > 90 ? .25 : p.fatigue > 70 ? .1 : .02;
+          const risk = hasAmuleto ? baseRisk * 0.9 : baseRisk;
+          if (Math.random() < risk && (p.injuredFor || 0) <= 0) {
+            p.injuredFor = hasMendez ? 1 : rnd(1, 3);
+            p.role = 'rs'; injuryList.push({ name: p.name, pos: p.pos, games: p.injuredFor });
+          }
         });
         roster.forEach(p => { if ((p.injuredFor || 0) > 0) p.injuredFor--; });
         const lineupKey = roster.filter(p => p.role === 'st').map(p => p.id).sort().join(',');
