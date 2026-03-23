@@ -20,6 +20,7 @@ import {
   CoachPortrait, NemesisPortrait, PosIcon, PlayerCard, PlayerDetailModal,
   CareerBars, ParticleSystem,
 } from "@/game/components";
+import { CareerCreateScreen, CareerCardScreen, CareerMatchScreen, CareerSeasonEnd, CareerEndScreen } from "@/game/CareerScreens";
 
 export default function Rabona() {
   const [screen, setScreen] = useState('loading');
