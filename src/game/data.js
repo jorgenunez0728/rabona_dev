@@ -446,6 +446,56 @@ export function avgStat(players, stat, formationMods = null) {
   return players.reduce((s, p) => s + (effectiveStats(p, formationMods)[stat] || p[stat] || 1), 0) / players.length;
 }
 
+// ── Relic draft: pick 3 relics weighted by rarity ──
+export function getRelicDraftOptions(currentRelics = [], count = 3) {
+  const weights = { common: 5, uncommon: 3, rare: 1.5, cursed: 0 }; // cursed only via start
+  const available = RELICS.filter(r => !currentRelics.includes(r.id) && r.rarity !== 'cursed');
+  if (available.length === 0) return [];
+  // Weighted shuffle
+  const pool = [];
+  available.forEach(r => { for (let i = 0; i < (weights[r.rarity] || 1) * 10; i++) pool.push(r); });
+  const chosen = [];
+  while (chosen.length < count && pool.length > 0) {
+    const idx = Math.floor(Math.random() * pool.length);
+    const relic = pool[idx];
+    if (!chosen.find(r => r.id === relic.id)) chosen.push(relic);
+    pool.splice(idx, 1);
+  }
+  return chosen;
+}
+
+// ── Starting relic pairs (one safe + one cursed) ──
+export const STARTING_RELIC_PAIRS = [
+  [
+    { id:'botines94', n:'Botines del 94', i:'👟', d:'Cada victoria da +3💰 extra.', rarity:'common', fx:'win_coins', val:3 },
+    { id:'maldicion', n:'La Maldición del 94', i:'💀', d:'Inicio: -10💰, pero +5 OVR a todos tus titulares.', rarity:'cursed', fx:'cursed_start', val:5, cursed:true },
+  ],
+  [
+    { id:'mochila', n:'Mochila del Barrio', i:'🎒', d:'Inicias cada partido con +5 moral.', rarity:'common', fx:'match_morale', val:5 },
+    { id:'pacto', n:'Pacto del Barrio', i:'🤝', d:'+20💰 de inicio, pero perder siempre roba 2 jugadores.', rarity:'cursed', fx:'cursed_steal', val:20, cursed:true },
+  ],
+  [
+    { id:'corazon', n:'Corazón de Barrio', i:'❤️', d:'Si vas perdiendo al 45\', +10% gol en 2ª.', rarity:'common', fx:'comeback', val:0.10 },
+    { id:'doble_filo', n:'Doble Filo', i:'⚔️', d:'Cada gol que haces también sube la moral rival en 5.', rarity:'cursed', fx:'cursed_atk', val:5, cursed:true },
+  ],
+];
+
+// ── Pre-match node types ──
+export const NODE_TYPES = {
+  normal:  { id:'normal',  n:'Partido',       i:'⚽', d:'Partido de liga estándar.',               color:'#42a5f5' },
+  elite:   { id:'elite',   n:'Duelo Élite',   i:'💀', d:'Rival mucho más fuerte. Recompensa: relic garantizada.', color:'#a855f7' },
+  rest:    { id:'rest',    n:'Descanso',       i:'🏥', d:'Todos los titulares recuperan 30% fatiga y -1 lesión.', color:'#00e676' },
+  training:{ id:'training',n:'Entrenamiento', i:'💪', d:'Sesiones de entrenamiento extra (3 slots en vez de 2).', color:'#ffd600' },
+};
+
+export function generateNodeChoice() {
+  // Returns 2-3 node options for the player to pick pre-match
+  const base = ['normal', 'normal'];
+  const extras = ['elite', 'rest', 'training'];
+  const extra = pick(extras);
+  return [base[0], extra].map(id => ({ ...NODE_TYPES[id] }));
+}
+
 export function applyRelicEffects(game, eventType, data = {}) {
   const relics = game.relics || [];
   let result = { ...data };
