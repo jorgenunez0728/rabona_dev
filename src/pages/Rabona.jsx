@@ -1068,8 +1068,7 @@ export default function Rabona() {
 
       // Relic draft (if won/drew and has < 4 relics) — show 1-of-3 picker after rewards
       const currentRelics = game.relics || [];
-      const isEliteMatch = selectedNode?.id === 'elite';
-      if ((won || (drew && isEliteMatch)) && currentRelics.length < 4) {
+      if (won && currentRelics.length < 4) {
         const draftOptions = getRelicDraftOptions(currentRelics, 3);
         if (draftOptions.length > 0) {
           rwOptions.push({
