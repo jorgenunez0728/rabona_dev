@@ -8,6 +8,7 @@ import {
   FORMATIONS, getLevelUpChoices, applyRelicEffects,
   getRelicDraftOptions, PN, LEAGUES, genPlayer, TRAITS,
 } from "@/game/data";
+import { getStadiumPitch } from "@/assets/stadiums";
 import { simulateMatch, PLAY_STYLES, INTENSITIES, getManOfTheMatch } from "@/game/engine";
 import { PlayerDetailModal, ParticleSystem } from "@/game/components";
 import { CareerCreateScreen, CareerCardScreen, CareerMatchScreen, CareerSeasonEnd, CareerEndScreen } from "@/game/CareerScreens";
@@ -60,6 +61,7 @@ export default function Rabona() {
     const hpxRef = useRef([]), hpyRef = useRef([]), apxRef = useRef([]), apyRef = useRef([]);
     const eventResolveRef = useRef(null);
     const penaltyResolveRef = useRef(null);
+    const pitchImgRef = useRef(null);
     const sim = useRef({ ps: 0, rs: 0, minute: 0, speed: 2, ballX: .5, ballY: .5, possession: true, log: [], done: false, rivalName: '', rivalPlayers: [], morale: 50, strategy: 'balanced', shots: 0, possCount: 0, totalTicks: 0, pendingEvent: null, halftimeShown: false, goalEffect: 0, pendingPenalty: null });
     const [display, setDisplay] = useState({ ps: 0, rs: 0, minute: 0, speed: 2, log: [], done: false, morale: 50, pendingEvent: null, strategy: 'balanced', pendingPenalty: null });
 
@@ -78,6 +80,12 @@ export default function Rabona() {
       runEngineLoop().then(() => { clearInterval(di); clearInterval(ci); cancelAnimationFrame(animId); const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: true, morale: s.morale, pendingEvent: null, strategy: s.strategy }); });
       return () => { clearInterval(di); clearInterval(ci); cancelAnimationFrame(animId); Crowd.stop(); };
     }, [match.running]);
+
+    useEffect(() => {
+      const src = getStadiumPitch(game.league);
+      if (src) { const img = new Image(); img.src = src; img.onload = () => { pitchImgRef.current = img; }; }
+      else { pitchImgRef.current = null; }
+    }, [game.league]);
 
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
     function waitForChoice() { return new Promise(resolve => { eventResolveRef.current = resolve; }); }
@@ -454,19 +462,23 @@ export default function Rabona() {
       if (!W || !H) return;
       ctx.save();
       if (shakeRef.current > 0) { const s = shakeRef.current; ctx.translate(Math.sin(f * 0.5) * s * 0.3, Math.cos(f * 0.7) * s * 0.2); shakeRef.current = Math.max(0, shakeRef.current - 0.5); }
-      for (let i = 0; i < 16; i++) {
-        const t = i / 16;
-        ctx.fillStyle = i % 2 === 0 ? `rgb(${Math.floor(38 + t * 12)},${Math.floor(96 + t * 20)},${Math.floor(21 + t * 10)})` : `rgb(${Math.floor(43 + t * 12)},${Math.floor(104 + t * 20)},${Math.floor(26 + t * 10)})`;
-        ctx.fillRect(0, i * H / 16, W, H / 16 + 1);
-      }
       const m = 10, fw = W - m * 2, fh = H - m * 2;
-      ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1.5;
-      ctx.strokeRect(m, m, fw, fh);
-      ctx.beginPath(); ctx.moveTo(m, H / 2); ctx.lineTo(W - m, H / 2); ctx.stroke();
-      ctx.beginPath(); ctx.arc(W / 2, H / 2, Math.min(fw, fh) * .08, 0, Math.PI * 2); ctx.stroke();
-      const gpw = fw * .14, gph = 4;
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      ctx.fillRect(W / 2 - gpw / 2, m - 1, gpw, gph); ctx.fillRect(W / 2 - gpw / 2, H - m - gph + 1, gpw, gph);
+      if (pitchImgRef.current) {
+        ctx.drawImage(pitchImgRef.current, 0, 0, W, H);
+      } else {
+        for (let i = 0; i < 16; i++) {
+          const t = i / 16;
+          ctx.fillStyle = i % 2 === 0 ? `rgb(${Math.floor(38 + t * 12)},${Math.floor(96 + t * 20)},${Math.floor(21 + t * 10)})` : `rgb(${Math.floor(43 + t * 12)},${Math.floor(104 + t * 20)},${Math.floor(26 + t * 10)})`;
+          ctx.fillRect(0, i * H / 16, W, H / 16 + 1);
+        }
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1.5;
+        ctx.strokeRect(m, m, fw, fh);
+        ctx.beginPath(); ctx.moveTo(m, H / 2); ctx.lineTo(W - m, H / 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(W / 2, H / 2, Math.min(fw, fh) * .08, 0, Math.PI * 2); ctx.stroke();
+        const gpw = fw * .14, gph = 4;
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.fillRect(W / 2 - gpw / 2, m - 1, gpw, gph); ctx.fillRect(W / 2 - gpw / 2, H - m - gph + 1, gpw, gph);
+      }
       const bpx = m + fw * S.ballX, bpy = m + fh * S.ballY;
       const homeFormation = [{ bx: .5, by: .88, pull: .005, minY: .78, maxY: .95 }, { bx: .25, by: .70, pull: .02, minY: .55, maxY: .82 }, { bx: .75, by: .70, pull: .02, minY: .55, maxY: .82 }, { bx: .5, by: .52, pull: .06, minY: .35, maxY: .70 }, { bx: .5, by: .35, pull: .08, minY: .15, maxY: .60 }];
       const awayFormation = [{ bx: .5, by: .12, pull: .005, minY: .05, maxY: .22 }, { bx: .3, by: .28, pull: .02, minY: .18, maxY: .45 }, { bx: .7, by: .28, pull: .02, minY: .18, maxY: .45 }, { bx: .5, by: .42, pull: .06, minY: .30, maxY: .60 }, { bx: .5, by: .55, pull: .08, minY: .35, maxY: .80 }];
@@ -688,20 +700,27 @@ export default function Rabona() {
   const transStyle = { opacity: transState === 'out' ? 0 : 1, transform: transState === 'out' ? 'scale(0.97)' : 'scale(1)', transition: 'opacity 0.22s ease, transform 0.22s ease' };
 
   return (
-    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative', background: T.bg }}>
+    <div className="fw-bg-pattern" style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative', background: T.bg }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500;600&family=Silkscreen:wght@400;700&display=swap');
         @keyframes fw-fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes fw-pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
         @keyframes fw-shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
         @keyframes fw-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+        @keyframes fw-slideIn { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes fw-scaleIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+        @keyframes fw-bounceIn { 0%{opacity:0;transform:scale(0.3)} 50%{transform:scale(1.05)} 70%{transform:scale(0.95)} 100%{opacity:1;transform:scale(1)} }
+        @keyframes fw-countUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
         .fw-anim-1{animation:fw-fadeUp .4s ease .05s both}.fw-anim-2{animation:fw-fadeUp .4s ease .12s both}.fw-anim-3{animation:fw-fadeUp .4s ease .2s both}.fw-anim-4{animation:fw-fadeUp .4s ease .28s both}.fw-anim-5{animation:fw-fadeUp .4s ease .36s both}
         .fw-float{animation:fw-float 3s ease-in-out infinite}.fw-pulse{animation:fw-pulse 2s ease infinite}
+        .fw-slideIn{animation:fw-slideIn .3s ease both}.fw-scaleIn{animation:fw-scaleIn .25s ease both}.fw-bounceIn{animation:fw-bounceIn .5s ease both}
+        .fw-hover{transition:transform .15s ease,box-shadow .15s ease}.fw-hover:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.3)}.fw-hover:active{transform:translateY(0)}
         .fw-shimmer{background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.06) 50%,transparent 100%);background-size:200% 100%;animation:fw-shimmer 2.5s linear infinite}
-        .fw-btn{font-family:'Oswald';font-weight:600;font-size:14px;padding:11px 28px;border:none;border-radius:6px;cursor:pointer;text-transform:uppercase;letter-spacing:1px;transition:transform .12s,filter .1s;}
-        .fw-btn:active{transform:scale(.93)!important;filter:brightness(.9)}.fw-btn:disabled{opacity:.4;cursor:not-allowed}
+        .fw-btn{font-family:'Oswald';font-weight:600;font-size:14px;padding:11px 28px;border:none;border-radius:6px;cursor:pointer;text-transform:uppercase;letter-spacing:1px;transition:transform .15s ease,filter .15s ease,box-shadow .15s ease;}
+        .fw-btn:hover{transform:translateY(-1px);filter:brightness(1.1);box-shadow:0 4px 12px rgba(0,0,0,0.3)}.fw-btn:active{transform:scale(.93)!important;filter:brightness(.9)}.fw-btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important;filter:none!important}
         .fw-btn-primary{background:linear-gradient(135deg,#d4a017,#f0c040);color:#0b1120}.fw-btn-green{background:linear-gradient(135deg,#00c853,#00e676);color:#0b1120}.fw-btn-outline{background:transparent;border:1.5px solid currentColor}
-        *{box-sizing:border-box}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+        .fw-bg-pattern{background-image:radial-gradient(circle,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:20px 20px}
+        *{box-sizing:border-box}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
       `}</style>
       <div style={{ ...transStyle, width: '100%', height: '100%', position: 'relative' }}>
         {screen === 'loading' && <LoadingScreen />}

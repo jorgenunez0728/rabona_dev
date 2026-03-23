@@ -1,15 +1,17 @@
 import { COACHES, COACH_PORTRAIT_IDX, NEMESIS, PN, POS_COLORS, T, CARD_TIERS, TRAITS, PERSONALITIES, TRAINING_OPTIONS, ACHIEVEMENTS, CAREER_TEAMS, calcOvr, effectiveStats, effectiveOvr, pick, BAR_NAMES, BAR_ICONS, BAR_COLORS } from "./data";
+import { CHIBI, ChibiImg } from "./data/chibiAssets.jsx";
 
 // ── Icon components ──
 export function CoachPortrait({ id, size = 32 }) {
-  const coach = COACHES.find(c => c.id === id);
+  const asset = CHIBI.coaches[id];
   return (
     <div style={{
-      width: size, height: size, fontSize: size * 0.7, display: 'flex',
+      width: size, height: size, display: 'flex',
       alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
       background: `${T.bg2}`, border: `1px solid ${T.border}`, flexShrink: 0,
+      overflow: 'hidden',
     }}>
-      {coach?.i || '🎓'}
+      <ChibiImg asset={asset} size={size} />
     </div>
   );
 }
@@ -17,19 +19,22 @@ export function CoachPortrait({ id, size = 32 }) {
 export function NemesisPortrait({ coachId, size = 32 }) {
   const nem = NEMESIS[coachId];
   if (!nem) return null;
+  const asset = CHIBI.nemesis[coachId];
   return (
     <div style={{
-      width: size, height: size, fontSize: size * 0.7, display: 'flex',
+      width: size, height: size, display: 'flex',
       alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
       background: `${T.bg2}`, border: `1px solid ${T.purple}30`, flexShrink: 0,
+      overflow: 'hidden',
     }}>
-      {nem.i}
+      <ChibiImg asset={asset || { fallback: nem.i }} size={size} />
     </div>
   );
 }
 
 export function PosIcon({ pos, size = 12 }) {
-  return <span style={{ fontSize: size, color: POS_COLORS[pos] }}>{pos === 'GK' ? '🧤' : pos === 'DEF' ? '🛡' : pos === 'MID' ? '⚙' : '⚡'}</span>;
+  const asset = CHIBI.positions[pos];
+  return <ChibiImg asset={asset} size={size} style={{ color: POS_COLORS[pos] }} />;
 }
 
 export function UIIcon({ name, size = 20 }) {
@@ -55,8 +60,9 @@ export function PlayerCard({ player, isCaptain, onAction, onDetail, compact = fa
       background: injured ? `${T.lose}08` : fatigued ? `${T.draw}08` : T.bg1,
       border: `1px solid ${injured ? T.lose + '20' : fatigued ? T.draw + '20' : T.border}`,
       borderLeft: `3px solid ${posColor}`, borderRadius: 4, cursor: 'pointer',
+      boxShadow: T.shadow, transition: 'transform 0.15s ease, box-shadow 0.15s ease',
     }}>
-      <span style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 10, color: posColor, minWidth: 26, textAlign: 'center' }}>{PN[player.pos]}</span>
+      <span style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 11, color: posColor, minWidth: 26, textAlign: 'center', letterSpacing: 0.5 }}>{PN[player.pos]}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: "'Barlow Condensed'", fontWeight: 600, fontSize: 13, color: T.tx, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
           {isCaptain ? '©️ ' : ''}{player.legendary ? '🌟 ' : ''}{player.name}{player.evo ? ' ⭐' : ''}{player.tempGK ? ' 🧤' : ''}
@@ -71,20 +77,20 @@ export function PlayerCard({ player, isCaptain, onAction, onDetail, compact = fa
         )}
       </div>
       <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 16, color: T.gold }}>{ovr}</div>
-      {injured && <span style={{ fontSize: 10 }}>🏥</span>}
-      {!injured && fatigued && <span style={{ fontSize: 10, color: T.draw }}>{player.fatigue}%</span>}
+      {injured && <span style={{ fontSize: 11 }}>🏥</span>}
+      {!injured && fatigued && <span style={{ fontSize: 11, color: T.draw }}>{player.fatigue}%</span>}
       {onAction && (
         <div style={{ display: 'flex', gap: 2 }} onClick={e => e.stopPropagation()}>
           {player.role === 'rs' && (
-            <button onClick={() => onAction('promote', player)} style={{ fontFamily: "'Oswald'", fontSize: 9, padding: '2px 5px', border: `1px solid ${T.win}`, background: `${T.win}15`, color: T.win, borderRadius: 3, cursor: 'pointer' }}>⬆</button>
+            <button onClick={() => onAction('promote', player)} style={{ fontFamily: "'Oswald'", fontSize: 11, padding: '3px 6px', border: `1px solid ${T.win}`, background: `${T.win}15`, color: T.win, borderRadius: 3, cursor: 'pointer' }}>⬆</button>
           )}
           {player.role === 'st' && (
-            <button onClick={() => onAction('demote', player)} style={{ fontFamily: "'Oswald'", fontSize: 9, padding: '2px 5px', border: `1px solid ${T.tx3}`, background: 'transparent', color: T.tx3, borderRadius: 3, cursor: 'pointer' }}>⬇</button>
+            <button onClick={() => onAction('demote', player)} style={{ fontFamily: "'Oswald'", fontSize: 11, padding: '3px 6px', border: `1px solid ${T.tx3}`, background: 'transparent', color: T.tx3, borderRadius: 3, cursor: 'pointer' }}>⬇</button>
           )}
           {player.pos !== 'GK' && player.role === 'rs' && (
-            <button onClick={() => onAction('tempGK', player)} style={{ fontFamily: "'Oswald'", fontSize: 9, padding: '2px 5px', border: `1px solid ${player.tempGK ? '#ffc107' : T.tx3}`, background: player.tempGK ? 'rgba(255,193,7,0.12)' : 'transparent', color: player.tempGK ? '#ffc107' : T.tx3, borderRadius: 3, cursor: 'pointer' }}>🧤</button>
+            <button onClick={() => onAction('tempGK', player)} style={{ fontFamily: "'Oswald'", fontSize: 11, padding: '3px 6px', border: `1px solid ${player.tempGK ? '#ffc107' : T.tx3}`, background: player.tempGK ? 'rgba(255,193,7,0.12)' : 'transparent', color: player.tempGK ? '#ffc107' : T.tx3, borderRadius: 3, cursor: 'pointer' }}>🧤</button>
           )}
-          <button onClick={() => onAction('captain', player)} style={{ fontFamily: "'Oswald'", fontSize: 9, padding: '2px 5px', border: `1px solid ${isCaptain ? T.gold : T.tx3}`, background: isCaptain ? `${T.gold}15` : 'transparent', color: isCaptain ? T.gold : T.tx3, borderRadius: 3, cursor: 'pointer' }}>©</button>
+          <button onClick={() => onAction('captain', player)} style={{ fontFamily: "'Oswald'", fontSize: 11, padding: '3px 6px', border: `1px solid ${isCaptain ? T.gold : T.tx3}`, background: isCaptain ? `${T.gold}15` : 'transparent', color: isCaptain ? T.gold : T.tx3, borderRadius: 3, cursor: 'pointer' }}>©</button>
         </div>
       )}
     </div>
@@ -99,8 +105,8 @@ export function PlayerDetailModal({ player, onClose, captainId }) {
   const es = effectiveStats(player);
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 16, backdropFilter: 'blur(4px)' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: tier.bg, borderRadius: 12, maxWidth: 340, width: '100%', border: `1px solid ${player.legendary ? T.gold + '40' : tier.border}`, boxShadow: tier.glow !== 'none' ? tier.glow : '0 8px 32px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+    <div onClick={onClose} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.88)', zIndex: 100, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 16, backdropFilter: 'blur(8px)' }}>
+      <div onClick={e => e.stopPropagation()} className="fw-scaleIn" style={{ background: tier.bg, borderRadius: 12, maxWidth: 340, width: '100%', border: `1px solid ${player.legendary ? T.gold + '40' : tier.border}`, boxShadow: tier.glow !== 'none' ? tier.glow : '0 8px 32px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
         <div style={{ padding: '20px 20px 0', textAlign: 'center' }}>
           <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 48, color: player.legendary ? T.gold : player.evo ? '#a78bfa' : T.tx, lineHeight: 1 }}>{effectiveOvr(player)}</div>
           <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 16, color: T.tx, marginTop: 4 }}>{isCaptain ? '©️ ' : ''}{player.legendary ? '🌟 ' : ''}{player.name}{player.evo ? ' ⭐' : ''}</div>
@@ -111,7 +117,7 @@ export function PlayerDetailModal({ player, onClose, captainId }) {
             {[{ s: es.atk, l: 'ATK', c: T.lose }, { s: es.def, l: 'DEF', c: T.info }, { s: es.spd, l: 'VEL', c: T.win }, { s: es.sav, l: 'PAR', c: '#ffc107' }].map(({ s, l, c }, i) => (
               <div key={i} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 6, padding: '6px 4px', textAlign: 'center' }}>
                 <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 22, color: c }}>{s}</div>
-                <div style={{ fontSize: 8, color: T.tx3 }}>{l}</div>
+                <div style={{ fontSize: 11, color: T.tx3, letterSpacing: 0.5 }}>{l}</div>
               </div>
             ))}
           </div>
@@ -120,7 +126,7 @@ export function PlayerDetailModal({ player, onClose, captainId }) {
               <span>Fatiga</span><span style={{ color: (player.fatigue || 0) > 70 ? T.lose : T.win }}>{player.fatigue || 0}%</span>
             </div>
             <div style={{ width: '100%', height: 6, background: T.bg2, borderRadius: 3 }}>
-              <div style={{ width: `${player.fatigue || 0}%`, height: '100%', background: (player.fatigue || 0) > 70 ? T.lose : T.win, borderRadius: 3 }} />
+              <div style={{ width: `${player.fatigue || 0}%`, height: '100%', background: (player.fatigue || 0) > 70 ? T.lose : T.win, borderRadius: 3, transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)' }} />
             </div>
           </div>
           <div style={{ background: `${T.purple}10`, borderRadius: 6, padding: 8, marginBottom: 5, border: `1px solid ${T.purple}20` }}>
@@ -154,7 +160,7 @@ export function CareerBars({ bars }) {
             <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, marginTop: 2 }}>
               <div style={{ width: `${val}%`, height: '100%', background: danger ? '#ff1744' : BAR_COLORS[i], borderRadius: 2, transition: 'width 0.3s' }} />
             </div>
-            <div style={{ fontFamily: "'Oswald'", fontSize: 9, color: danger ? '#ff1744' : '#607d8b', marginTop: 1 }}>{val}</div>
+            <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: danger ? '#ff1744' : '#607d8b', letterSpacing: 0.5, marginTop: 1 }}>{val}</div>
           </div>
         );
       })}

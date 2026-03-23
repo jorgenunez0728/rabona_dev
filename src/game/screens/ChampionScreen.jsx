@@ -13,7 +13,7 @@ export default function ChampionScreen() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', overflow: 'auto', background: 'radial-gradient(ellipse at 50% 30%,#2a2510 0%,#0b1120 60%)', padding: 16, textAlign: 'center' }}>
       <div style={{ fontSize: 60 }}>🏆</div>
-      <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 42, color: '#f0c040', textTransform: 'uppercase', textShadow: '0 0 30px rgba(240,192,64,0.3)', marginTop: 8 }}>¡¡CAMPEONES!!</div>
+      <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 32, color: '#f0c040', textTransform: 'uppercase', textShadow: '0 0 30px rgba(240,192,64,0.3)', marginTop: 8, letterSpacing: 2 }}>¡¡CAMPEONES!!</div>
       <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 22, color: '#fff', textTransform: 'uppercase', marginTop: 4 }}>Liga Intergaláctica</div>
       <div style={{ maxWidth: 340, margin: '16px 0' }}>
         <div style={{ fontSize: 36 }}>👴</div>
@@ -23,7 +23,7 @@ export default function ChampionScreen() {
         {[{ l: 'Partidos', v: cs.matchesPlayed || 0 }, { l: 'Victorias', v: cs.wins || 0 }, { l: 'Goles', v: cs.goalsFor || 0 }].map((s, i) => (
           <div key={i} style={{ background: 'rgba(240,192,64,0.06)', borderRadius: 4, padding: '6px', textAlign: 'center', border: '1px solid rgba(240,192,64,0.15)' }}>
             <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 20, color: '#f0c040' }}>{s.v}</div>
-            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 9, color: '#607d8b' }}>{s.l}</div>
+            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#607d8b', letterSpacing: 0.5 }}>{s.l}</div>
           </div>
         ))}
       </div>

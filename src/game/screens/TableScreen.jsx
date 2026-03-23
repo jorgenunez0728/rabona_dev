@@ -23,12 +23,12 @@ export default function TableScreen() {
       <div style={{ flexShrink: 0, padding: '8px 10px 6px' }}>
         <div style={{ maxWidth: 420, margin: '0 auto', background: T.bg1, borderRadius: 8, overflow: 'hidden', border: `1px solid ${T.border}` }}>
           <div style={{ background: 'linear-gradient(135deg,#141e3a,#1a2844)', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${T.border}` }}>
-            <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 14, color: '#fff', textTransform: 'uppercase' }}>{lg.i} {lg.n}</div>
+            <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 13, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>{lg.i} {lg.n}</div>
             <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx2 }}>💰{game.coins} · J{game.matchNum}/{lg.m}</div>
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: "'Barlow Condensed'" }}>
             <thead><tr style={{ borderBottom: `1px solid ${T.border}` }}>
-              {['#', 'Equipo', 'G', 'E', 'P', 'DG', 'PTS'].map(h => (<th key={h} style={{ fontWeight: 600, fontSize: 9, color: T.tx3, padding: '3px 2px', textAlign: h === 'Equipo' ? 'left' : 'center', textTransform: 'uppercase' }}>{h}</th>))}
+              {['#', 'Equipo', 'G', 'E', 'P', 'DG', 'PTS'].map(h => (<th key={h} style={{ fontWeight: 600, fontSize: 11, color: T.tx3, padding: '3px 2px', textAlign: h === 'Equipo' ? 'left' : 'center', textTransform: 'uppercase', letterSpacing: 0.5 }}>{h}</th>))}
             </tr></thead>
             <tbody>{sorted.map((t, i) => {
               const pts = t.w * 3 + t.d, dg = t.gf - t.ga;
@@ -45,7 +45,7 @@ export default function TableScreen() {
               );
             })}</tbody>
           </table>
-          <div style={{ padding: '4px 10px', background: `${T.purple}08`, borderTop: `1px solid ${T.purple}15`, fontSize: 10, color: T.purple, textAlign: 'center' }}>
+          <div style={{ padding: '4px 10px', background: `${T.purple}08`, borderTop: `1px solid ${T.purple}15`, fontSize: 11, color: T.purple, textAlign: 'center' }}>
             {done ? (myPos < 2 ? '🎉 ¡Clasificado!' : '💀 ELIMINADOS') : `Top 2 ascienden · ${lg.m - game.matchNum} restantes`}
           </div>
         </div>
@@ -91,8 +91,8 @@ export default function TableScreen() {
                   {(game.relics||[]).length > 0 && (
                     <div style={{ display: 'flex', gap: 3, marginTop: 3, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       {(game.relics||[]).map(rid => { const r = RELICS.find(x=>x.id===rid); return r ? (
-                        <div key={rid} title={r.d} style={{ display:'flex', alignItems:'center', gap:2, background:`rgba(168,85,247,0.1)`, border:`1px solid rgba(168,85,247,0.2)`, borderRadius:4, padding:'1px 5px', fontSize:9 }}>
-                          <span>{r.i}</span><span style={{ fontFamily:"'Oswald'", fontSize:8, color:T.purple }}>{r.n.split(' ').slice(0,2).join(' ')}</span>
+                        <div key={rid} title={r.d} style={{ display:'flex', alignItems:'center', gap:2, background:`rgba(168,85,247,0.1)`, border:`1px solid rgba(168,85,247,0.2)`, borderRadius:4, padding:'2px 6px', fontSize:11 }}>
+                          <span>{r.i}</span><span style={{ fontFamily:"'Oswald'", fontSize:11, color:T.purple, letterSpacing:0.5 }}>{r.n.split(' ').slice(0,2).join(' ')}</span>
                         </div>
                       ) : null; })}
                     </div>
@@ -102,9 +102,9 @@ export default function TableScreen() {
               <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
                 {starters.map(p => (
                   <div key={p.id} onClick={() => setDetailPlayer(p)} style={{ background: `${POS_COLORS[p.pos]}10`, border: `1px solid ${POS_COLORS[p.pos]}25`, borderRadius: 4, padding: '2px 6px', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer' }}>
-                    <span style={{ fontFamily: "'Oswald'", fontSize: 8, color: POS_COLORS[p.pos] }}>{PN[p.pos]}</span>
-                    <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: T.tx }}>{p.name.split(' ').pop()}</span>
-                    <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.gold }}>{effectiveOvr(p)}</span>
+                    <span style={{ fontFamily: "'Oswald'", fontSize: 11, color: POS_COLORS[p.pos], letterSpacing: 0.5 }}>{PN[p.pos]}</span>
+                    <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx }}>{p.name.split(' ').pop()}</span>
+                    <span style={{ fontFamily: "'Oswald'", fontSize: 11, color: T.gold }}>{effectiveOvr(p)}</span>
                   </div>
                 ))}
               </div>
@@ -113,12 +113,12 @@ export default function TableScreen() {
           {game.copa?.active && !game.copa?.eliminated && (
             <div style={{ background: T.bg1, borderRadius: 8, padding: 10, border: `1px solid ${T.gold}20`, marginTop: 6 }}>
               <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, color: T.gold, textTransform: 'uppercase', marginBottom: 2 }}>🏆 {COPA_NAMES[Math.min(game.league, 6)]}</div>
-              <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: T.lose, marginBottom: 6 }}>💀 Perder en Copa = Fin de la Carrera</div>
+              <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.lose, marginBottom: 6 }}>💀 Perder en Copa = Fin de la Carrera</div>
               <div style={{ display: 'flex', gap: 4 }}>
                 {(game.copa.bracket || []).map((r, i) => (
                   <div key={i} style={{ flex: 1, background: r.beaten ? `${T.win}10` : i === game.copa.round ? `${T.gold}10` : T.bg2, border: `1px solid ${r.beaten ? T.win + '30' : i === game.copa.round ? T.gold + '30' : T.border}`, borderRadius: 4, padding: '4px 6px', textAlign: 'center' }}>
-                    <div style={{ fontFamily: "'Oswald'", fontSize: 8, color: T.tx3 }}>{i === 0 ? 'Cuartos' : i === 1 ? 'Semi' : 'Final'}</div>
-                    <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: r.beaten ? T.win : i === game.copa.round ? T.gold : T.tx3 }}>{r.beaten ? '✓' : r.name}</div>
+                    <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: T.tx3, letterSpacing: 0.5 }}>{i === 0 ? 'Cuartos' : i === 1 ? 'Semi' : 'Final'}</div>
+                    <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: r.beaten ? T.win : i === game.copa.round ? T.gold : T.tx3 }}>{r.beaten ? '✓' : r.name}</div>
                   </div>
                 ))}
               </div>

@@ -15,12 +15,12 @@ export default function AscensionScreen() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', overflow: 'auto', background: 'radial-gradient(ellipse at 50% 40%,#1a2a10 0%,#0b1120 70%)', padding: 16, textAlign: 'center' }}>
       <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 13, color: '#00e676', textTransform: 'uppercase', letterSpacing: 3 }}>🎉 ¡ASCENSO!</div>
-      <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 32, color: '#f0c040', textTransform: 'uppercase', marginTop: 6 }}>{cs.title}</div>
+      <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 24, color: '#f0c040', textTransform: 'uppercase', marginTop: 6, letterSpacing: 1 }}>{cs.title}</div>
       <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 16, color: '#607d8b', marginTop: 4 }}>{cs.sub}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '14px 0' }}>
-        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 6, padding: '6px 14px', textAlign: 'center' }}><div style={{ fontSize: 20 }}>{fromLg.i}</div><div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: '#607d8b' }}>{fromLg.n}</div></div>
+        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 6, padding: '6px 14px', textAlign: 'center' }}><div style={{ fontSize: 20 }}>{fromLg.i}</div><div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#607d8b' }}>{fromLg.n}</div></div>
         <div style={{ fontFamily: "'Oswald'", fontSize: 20, color: '#f0c040' }}>→</div>
-        <div style={{ background: 'rgba(240,192,64,0.06)', borderRadius: 6, padding: '6px 14px', border: '1px solid rgba(240,192,64,0.15)', textAlign: 'center' }}><div style={{ fontSize: 20 }}>{toLg.i}</div><div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: '#f0c040' }}>{toLg.n}</div></div>
+        <div style={{ background: 'rgba(240,192,64,0.06)', borderRadius: 6, padding: '6px 14px', border: '1px solid rgba(240,192,64,0.15)', textAlign: 'center' }}><div style={{ fontSize: 20 }}>{toLg.i}</div><div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#f0c040' }}>{toLg.n}</div></div>
       </div>
       <div style={{ maxWidth: 340, margin: '8px 0' }}>
         <div style={{ fontSize: 36 }}><CoachPortrait id="miguel" size={40} /></div>

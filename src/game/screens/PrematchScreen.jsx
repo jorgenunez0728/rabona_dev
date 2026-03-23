@@ -6,6 +6,7 @@ import {
   PN, POS_COLORS, POS_ORDER, T,
   genPlayer, pick, effectiveOvr, teamPower,
 } from "@/game/data";
+import { getStadiumFront } from "@/assets/stadiums";
 import useGameStore from "@/game/store";
 
 export default function PrematchScreen() {
@@ -44,7 +45,7 @@ export default function PrematchScreen() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'auto', background: T.bg }}>
       <div style={{ background: isNemesisMatch ? 'linear-gradient(135deg,#4a148c,#880e4f)' : isCopaMatch ? 'linear-gradient(135deg,#f9a825,#e65100)' : 'linear-gradient(135deg,#1565c0,#c62828)', padding: '14px 16px', textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Oswald'", fontSize: 10, color: 'rgba(255,255,255,0.7)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>
+        <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: 'rgba(255,255,255,0.7)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>
           {isCopaMatch ? `🏆 Copa · Ronda ${(copa?.round || 0) + 1}` : isNemesisMatch ? '⚔️ DUELO DE RIVALES' : `${lg.i} Jornada ${game.matchNum + 1}`}
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14 }}>
@@ -54,29 +55,39 @@ export default function PrematchScreen() {
         </div>
         {isCopaMatch && <div style={{ fontSize: 12, color: '#fff', marginTop: 4, background: 'rgba(255,0,0,0.3)', padding: '3px 10px', borderRadius: 4, fontWeight: 700 }}>💀 PERDER = FIN DE LA CARRERA</div>}
       </div>
-      <div style={{ background: T.bg1, padding: '8px 16px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: st.c, textTransform: 'uppercase' }}>{st.n}</div>
-      </div>
+      {getStadiumFront(game.league) ? (
+        <div style={{ position: 'relative', overflow: 'hidden', maxHeight: 140 }}>
+          <img src={getStadiumFront(game.league)} alt={st.n} style={{ width: '100%', display: 'block', objectFit: 'cover', objectPosition: 'top' }} />
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.85))', padding: '16px 16px 6px' }}>
+            <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: st.c, textTransform: 'uppercase', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{st.n}</div>
+            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{st.d}</div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ background: T.bg1, padding: '8px 16px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: st.c, textTransform: 'uppercase' }}>{st.n}</div>
+        </div>
+      )}
       {/* Formation Selector */}
       <div style={{ padding: '8px 12px', background: T.bg1, borderBottom: `1px solid ${T.border}` }}>
-        <div style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 5 }}>Formación</div>
+        <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 5 }}>Formación</div>
         <div style={{ display: 'flex', gap: 4 }}>
           {FORMATIONS.map(f => {
             const active = game.formation === f.id;
             return (
               <div key={f.id} onClick={() => setGame(g => ({ ...g, formation: f.id }))} style={{ flex: 1, padding: '6px 4px', background: active ? `${T.info}15` : T.bg2, border: `1px solid ${active ? T.info + '60' : T.border}`, borderRadius: 5, cursor: 'pointer', textAlign: 'center' }}>
                 <div style={{ fontSize: 14 }}>{f.i}</div>
-                <div style={{ fontFamily: "'Oswald'", fontSize: 8, color: active ? T.info : T.tx3, textTransform: 'uppercase', marginTop: 1, lineHeight: 1.2 }}>{f.n.split('(')[1]?.replace(')','') || f.id}</div>
+                <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: active ? T.info : T.tx3, textTransform: 'uppercase', marginTop: 1, lineHeight: 1.2, letterSpacing: 0.5 }}>{f.n.split('(')[1]?.replace(')','') || f.id}</div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 2, marginTop: 3, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 7, color: f.mods.atkMult > 1 ? T.win : f.mods.atkMult < 1 ? T.lose : T.tx3 }}>ATK {f.mods.atkMult > 1 ? '▲' : f.mods.atkMult < 1 ? '▼' : '—'}</span>
-                  <span style={{ fontSize: 7, color: f.mods.defMult > 1 ? T.win : f.mods.defMult < 1 ? T.lose : T.tx3 }}>DEF {f.mods.defMult > 1 ? '▲' : f.mods.defMult < 1 ? '▼' : '—'}</span>
-                  <span style={{ fontSize: 7, color: f.mods.spdMult > 1 ? T.win : f.mods.spdMult < 1 ? T.lose : T.tx3 }}>VEL {f.mods.spdMult > 1 ? '▲' : f.mods.spdMult < 1 ? '▼' : '—'}</span>
+                  <span style={{ fontSize: 9, color: f.mods.atkMult > 1 ? T.win : f.mods.atkMult < 1 ? T.lose : T.tx3 }}>ATK {f.mods.atkMult > 1 ? '▲' : f.mods.atkMult < 1 ? '▼' : '—'}</span>
+                  <span style={{ fontSize: 9, color: f.mods.defMult > 1 ? T.win : f.mods.defMult < 1 ? T.lose : T.tx3 }}>DEF {f.mods.defMult > 1 ? '▲' : f.mods.defMult < 1 ? '▼' : '—'}</span>
+                  <span style={{ fontSize: 9, color: f.mods.spdMult > 1 ? T.win : f.mods.spdMult < 1 ? T.lose : T.tx3 }}>VEL {f.mods.spdMult > 1 ? '▲' : f.mods.spdMult < 1 ? '▼' : '—'}</span>
                 </div>
               </div>
             );
           })}
         </div>
-        {currentFormation && <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: T.tx2, marginTop: 4, textAlign: 'center' }}>{currentFormation.desc}</div>}
+        {currentFormation && <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx2, marginTop: 4, textAlign: 'center' }}>{currentFormation.desc}</div>}
       </div>
       {injuredStarters.length > 0 && <div style={{ padding: '10px 14px', background: 'rgba(248,81,73,0.06)', borderBottom: `1px solid rgba(248,81,73,0.15)` }}><div style={{ fontSize: 14, color: T.lose, fontFamily: "'Oswald'", fontWeight: 600 }}>🏥 {injuredStarters.length} LESIONADO(S) — ¡no pueden jugar!</div></div>}
       <div style={{ display: 'flex', gap: 3, padding: 8, flex: 1 }}>
@@ -96,9 +107,9 @@ export default function PrematchScreen() {
         ))}
       </div>
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, padding: 8, background: '#141e3a' }}>
-        <div style={{ textAlign: 'center' }}><div style={{ fontFamily: "'Barlow Condensed'", fontSize: 9, color: '#607d8b', textTransform: 'uppercase' }}>Halcones</div><div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 28, color: '#42a5f5' }}>{tp}</div></div>
+        <div style={{ textAlign: 'center' }}><div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#607d8b', textTransform: 'uppercase' }}>Halcones</div><div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 28, color: '#42a5f5' }}>{tp}</div></div>
         <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: '#455a64' }}>VS</div>
-        <div style={{ textAlign: 'center' }}><div style={{ fontFamily: "'Barlow Condensed'", fontSize: 9, color: '#607d8b', textTransform: 'uppercase' }}>{rivalName}</div><div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 28, color: '#ef5350' }}>{rtp}</div></div>
+        <div style={{ textAlign: 'center' }}><div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#607d8b', textTransform: 'uppercase' }}>{rivalName}</div><div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 28, color: '#ef5350' }}>{rtp}</div></div>
       </div>
       <div style={{ display: 'flex', gap: 8, padding: '8px 16px', justifyContent: 'center', background: T.bg }}>
         <button onClick={() => go('roster')} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, padding: '8px 16px', border: '1.5px solid #607d8b', background: 'transparent', color: '#e8eaf6', borderRadius: 4, cursor: 'pointer', textTransform: 'uppercase' }}>Roster</button>

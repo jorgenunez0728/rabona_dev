@@ -11,7 +11,7 @@ export default function StatsScreen() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', overflow: 'auto', background: T.bg }}>
       <div style={{ width: '100%', padding: '12px 16px', textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 28, color: '#fff', textTransform: 'uppercase' }}>📖 Compendio</div>
+        <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 22, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>📖 Compendio</div>
       </div>
       <div style={{ display: 'flex', width: '100%', maxWidth: 440, background: T.bg1, borderBottom: `1px solid ${T.border}` }}>
         {[{ k: 'stats', l: '📊' }, { k: 'fame', l: '🌟 HOF' }, { k: 'achieve', l: '🏆' }].map(t => (
@@ -26,7 +26,7 @@ export default function StatsScreen() {
                 {[{ l: 'Runs', v: gs.totalRuns || 0, c: T.tx }, { l: 'Victorias', v: gs.totalWins || 0, c: T.win }, { l: 'Goles', v: gs.totalGoals || 0, c: T.info }, { l: 'Mejor liga', v: gs.bestLeagueName || '—', c: T.purple }, { l: 'Racha', v: (gs.bestStreak || 0) + '🔥', c: T.draw }, { l: 'Ascensión', v: (gs.ascensionLevel || 0) + '/7', c: T.gold }].map((s, i) => (
                   <div key={i} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 4, padding: '6px 4px', textAlign: 'center' }}>
                     <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 16, color: s.c }}>{s.v}</div>
-                    <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 8, color: T.tx3, textTransform: 'uppercase' }}>{s.l}</div>
+                    <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx3, textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.l}</div>
                   </div>
                 ))}
               </div>
@@ -52,14 +52,14 @@ export default function StatsScreen() {
               <div key={i} style={{ background: 'linear-gradient(145deg,#2a2510,#3a3215)', borderRadius: 8, padding: 10, border: `1px solid ${T.gold}20`, display: 'flex', gap: 8, alignItems: 'center' }}>
                 <div style={{ textAlign: 'center', minWidth: 36 }}>
                   <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 22, color: T.gold }}>{p.ovr}</div>
-                  <div style={{ fontFamily: "'Oswald'", fontSize: 9, color: POS_COLORS[p.pos] || T.tx2 }}>{PN[p.pos] || p.pos}</div>
+                  <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: POS_COLORS[p.pos] || T.tx2, letterSpacing: 0.5 }}>{PN[p.pos] || p.pos}</div>
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: "'Barlow Condensed'", fontWeight: 600, fontSize: 14, color: T.tx }}>⭐ {p.name}</div>
-                  {p.trait && <div style={{ fontSize: 9, color: T.purple, marginTop: 1 }}>✦ {p.trait}</div>}
+                  {p.trait && <div style={{ fontSize: 11, color: T.purple, marginTop: 1 }}>✦ {p.trait}</div>}
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: T.tx2 }}>Run #{p.run}</div>
+                  <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx2 }}>Run #{p.run}</div>
                   <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.gold }}>{p.league}</div>
                 </div>
               </div>
@@ -78,7 +78,7 @@ export default function StatsScreen() {
                     <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, color: done ? T.tx : T.tx3 }}>{a.n}</div>
                     <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: done ? T.tx2 : T.tx3 }}>{a.d}</div>
                   </div>
-                  {done && <div style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.win }}>✓</div>}
+                  {done && <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: T.win }}>✓</div>}
                 </div>
               );
             })}

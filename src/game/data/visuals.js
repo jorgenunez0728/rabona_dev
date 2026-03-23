@@ -9,9 +9,11 @@ export const POS_ICON_IDX={GK:0,DEF:1,MID:2,FWD:3};
 // Design system
 export const T={
   bg:'#0D1117', bg1:'#161B22', bg2:'#21262D', bg3:'#30363D',
-  tx:'#E6EDF3', tx2:'#8B949E', tx3:'#484F58',
+  tx:'#E6EDF3', tx2:'#8B949E', tx3:'#6E7681', tx4:'#9198A1',
   win:'#3FB950', lose:'#F85149', draw:'#D29922', info:'#58A6FF', gold:'#FFD700',
-  accent:'#00C853', purple:'#A855F7', border:'rgba(255,255,255,0.06)',
+  accent:'#00C853', purple:'#A855F7', border:'rgba(255,255,255,0.12)',
+  shadow:'0 1px 3px rgba(0,0,0,0.4)', glow:'0 0 12px rgba(88,166,255,0.15)',
+  fontPixel:"'Silkscreen', cursive", fontHeading:"'Oswald', sans-serif", fontBody:"'Barlow Condensed', sans-serif",
 };
 
 export const CARD_TIERS = {
