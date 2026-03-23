@@ -237,4 +237,19 @@ const useGameStore = create((set, get) => ({
   },
 }));
 
+// ── Auto-save: whenever game state changes AND there's an active save, persist automatically ──
+let autoSaveTimer = null;
+useGameStore.subscribe(
+  (state) => state.game,
+  (game) => {
+    const { hasSave } = useGameStore.getState();
+    if (!hasSave || !game.coach) return;
+    // Debounce: wait 500ms after last change to avoid saving on every keystroke
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+      saveGame(game, 'table');
+    }, 500);
+  },
+);
+
 export default useGameStore;
