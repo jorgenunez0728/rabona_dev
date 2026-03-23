@@ -193,6 +193,7 @@ export default function Rabona() {
     const [selectedCoach, setSelectedCoach] = useState(null);
     const [selectedAsc, setSelectedAsc] = useState(maxAsc);
 
+    const [pendingCoach, setPendingCoach] = useState(null);
     const [startingRelicPair, setStartingRelicPair] = useState(null);
     const [chosenStartRelic, setChosenStartRelic] = useState(null);
 
@@ -225,14 +226,14 @@ export default function Rabona() {
     }
 
     function startRun(coach) {
-      // Show starting relic choice
       const pair = STARTING_RELIC_PAIRS[Math.floor(Math.random() * STARTING_RELIC_PAIRS.length)];
+      setPendingCoach(coach);
       setStartingRelicPair(pair);
       setChosenStartRelic(null);
     }
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: `linear-gradient(180deg,${T.bg},#0f1730)` }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: `linear-gradient(180deg,${T.bg},#0f1730)`, position: 'relative' }}>
         <div style={{ padding: '14px 16px 8px', textAlign: 'center' }}>
           <div className="fw-anim-1" style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 24, color: '#fff', textTransform: 'uppercase' }}>Elige Entrenador</div>
         </div>
@@ -273,6 +274,28 @@ export default function Rabona() {
             })}
           </div>
         </div>
+        {startingRelicPair && pendingCoach && (
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.93)', zIndex: 100, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+            <div style={{ background: 'linear-gradient(135deg,#1a1030,#2d1a4a)', borderRadius: 14, maxWidth: 380, width: '100%', border: `1px solid ${T.purple}40`, padding: 22 }}>
+              <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 22, color: T.purple, textTransform: 'uppercase' }}>📿 Reliquia Inicial</div>
+                <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 14, color: T.tx3, marginTop: 4 }}>Elige tu ventaja para este run</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {startingRelicPair.map((relic, i) => relic ? (
+                  <div key={i} onClick={() => { SFX.play('reward'); const c = pendingCoach; setStartingRelicPair(null); setPendingCoach(null); confirmStart(c, relic); }} style={{ background: `${T.gold}08`, border: `1.5px solid ${T.gold}30`, borderRadius: 10, padding: '14px 16px', cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center' }}>
+                    <div style={{ fontSize: 32, minWidth: 40, textAlign: 'center' }}>{relic.i}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 16, color: T.gold, textTransform: 'uppercase' }}>{relic.n}</div>
+                      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 13, color: T.tx, lineHeight: 1.3, marginTop: 2 }}>{relic.d}</div>
+                    </div>
+                  </div>
+                ) : null)}
+                <button onClick={() => { SFX.play('click'); const c = pendingCoach; setStartingRelicPair(null); setPendingCoach(null); confirmStart(c, null); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, padding: '10px', border: `1px solid ${T.tx3}`, background: 'transparent', color: T.tx2, borderRadius: 8, cursor: 'pointer', marginTop: 4 }}>Sin reliquia →</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
