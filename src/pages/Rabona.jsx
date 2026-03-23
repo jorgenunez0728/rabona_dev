@@ -647,12 +647,14 @@ export default function Rabona() {
     const copa = game.copa;
     const rivalName = isCopaMatch ? (copa?.bracket[copa.round]?.name || 'Copa FC') : isNemesisMatch ? nem.n : rns[game.matchNum % rns.length];
     const rpRef = useRef(null), rcRef = useRef(null), objRef = useRef(null);
+    const currentFormation = FORMATIONS.find(f => f.id === game.formation) || FORMATIONS[1];
 
     if (!rpRef.current) {
       const ascLv = game.ascension || 0;
       const ascMods = ASCENSION_MODS[Math.min(ascLv, ASCENSION_MODS.length - 1)].mods;
       const rlvBonus = ascMods.includes('rival_lv_up') ? 1 : 0;
-      rpRef.current = ['GK', 'DEF', 'MID', 'MID', 'FWD'].map(p => {
+      // Rival also has 6 outfield + GK = 7
+      rpRef.current = ['GK','DEF','DEF','MID','MID','FWD','FWD'].map(p => {
         const rp = genPlayer(p, Math.max(1, lg.rb - 2 + rlvBonus), lg.rb + 2 + rlvBonus);
         if (ascMods.includes('killer_fwd') && p === 'FWD') rp.atk += 5;
         if (isNemesisMatch && nem.boost) { rp.atk += (nem.boost.atk || 0); rp.def += (nem.boost.def || 0); rp.spd += (nem.boost.spd || 0); }
@@ -664,7 +666,7 @@ export default function Rabona() {
     }
 
     const starters = game.roster.filter(p => p.role === 'st');
-    const tp = teamPower(starters), rtp = teamPower(rpRef.current);
+    const tp = teamPower(starters, currentFormation?.mods), rtp = teamPower(rpRef.current);
     const injuredStarters = starters.filter(p => p.injuredFor > 0);
 
     return (
