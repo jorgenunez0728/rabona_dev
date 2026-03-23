@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { SFX } from '@/game/audio';
 import { COACHES, ASCENSION_MODS, T, STARTING_RELIC_PAIRS } from '@/game/data';
+import { RelicIcon } from '@/game/data/chibiAssets';
 import { CoachPortrait } from '@/game/components';
 import useGameStore from '@/game/store';
 
@@ -70,7 +71,7 @@ export default function CoachScreen() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {startingRelicPair.map((relic, i) => relic ? (
                 <div key={i} onClick={() => { SFX.play('reward'); const c = pendingCoach; setStartingRelicPair(null); setPendingCoach(null); confirmStart(c, relic, selectedAsc); }} style={{ background: `${T.gold}08`, border: `1.5px solid ${T.gold}30`, borderRadius: 10, padding: '14px 16px', cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center' }}>
-                  <div style={{ fontSize: 32, minWidth: 40, textAlign: 'center' }}>{relic.i}</div>
+                  <div style={{ minWidth: 40, textAlign: 'center' }}><RelicIcon id={relic.id} size={36} /></div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 16, color: T.gold, textTransform: 'uppercase' }}>{relic.n}</div>
                     <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 13, color: T.tx, lineHeight: 1.3, marginTop: 2 }}>{relic.d}</div>

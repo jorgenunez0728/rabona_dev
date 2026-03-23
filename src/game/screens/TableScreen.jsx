@@ -1,4 +1,5 @@
 import useGameStore from '@/game/store';
+import { FormIcon, RelicIcon } from '@/game/data/chibiAssets';
 import {
   LEAGUES, FORMATIONS, RELICS, POS_ORDER, POS_COLORS, T, PN,
   getBoardEvents, effectiveOvr, COPA_NAMES,
@@ -83,7 +84,7 @@ export default function TableScreen() {
                 <div>
                   <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, color: T.tx }}>{game.coach?.i} {game.coach?.n}</div>
                   <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.win }}>✦ {game.coach?.a}</div>
-                  <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.info, marginTop: 1 }}>{currentFormation.i} {currentFormation.n} <span style={{ color: T.tx3 }}>· {currentFormation.tag}</span></div>
+                  <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.info, marginTop: 1 }}><FormIcon id={currentFormation.id} size={16} style={{ verticalAlign: 'middle', marginRight: 4 }} />{currentFormation.n} <span style={{ color: T.tx3 }}>· {currentFormation.tag}</span></div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx2 }}>🔗 Química: <span style={{ color: T.gold, fontFamily: "'Oswald'", fontWeight: 700 }}>{game.chemistry}</span></div>
@@ -92,7 +93,7 @@ export default function TableScreen() {
                     <div style={{ display: 'flex', gap: 3, marginTop: 3, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       {(game.relics||[]).map(rid => { const r = RELICS.find(x=>x.id===rid); return r ? (
                         <div key={rid} title={r.d} style={{ display:'flex', alignItems:'center', gap:2, background:`rgba(168,85,247,0.1)`, border:`1px solid rgba(168,85,247,0.2)`, borderRadius:4, padding:'2px 6px', fontSize:11 }}>
-                          <span>{r.i}</span><span style={{ fontFamily:"'Oswald'", fontSize:11, color:T.purple, letterSpacing:0.5 }}>{r.n.split(' ').slice(0,2).join(' ')}</span>
+                          <RelicIcon id={r.id} size={18} /><span style={{ fontFamily:"'Oswald'", fontSize:11, color:T.purple, letterSpacing:0.5 }}>{r.n.split(' ').slice(0,2).join(' ')}</span>
                         </div>
                       ) : null; })}
                     </div>

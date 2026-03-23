@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { SFX } from "@/game/audio";
+import { FormIcon } from "@/game/data/chibiAssets";
 import {
   LEAGUES, STADIUMS, RIVAL_NAMES, RIVAL_COACHES, ASCENSION_MODS,
   FORMATIONS, MATCH_OBJECTIVES, getNemesis,
@@ -76,7 +77,7 @@ export default function PrematchScreen() {
             const active = game.formation === f.id;
             return (
               <div key={f.id} onClick={() => setGame(g => ({ ...g, formation: f.id }))} style={{ flex: 1, padding: '6px 4px', background: active ? `${T.info}15` : T.bg2, border: `1px solid ${active ? T.info + '60' : T.border}`, borderRadius: 5, cursor: 'pointer', textAlign: 'center' }}>
-                <div style={{ fontSize: 14 }}>{f.i}</div>
+                <FormIcon id={f.id} size={28} />
                 <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: active ? T.info : T.tx3, textTransform: 'uppercase', marginTop: 1, lineHeight: 1.2, letterSpacing: 0.5 }}>{f.n.split('(')[1]?.replace(')','') || f.id}</div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 2, marginTop: 3, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 9, color: f.mods.atkMult > 1 ? T.win : f.mods.atkMult < 1 ? T.lose : T.tx3 }}>ATK {f.mods.atkMult > 1 ? '▲' : f.mods.atkMult < 1 ? '▼' : '—'}</span>
