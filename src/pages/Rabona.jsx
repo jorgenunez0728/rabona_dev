@@ -1692,39 +1692,7 @@ export default function Rabona() {
     );
   };
 
-  // ─── NODE CHOICE SCREEN ───
-  const NodeChoiceScreen = () => {
-    const nodes = pendingNodeChoice?.nodes || [];
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-        <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 22, color: T.gold, textTransform: 'uppercase', marginBottom: 4 }}>¿Cómo preparas la jornada?</div>
-        <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: T.tx3, marginBottom: 16 }}>Elige el camino</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 380 }}>
-          {nodes.map((node, i) => (
-            <div key={i} onClick={() => {
-              SFX.play('click');
-              setSelectedNode(node);
-              setPendingNodeChoice(null);
-              if (node.id === 'rest') {
-                setGame(g => ({ ...g, roster: g.roster.map(p => ({ ...p, fatigue: p.role === 'st' ? Math.max(0, (p.fatigue || 0) - 30) : p.fatigue, injuredFor: Math.max(0, (p.injuredFor || 0) - 1) })) }));
-                go('table');
-              } else if (node.id === 'training') {
-                setGame(g => ({ ...g, extraTrainingSlots: 1 })); go('training');
-              } else {
-                setMatchType(node.id === 'elite' ? 'elite' : 'league'); go('prematch');
-              }
-            }} style={{ background: `${node.color}08`, border: `1.5px solid ${node.color}30`, borderRadius: 10, padding: '14px 16px', cursor: 'pointer', display: 'flex', gap: 12, alignItems: 'center' }}>
-              <div style={{ fontSize: 28 }}>{node.i}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 16, color: node.color, textTransform: 'uppercase' }}>{node.n}</div>
-                <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: T.tx2, marginTop: 2 }}>{node.d}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
+
 
   // ─── CAREER SCREENS (imported — see game/CareerScreens.jsx) ───
   const careerHelpers = { setCareer, setCareerScreen, go, initCareer, getCareerCards, applyBarEffects, checkCareerEnd, applyAging, getMatchCards };
