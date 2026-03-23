@@ -1906,10 +1906,13 @@ export default function Rabona() {
                     SFX.play('reward');
                     setGame(g => ({
                       ...g,
-                      roster: g.roster.map(p => p.id === pendingLevelUp.player.id
-                        ? { ...choice.apply({ ...p }), lv: p.lv + 1, xp: (p.xp || 0) - (p.xpNext || 20), xpNext: (p.lv + 1) * 10 + 20 }
-                        : p
-                      )
+                      roster: g.roster.map(p => {
+                        if (p.id !== pendingLevelUp.player.id) return p;
+                        const gainedXp = p.trait?.fx === 'xp' ? Math.floor(xpGain * 1.5) : xpGain;
+                        const newXp = (p.xp || 0) + gainedXp;
+                        const newXpNext = p.xpNext || 20;
+                        return { ...choice.apply({ ...p }), lv: p.lv + 1, xp: Math.max(0, newXp - newXpNext), xpNext: (p.lv + 1) * 10 + 20 };
+                      })
                     }));
                     setPendingLevelUp(null);
                   }} style={{ padding: '14px', background: `${T.gold}08`, border: `1.5px solid ${T.gold}30`, borderRadius: 8, cursor: 'pointer', textAlign: 'left' }}>
