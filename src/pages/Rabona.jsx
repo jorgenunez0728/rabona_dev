@@ -837,27 +837,24 @@ export default function Rabona() {
       while (S.minute < 90) {
         S.minute += rnd(2, 4); if (S.minute > 90) S.minute = 90; S.totalTicks++;
 
+        // Halftime — simplified, no prompt: auto apply balanced, show in log
         if (S.minute >= 45 && !S.halftimeShown) {
           S.halftimeShown = true;
-          SFX.play('halftime'); addLog('event', `🕐 Medio tiempo: ${S.ps}-${S.rs}`);
-          const htEvent = { n: '🕐 MEDIO TIEMPO', d: `Halcones ${S.ps} - ${S.rs} ${S.rivalName}`, isHalftime: true, o: [{ n: 'Ofensiva', d: 'Arriesgar', i: '⚔' }, { n: 'Equilibrada', d: 'Balance', i: '⚖' }, { n: 'Defensiva', d: 'Cerrar atrás', i: '🛡' }] };
+          SFX.play('halftime');
+          addLog('event', `🕐 Descanso: ${S.ps}-${S.rs} · Elige táctica para 2ª parte`);
+          // Show halftime strategy picker inline (via pending event with isHalftime flag)
+          const htEvent = { n: '🕐 MEDIO TIEMPO', d: `${S.ps}-${S.rs} · ¿Cómo encaras la 2ª parte?`, isHalftime: true, o: [{ n: 'Ofensiva', d: '+Ataque, -Defensa', i: '⚔' }, { n: 'Equilibrada', d: 'Balance', i: '⚖' }, { n: 'Defensiva', d: '+Defensa, -Ataque', i: '🛡' }] };
           const choice = await showTacticalEvent(htEvent);
           S.strategy = ['offensive', 'balanced', 'defensive'][choice] || 'balanced';
           S.morale = Math.min(99, S.morale + 5);
-          addLog('event', `📋 ${['Ofensiva', 'Equilibrada', 'Defensiva'][choice]}`);
-          await sleep(300);
+          await sleep(200);
         }
 
-        if (S.minute - lastEventMin >= rnd(12, 18) && sp() > 0 && S.minute < 88) {
+        // Tactical events: max MAX_TACTICAL_EVENTS per match (excluding halftime and penalties)
+        if (tacticalEventsShown < MAX_TACTICAL_EVENTS && S.minute - lastEventMin >= rnd(20, 30) && sp() > 0 && S.minute < 85 && S.minute > 10) {
           lastEventMin = S.minute;
-          const ev = randomizeEvent(pick(TACTICS));
-          if (ev.n.includes('PENAL')) {
-            addLog('event', `‼ ${S.minute}' ¡PENAL!`);
-            const penResult = await showPenaltyMinigame();
-            if (penResult.scored) { S.ps++; S.goalEffect = 1; shakeRef.current = 15; S.ballX = .5; S.ballY = .05; SFX.play('goal'); addLog('goal', `⚽ ${S.minute}' ¡¡GOOOL DE PENAL!!`); S.morale = Math.min(99, S.morale + 12); }
-            else { addLog('normal', `${S.minute}' Penal fallado...`); S.morale = Math.max(0, S.morale - 5); }
-            await sleep(sp() >= 2 ? 800 : 200); S.ballX = .5; S.ballY = .5; continue;
-          }
+          tacticalEventsShown++;
+          const ev = randomizeEvent(pick(TACTICS.filter(e => !e.n.includes('PENAL') && !e.n.includes('LESIÓN'))));
           const choice = await showTacticalEvent(ev);
           const eff = ev.o[choice]?.e || {};
           S.morale = Math.max(0, Math.min(99, S.morale + (eff.morale || 0)));
