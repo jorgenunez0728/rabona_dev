@@ -50,8 +50,6 @@ export default function Rabona() {
   const [careerScreen, setCareerScreen] = useState('create');
   const [transState, setTransState] = useState('in');
   const [pendingRelicDraft, setPendingRelicDraft] = useState(null); // { options: [] }
-  const [pendingNodeChoice, setPendingNodeChoice] = useState(null); // { nodes: [] }
-  const [selectedNode, setSelectedNode] = useState(null); // the chosen node for this match
 
   function checkAchievements(gs) {
     const newAchs = [...(gs.achievements || [])];
