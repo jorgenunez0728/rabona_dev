@@ -2,7 +2,55 @@
 // GAME DATA CONSTANTS
 // ═══════════════════════════════════════
 
-export const TRAITS=[{n:'Líder',d:'+1 ATK/DEF a todos',fx:'team'},{n:'Goleador',d:'+3 ATK en remate',fx:'atk'},{n:'Muro',d:'+3 DEF defensiva',fx:'def'},{n:'Veloz',d:'+2 VEL robos',fx:'spd'},{n:'Creativo',d:'Más eventos',fx:'events'},{n:'Clutch',d:'+5 si pierden',fx:'clutch'},{n:'Tanque',d:'+4 DEF -1 VEL',fx:'tank'},{n:'Fantasma',d:'+3 ATK sorpresa',fx:'ghost'},{n:'Capitán',d:'Penales +20%',fx:'pen'},{n:'Promesa',d:'+50% XP',fx:'xp'}];
+export const TRAITS=[{n:'Líder',d:'+1 ATK/DEF a todos',fx:'team'},{n:'Goleador',d:'+3 ATK en remate',fx:'atk'},{n:'Muro',d:'+3 DEF defensiva',fx:'def'},{n:'Veloz',d:'+2 VEL robos',fx:'spd'},{n:'Creativo',d:'Más eventos tácticos',fx:'events'},{n:'Clutch',d:'+5 ATK si van perdiendo',fx:'clutch'},{n:'Tanque',d:'+4 DEF -1 VEL',fx:'tank'},{n:'Fantasma',d:'+3 ATK sorpresa',fx:'ghost'},{n:'Capitán',d:'Penales +20%',fx:'pen'},{n:'Promesa',d:'+50% XP',fx:'xp'},{n:'Sólido',d:'No se fatiga',fx:'tireless'},{n:'Bruto',d:'+2 ATK, foul chance',fx:'brute'}];
+
+// ── FORMATIONS (Fut 7: 1 GK + 6 outfield) ──
+export const FORMATIONS = [
+  {
+    id: 'muro',    n: 'Muro (1-4-2)',    i: '🛡',
+    slots: ['GK','DEF','DEF','DEF','DEF','FWD','FWD'],
+    desc: 'Fortaleza defensiva. Sacrificas peligro ofensivo.',
+    mods: { atkMult: 0.75, defMult: 1.35, spdMult: 0.90 },
+    tag: 'Muy defensiva',
+  },
+  {
+    id: 'clasica', n: 'Clásica (1-2-2-2)',  i: '⚖️',
+    slots: ['GK','DEF','DEF','MID','MID','FWD','FWD'],
+    desc: 'Equilibrio entre ataque y defensa.',
+    mods: { atkMult: 1.00, defMult: 1.00, spdMult: 1.00 },
+    tag: 'Balanceada',
+  },
+  {
+    id: 'diamante', n: 'Diamante (1-3-2-1)', i: '💎',
+    slots: ['GK','DEF','DEF','DEF','MID','MID','FWD'],
+    desc: 'Posesión y velocidad. GK más expuesto.',
+    mods: { atkMult: 0.90, defMult: 1.10, spdMult: 1.30 },
+    tag: 'Posesión',
+  },
+  {
+    id: 'blitz',   n: 'Blitz (1-2-1-3)',   i: '⚡',
+    slots: ['GK','DEF','DEF','MID','FWD','FWD','FWD'],
+    desc: 'Ataque total. Tu defensa sufrirá.',
+    mods: { atkMult: 1.35, defMult: 0.70, spdMult: 1.05 },
+    tag: 'Muy ofensiva',
+  },
+];
+
+// ── RELICS ──
+export const RELICS = [
+  { id:'botines94',   n:'Botines del 94',      i:'👟', d:'Cada victoria da +3💰 extra.',          rarity:'common',  fx:'win_coins',    val:3 },
+  { id:'guantes',     n:'Guantes de Hierro',   i:'🧤', d:'El portero nunca concede en el 90\'.',   rarity:'rare',    fx:'gk_last_min',  val:1 },
+  { id:'cuaderno',    n:'Cuaderno del Profeta', i:'📋', d:'Ves stats del rival antes del partido.', rarity:'rare',    fx:'scout_rival',  val:1 },
+  { id:'corazon',     n:'Corazón de Barrio',   i:'❤️', d:'Si vas 0-1 al 45\', +10% chance de gol.', rarity:'common',  fx:'comeback',     val:0.10 },
+  { id:'mendez',      n:'Doctora Méndez',      i:'🩹', d:'Lesiones duran 1 partido menos.',        rarity:'common',  fx:'heal_fast',    val:1 },
+  { id:'vestuario',   n:'Vestuario Unido',     i:'🔗', d:'La química nunca baja de 30.',           rarity:'common',  fx:'chem_floor',   val:30 },
+  { id:'megafono',    n:'Megáfono de Don Miguel', i:'📣', d:'Moral mínima garantizada en 40.',     rarity:'common',  fx:'morale_floor', val:40 },
+  { id:'prensa',      n:'Rueda de Prensa',     i:'📰', d:'+5💰 por cada objetivo completado.',     rarity:'rare',    fx:'obj_bonus',    val:5 },
+  { id:'mochila',     n:'Mochila del Barrio',  i:'🎒', d:'Inicias cada partido con +5 moral.',     rarity:'uncommon',fx:'match_morale',  val:5 },
+  { id:'reloj',       n:'Reloj del 94',        i:'⏱', d:'Siempre tienes 1 evento táctico extra.', rarity:'rare',    fx:'extra_event',  val:1 },
+  { id:'amuleto',     n:'Amuleto de la Abuela',i:'📿', d:'10% menos de lesiones.',                rarity:'uncommon',fx:'injury_reduce', val:0.10 },
+  { id:'trofeo',      n:'Mini Trofeo',         i:'🏆', d:'+2💰 por cada partido de racha.',        rarity:'uncommon',fx:'streak_coins',  val:2 },
+];
 
 export const FN='Memo,Chuy,Beto,Nacho,Paco,Rafa,Toño,Pipe,Lalo,Hugo,Iker,Leo,Gael,Said,Omar,Diego,Alan,Erik,Joel,Ivan,Santiago,Patricio,Emilio,Rodrigo,Fernando,Arturo,Salvador,Margarito,Valentín,Ulises,Néstor,Damián,Rubén,Gonzalo,Édgar,Adrián,Ismael,Saúl,Gerardo,Ezequiel,Armando,Raúl,Víctor,Gilberto,Sebastián,Mateo,Dante,Héctor,Cristian,Josué,Esteban,Ramiro,Tadeo,Fabian,Marcelo,Octavio,Renato,Bruno,Axel,Aldo,Benito,Camilo,Darío,Elías'.split(',');
 export const LN='García,López,Hernández,Martínez,Rodríguez,Pérez,Sánchez,Ramírez,Torres,Flores,Cruz,Reyes,Morales,Ortiz,Vargas,Castillo,Fernández,Estrella,De la Rosa,Mendoza,Ríos,Fuentes,Acosta,Aguilar,Navarro,Ponce,Guerrero,Medina,Delgado,Romero,Salazar,Vega,Ibarra,Orozco,Contreras,Cervantes,Domínguez,Ávila,Montes,Espinosa,Valencia,Paredes,Lozano,Herrera,Solís,Villanueva,Cisneros,Cárdenas,Bravo,Luna,Ángeles,Barrera,Trejo,Sandoval,Pineda,Rosas,Bautista,Carrillo,Duarte,Quiroz,De León,Nava,Chávez,Pacheco'.split(',');
@@ -282,6 +330,38 @@ export function applyBoardEffect(gameState, effects, fxKey) {
     }
   }
   return g;
+}
+
+// ── LEVEL UP CHOICES ──
+export function getLevelUpChoices(player) {
+  const pos = player.pos;
+  const pool = [
+    { id:'atk2',   n:'Rematador',   d:'+3 ATK',              apply: p => ({ ...p, atk: p.atk + 3 }) },
+    { id:'def2',   n:'Roca',        d:'+3 DEF',              apply: p => ({ ...p, def: p.def + 3 }) },
+    { id:'spd2',   n:'Cohete',      d:'+3 VEL',              apply: p => ({ ...p, spd: p.spd + 3 }) },
+    { id:'atkdef', n:'Completo',    d:'+2 ATK, +1 DEF',      apply: p => ({ ...p, atk: p.atk + 2, def: p.def + 1 }) },
+    { id:'defspd', n:'Lateral',     d:'+2 DEF, +1 VEL',      apply: p => ({ ...p, def: p.def + 2, spd: p.spd + 1 }) },
+    { id:'atkspd', n:'Desequilibrio', d:'+2 ATK, +1 VEL, -1 DEF', apply: p => ({ ...p, atk: p.atk + 2, spd: p.spd + 1, def: Math.max(1, p.def - 1) }) },
+    { id:'glass',  n:'Cañón',       d:'+5 ATK, -2 DEF',      apply: p => ({ ...p, atk: p.atk + 5, def: Math.max(1, p.def - 2) }) },
+    { id:'wall',   n:'Bunker',      d:'+5 DEF, -2 ATK',      apply: p => ({ ...p, def: p.def + 5, atk: Math.max(1, p.atk - 2) }) },
+    { id:'allround', n:'Todo Terreno', d:'+1 ATK, +1 DEF, +1 VEL', apply: p => ({ ...p, atk: p.atk + 1, def: p.def + 1, spd: p.spd + 1 }) },
+  ];
+  // GK-specific
+  if (pos === 'GK') return [
+    { id:'sav3', n:'Muralla',    d:'+4 PAR',               apply: p => ({ ...p, sav: p.sav + 4 }) },
+    { id:'sav2', n:'Reflejos',   d:'+2 PAR, +2 DEF',       apply: p => ({ ...p, sav: p.sav + 2, def: p.def + 2 }) },
+    { id:'savspd',n:'Libero',    d:'+2 PAR, +2 VEL',       apply: p => ({ ...p, sav: p.sav + 2, spd: p.spd + 2 }) },
+  ];
+  // Shuffle and pick 3 relevant to position
+  const biased = pos === 'FWD'
+    ? ['atk2','atkspd','glass','atkdef','allround']
+    : pos === 'DEF'
+    ? ['def2','wall','defspd','atkdef','allround']
+    : ['allround','atkdef','defspd','atk2','def2'];
+  const chosen = [];
+  for (const id of biased) { const c = pool.find(x => x.id === id); if (c && chosen.length < 3) chosen.push(c); }
+  while (chosen.length < 3) { const c = pool.find(x => !chosen.find(y => y.id === x.id)); if (c) chosen.push(c); else break; }
+  return chosen.slice(0, 3);
 }
 
 // Helper: generate player
