@@ -26,8 +26,10 @@ export default function Rabona() {
     coach: null, roster: [], league: 0, matchNum: 0,
     table: [], captain: null, chemistry: 0, matchesTogether: 0, lastLineup: null, coins: 0,
     rivalMemory: {}, streak: 0, currentObjectives: [], trainedIds: [],
+    formation: 'clasica', relics: [],
     careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {} },
   });
+  const [pendingLevelUp, setPendingLevelUp] = useState(null); // { player, choices }
   const [match, setMatch] = useState({ ps: 0, rs: 0, minute: 0, speed: 2, running: false, rival: null, rivalPlayers: [], rivalCoach: null, ballX: .5, ballY: .5, possession: true, log: [], eventPopup: null });
   const [rewards, setRewards] = useState({ options: [], selected: null, stolen: null });
   const [rewardsTab, setRewardsTab] = useState('summary');
