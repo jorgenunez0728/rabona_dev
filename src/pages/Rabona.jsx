@@ -1734,13 +1734,14 @@ export default function Rabona() {
         {screen === 'champion' && <ChampionScreen />}
         {screen === 'death' && <DeathScreen />}
         {screen === 'stats' && <StatsScreen />}
+        {screen === 'nodeChoice' && <NodeChoiceScreen />}
         {screen === 'career' && (
-          careerScreen === 'create' ? <CareerCreateScreen /> :
-            careerScreen === 'cards' ? <CareerCardScreen /> :
-              careerScreen === 'match' ? <CareerMatchScreen /> :
-                careerScreen === 'seasonEnd' ? <CareerSeasonEnd /> :
-                  careerScreen === 'careerEnd' ? <CareerEndScreen /> :
-                    <CareerCreateScreen />
+          careerScreen === 'create' ? <CareerCreateScreenLocal /> :
+            careerScreen === 'cards' ? <CareerCardScreenLocal /> :
+              careerScreen === 'match' ? <CareerMatchScreenLocal /> :
+                careerScreen === 'seasonEnd' ? <CareerSeasonEndLocal /> :
+                  careerScreen === 'careerEnd' ? <CareerEndScreenLocal /> :
+                    <CareerCreateScreenLocal />
         )}
         {detailPlayer && <PlayerDetailModal player={detailPlayer} onClose={() => setDetailPlayer(null)} captainId={game.captain} />}
         {pendingLevelUp && (
