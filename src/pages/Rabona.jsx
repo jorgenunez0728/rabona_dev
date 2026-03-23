@@ -1066,7 +1066,7 @@ export default function Rabona() {
         else { setGame(g => ({ ...g, copa: { ...g.copa, eliminated: true, active: false } })); setTimeout(() => go('death'), 1500); return; }
       }
 
-      setRewards({ options: rwOptions, selected: null, stolen, result: { ps, rs, won, drew, lost, xpGain, coinGain: coinGain + objCoins, rivalName: S.rivalName, rosterSnapshot: snapRoster, rivalPlayers: S.rivalPlayers, starters: allRoster.filter(p => p.role === 'st'), goals, cards, possPct, shots: S.shots, morale: S.morale, objResults, personalityEvents, injuryList, socialPosts, matchType } });
+      setRewards({ options: rwOptions, selected: null, stolen, xpGain, result: { ps, rs, won, drew, lost, xpGain, coinGain: coinGain + objCoins, rivalName: S.rivalName, rosterSnapshot: snapRoster, rivalPlayers: S.rivalPlayers, starters: allRoster.filter(p => p.role === 'st'), goals, cards, possPct, shots: S.shots, morale: S.morale, objResults, personalityEvents, injuryList, socialPosts, matchType } });
       setMatch(m => ({ ...m, running: false })); simRef.current = false; setRewardsTab('summary'); setScreen('rewards');
     }
 
