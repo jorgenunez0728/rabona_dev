@@ -1818,10 +1818,9 @@ export default function Rabona() {
                       ...g,
                       roster: g.roster.map(p => {
                         if (p.id !== pendingLevelUp.player.id) return p;
-                        const gainedXp = p.trait?.fx === 'xp' ? Math.floor(xpGain * 1.5) : xpGain;
-                        const newXp = (p.xp || 0) + gainedXp;
+                        // Use current XP on player (already includes match XP gain)
                         const newXpNext = p.xpNext || 20;
-                        return { ...choice.apply({ ...p }), lv: p.lv + 1, xp: Math.max(0, newXp - newXpNext), xpNext: (p.lv + 1) * 10 + 20 };
+                        return { ...choice.apply({ ...p }), lv: p.lv + 1, xp: Math.max(0, (p.xp || 0) - newXpNext), xpNext: (p.lv + 1) * 10 + 20 };
                       })
                     }));
                     setPendingLevelUp(null);
