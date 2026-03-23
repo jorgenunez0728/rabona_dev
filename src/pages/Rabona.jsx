@@ -816,6 +816,8 @@ export default function Rabona() {
       const simRelics = game.relics || [];
       const moraleFloor = simRelics.includes('megafono') ? 40 : 0;
       const chemFloor = simRelics.includes('vestuario') ? 30 : 0;
+      const hasGkLastMin = simRelics.includes('guantes');   // GK relic: block final goal
+      const hasScoutRival = simRelics.includes('cuaderno'); // Scout relic: +5% possession
       const chemBonus = game.chemistry * .001;
       const diffMod = game.league <= 1 ? 0.005 : game.league * 0.008;
       let lastEventMin = -10;
@@ -861,7 +863,8 @@ export default function Rabona() {
         const stratMod = S.strategy === 'offensive' ? .03 : S.strategy === 'defensive' ? -.02 : 0;
         const tM = avgStat(starters, 'spd', formMods) + avgStat(starters, 'atk', formMods) * .5 + chemBonus * 10;
         const rM = avgStat(S.rivalPlayers, 'spd') + avgStat(S.rivalPlayers, 'atk') * .5;
-        S.possession = Math.random() < (tM / (tM + rM) + stealBonus + moraleMod + stratMod);
+        const scoutBonus = hasScoutRival ? 0.05 : 0;
+        S.possession = Math.random() < (tM / (tM + rM) + stealBonus + moraleMod + stratMod + scoutBonus);
         if (S.possession) S.possCount++;
         const clutch = S.ps < S.rs && starters.some(p => p.trait.fx === 'clutch');
         const stratAtk = S.strategy === 'offensive' ? .015 : S.strategy === 'defensive' ? -.01 : 0;
@@ -901,6 +904,11 @@ export default function Rabona() {
         await sleep(sp() >= 2 ? 600 : sp() === 1 ? 180 : 100);
       }
 
+      // gk_last_min relic: if losing by 1 at 90', block the final concede chance
+      if (hasGkLastMin && S.ps < S.rs && S.rs - S.ps === 1) {
+        addLog('event', `🧤 ¡Los Guantes de Hierro salvan el marcador al final!`);
+        S.rs = Math.max(S.ps, S.rs - 1);
+      }
       SFX.play('whistle_double'); addLog('event', `🏁 ¡Final! Halcones ${S.ps}-${S.rs} ${S.rivalName}`);
       Crowd.stop();
       await sleep(sp() === 0 ? 600 : 2500); S.done = true;
@@ -946,7 +954,7 @@ export default function Rabona() {
           }
         });
         roster.forEach(p => { if ((p.injuredFor || 0) > 0) p.injuredFor--; });
-        const lineupKey = roster.filter(p => p.role === 'st').map(p => p.id).sort().join(',');
+        const lineupKey = roster.filter(p => p.role === 'st').slice(0, 6).map(p => p.id).sort().join(',');
         let mt = g.matchesTogether, chem = g.chemistry;
         if (g.lastLineup === lineupKey) { mt++; chem = Math.min(99, mt * 5 + 10); } else { mt = Math.max(0, mt - 2); chem = Math.max(5, mt * 5 + 10); }
         const newStreak = won ? (Math.max(0, g.streak) + 1) : (lost ? Math.min(0, g.streak) - 1 : 0);
