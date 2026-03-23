@@ -448,11 +448,11 @@ export function teamGKRating(players) {
   return effectiveStats(gk).sav;
 }
 
-export function teamPower(players) {
+export function teamPower(players, formationMods = null) {
   if (!players?.length) return 10;
-  const atk = avgStat(players, 'atk');
-  const def = avgStat(players, 'def');
-  const spd = avgStat(players, 'spd');
+  const atk = avgStat(players, 'atk', formationMods);
+  const def = avgStat(players, 'def', formationMods);
+  const spd = avgStat(players, 'spd', formationMods);
   return Math.round((atk + def + spd) / 3 * 10) / 10;
 }
 
