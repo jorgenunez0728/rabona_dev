@@ -1303,6 +1303,7 @@ export default function Rabona() {
   // ─── REWARDS SCREEN ───
   const RewardsScreen = () => {
     const r = rewards.result; if (!r) return null;
+    const xpGain = rewards.xpGain || 0;
     const resultColor = r.won ? T.win : r.drew ? T.draw : T.lose;
     const resultLabel = r.won ? 'VICTORIA' : r.drew ? 'EMPATE' : 'DERROTA';
     const [tab, setTab] = [rewardsTab, setRewardsTab];
