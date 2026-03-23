@@ -1096,8 +1096,26 @@ export default function Rabona() {
       if (won && allRoster.length < 14) { const r = pick(S.rivalPlayers); rwOptions.push({ title: '🔄 Reclutar', desc: `${r.name} (${PN[r.pos]} OVR${calcOvr(r)})`, detail: `⚔${r.atk} 🛡${r.def} ⚡${r.spd}`, fn: () => { r.role = 'rs'; setGame(g => ({ ...g, roster: [...g.roster, r] })); } }); }
       else if (allRoster.length < 14) { const lg2 = LEAGUES[game.league]; const fa = genPlayer(pick(['GK', 'DEF', 'MID', 'FWD']), lg2.lv[0], lg2.lv[0] + 2); rwOptions.push({ title: '🆕 Agente Libre', desc: `${fa.name} (${PN[fa.pos]} OVR${calcOvr(fa)})`, detail: `⚔${fa.atk} 🛡${fa.def} ⚡${fa.spd}`, fn: () => { fa.role = 'rs'; setGame(g => ({ ...g, roster: [...g.roster, fa] })); } }); }
 
+      // blowout_boost relic: win 3-0+ → random starter gets +1 all stats
+      if (simRelics.includes('doblaje') && won && ps - rs >= 3) {
+        const starters2 = allRoster.filter(p => p.role === 'st');
+        if (starters2.length) {
+          const t = pick(starters2);
+          setGame(g => ({ ...g, roster: g.roster.map(p => p.id === t.id ? { ...p, atk: p.atk + 1, def: p.def + 1, spd: p.spd + 1 } : p) }));
+        }
+      }
+
       let stolen = null;
-      if (lost) { const stealable = allRoster.filter(p => p.id !== game.captain && p.role === 'st'); if (stealable.length) { stolen = pick(stealable); setGame(g => ({ ...g, roster: g.roster.filter(p => p.id !== stolen.id) })); } }
+      const hasCursedSteal = simRelics.includes('pacto');
+      if (lost) {
+        const stealCount = hasCursedSteal ? 2 : 1;
+        const stealable = allRoster.filter(p => p.id !== game.captain && p.role === 'st');
+        for (let si = 0; si < stealCount && stealable.length > si; si++) {
+          const s = stealable[si];
+          if (si === 0) stolen = s;
+          setGame(g => ({ ...g, roster: g.roster.filter(p => p.id !== s.id) }));
+        }
+      }
       const snapRoster = allRoster.filter(p => !stolen || p.id !== stolen.id);
       const goals = S.log.filter(e => e.type === 'goal' || e.type === 'goalRival');
       const cards = S.log.filter(e => e.type === 'card');
