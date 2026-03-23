@@ -4,7 +4,7 @@ import {
   TACTICS, POS_ORDER, T, PERSONALITIES,
   rnd, pick, calcOvr,
   avgStat, teamGKRating, teamPower, narrate as legacyNarrate, randomizeEvent,
-  generateLivePosts, generateSocialPosts, getRivalKit, drawSprite,
+  generateLivePosts, generateSocialPosts, getRivalKit, drawSprite, getRivalSpriteVariant,
   FORMATIONS, getLevelUpChoices, applyRelicEffects,
   getRelicDraftOptions, PN, LEAGUES, genPlayer, TRAITS,
 } from "@/game/data";
@@ -241,6 +241,9 @@ export default function Rabona() {
             await sleep(sp() >= 2 ? 600 : 150);
             S.ballX = .5; S.ballY = .5;
             result = engine.next(penResult);
+            // Defensive: ensure score is synced after penalty resolution
+            if (result.value && result.value.homeScore !== undefined) S.ps = result.value.homeScore;
+            if (result.value && result.value.awayScore !== undefined) S.rs = result.value.awayScore;
             continue;
           }
 
@@ -465,7 +468,11 @@ export default function Rabona() {
       if (shakeRef.current > 0) { const s = shakeRef.current; ctx.translate(Math.sin(f * 0.5) * s * 0.3, Math.cos(f * 0.7) * s * 0.2); shakeRef.current = Math.max(0, shakeRef.current - 0.5); }
       const m = 10, fw = W - m * 2, fh = H - m * 2;
       if (pitchImgRef.current) {
-        ctx.drawImage(pitchImgRef.current, 0, 0, W, H);
+        ctx.save();
+        ctx.translate(W / 2, H / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.drawImage(pitchImgRef.current, -H / 2, -W / 2, H, W);
+        ctx.restore();
       } else {
         for (let i = 0; i < 16; i++) {
           const t = i / 16;
@@ -520,15 +527,16 @@ export default function Rabona() {
         const px = hpxRef.current[i] + Math.sin(f * .016 + i * 1.3) * 1.5, py = hpyRef.current[i] + Math.sin(f * .013 + i) * 1.2;
         const isGK = i === 0 || (hStarters[i] && hStarters[i].pos === 'GK');
         ctx.globalAlpha = 1;
-        drawSprite(ctx, px, py, '#1565c0', '#0d47a1', f, i + 100, isGK);
+        drawSprite(ctx, px, py, '#1565c0', '#0d47a1', f, i + 100, isGK, 'home');
         ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText(hStarters[i] ? hStarters[i].name.split(' ').pop().substring(0, 8) : '', px, py + 22);
         ctx.textAlign = 'left';
       }
+      const rivalVariant = getRivalSpriteVariant(rKit[0]);
       for (let i = 0; i < 5; i++) {
         const px = apxRef.current[i] + Math.sin(f * .018 + i * 1.5) * 1.5, py = apyRef.current[i] + Math.sin(f * .015 + i * 1.1) * 1.2;
         ctx.globalAlpha = 1;
-        drawSprite(ctx, px, py, rKit[0], rKit[1], f, i + 200, i === 0);
+        drawSprite(ctx, px, py, rKit[0], rKit[1], f, i + 200, i === 0, 'rival', rivalVariant);
         ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText(S.rivalPlayers[i] ? S.rivalPlayers[i].name.split(' ').pop().substring(0, 8) : '', px, py + 22);
         ctx.textAlign = 'left';
@@ -566,7 +574,9 @@ export default function Rabona() {
             {livePosts.map((p, i) => (
               <div key={i} style={{ background: T.bg1, borderRadius: 5, padding: '4px 5px', border: `1px solid ${T.border}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 2 }}>
-                  <div style={{ fontSize: 9, flexShrink: 0 }}>{p.acc?.av || '👤'}</div>
+                  <div style={{ fontSize: 9, flexShrink: 0, width: 14, height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {p.acc?.avImg ? <img src={p.acc.avImg} width={14} height={14} alt="" style={{ imageRendering: 'pixelated', display: 'block' }} /> : (p.acc?.av || '👤')}
+                  </div>
                   <span style={{ fontFamily: "'Oswald'", fontSize: 7, color: T.tx2, flex: 1 }}>{p.acc?.n}</span>
                   <span style={{ fontSize: 6, color: T.tx3 }}>{p.t}</span>
                 </div>
