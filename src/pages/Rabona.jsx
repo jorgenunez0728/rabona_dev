@@ -857,9 +857,9 @@ export default function Rabona() {
           continue;
         }
 
-        const moraleMod = ((S.morale - 50) / 200);
+        const moraleMod = ((Math.max(moraleFloor, S.morale) - 50) / 200);
         const stratMod = S.strategy === 'offensive' ? .03 : S.strategy === 'defensive' ? -.02 : 0;
-        const tM = avgStat(starters, 'spd') + avgStat(starters, 'atk') * .5 + chemBonus * 10;
+        const tM = avgStat(starters, 'spd', formMods) + avgStat(starters, 'atk', formMods) * .5 + chemBonus * 10;
         const rM = avgStat(S.rivalPlayers, 'spd') + avgStat(S.rivalPlayers, 'atk') * .5;
         S.possession = Math.random() < (tM / (tM + rM) + stealBonus + moraleMod + stratMod);
         if (S.possession) S.possCount++;
