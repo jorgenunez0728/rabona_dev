@@ -924,9 +924,11 @@ export default function Rabona() {
         const stratDef = S.strategy === 'defensive' ? .015 : S.strategy === 'offensive' ? -.008 : 0;
 
         if (S.possession) {
-          const aP = avgStat(starters, 'atk', formMods) + (clutch ? 5 : 0);
+          const aP = avgStat(starters, 'atk', formMods) + (clutch ? 5 : 0) + captainBoostVal;
           const rD = avgStat(S.rivalPlayers, 'def');
-          const gc = (aP - rD * .6) * .015 + .03 + moraleMod * .02 + stratAtk - diffMod * .5;
+          const blitzBonus = hasBlitzBoots ? 0.08 : 0;
+          const diamanteBonus = hasDiamanteKey ? 0.03 : 0;
+          const gc = (aP - rD * .6) * .015 + .03 + moraleMod * .02 + stratAtk - diffMod * .5 + blitzBonus + diamanteBonus;
           S.shots++;
           if (Math.random() < Math.max(.02, Math.min(.14, gc))) {
             S.ps++; S.goalEffect = 1; shakeRef.current = 15; S.ballX = .5; S.ballY = .05; S.morale = Math.min(99, S.morale + 10);
