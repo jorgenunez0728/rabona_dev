@@ -331,10 +331,12 @@ export default function Rabona() {
                   <div>
                     <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, color: T.tx }}>{game.coach?.i} {game.coach?.n}</div>
                     <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.win }}>✦ {game.coach?.a}</div>
+                    <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.info, marginTop: 1 }}>{currentFormation.i} {currentFormation.n} <span style={{ color: T.tx3 }}>· {currentFormation.tag}</span></div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx2 }}>🔗 Química: <span style={{ color: T.gold, fontFamily: "'Oswald'", fontWeight: 700 }}>{game.chemistry}</span></div>
                     <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: game.streak > 0 ? T.win : game.streak < 0 ? T.lose : T.tx3 }}>{game.streak > 0 ? `🔥 Racha: ${game.streak}` : game.streak < 0 ? `💀 ${Math.abs(game.streak)}` : '—'}</div>
+                    {(game.relics||[]).length > 0 && <div style={{ fontSize: 11, marginTop: 2 }}>{(game.relics||[]).map(rid => { const r = RELICS.find(x=>x.id===rid); return r ? <span key={rid} title={r.d}>{r.i}</span> : null; })}</div>}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
