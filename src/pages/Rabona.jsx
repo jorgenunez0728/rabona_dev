@@ -910,7 +910,11 @@ export default function Rabona() {
       const won = ps > rs, drew = ps === rs, lost = ps < rs;
       const streakBonus = Math.max(0, game.streak) * 3;
       const leagueBonus = Math.floor(game.league * 4);
-      const coinGain = (won ? 25 : drew ? 12 : 5) + streakBonus + leagueBonus;
+      const relics = game.relics || [];
+      const relicCoinBonus = (won && relics.includes('botines94') ? 3 : 0)
+        + (won && relics.includes('trofeo') ? 2 * Math.max(0, game.streak) : 0)
+        + (relics.includes('prensa') ? 5 : 0); // prensa applied per obj below
+      const coinGain = (won ? 25 : drew ? 12 : 5) + streakBonus + leagueBonus + relicCoinBonus;
       const xpGain = won ? 18 : drew ? 12 : 8;
       const possPct = Math.round(S.possCount / Math.max(1, S.totalTicks) * 100);
       const objData = { wentBehind: S.log.some(e => e.type === 'goalRival'), fatiguedCount: 0, finalMorale: S.morale, possPct };
