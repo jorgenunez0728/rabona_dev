@@ -31,7 +31,7 @@ export default function Rabona() {
   });
   const [pendingLevelUp, setPendingLevelUp] = useState(null); // { player, choices }
   const [match, setMatch] = useState({ ps: 0, rs: 0, minute: 0, speed: 2, running: false, rival: null, rivalPlayers: [], rivalCoach: null, ballX: .5, ballY: .5, possession: true, log: [], eventPopup: null });
-  const [rewards, setRewards] = useState({ options: [], selected: null, stolen: null });
+  const [rewards, setRewards] = useState({ options: [], selected: null, stolen: null, xpGain: 0 });
   const [rewardsTab, setRewardsTab] = useState('summary');
   const [market, setMarket] = useState({ players: [], open: false });
   const [hasSave, setHasSave] = useState(false);
