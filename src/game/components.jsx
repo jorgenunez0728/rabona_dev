@@ -141,8 +141,6 @@ export function PlayerDetailModal({ player, onClose, captainId }) {
 }
 
 // ── Career Bars ──
-import { BAR_NAMES, BAR_ICONS, BAR_COLORS } from "./data";
-
 export function CareerBars({ bars }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', gap: 2, padding: '6px 8px', background: '#0a0e1a', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
