@@ -1,1 +1,0 @@
-export { saveGame, loadGame, saveGlobalStats, loadGlobalStats, deleteSave, hasSaveData } from "../../src/game/save";
