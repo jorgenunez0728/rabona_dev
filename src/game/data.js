@@ -398,16 +398,23 @@ export function calcOvr(p) {
   return Math.round((p.atk + p.def + p.spd) / 3);
 }
 
-export function effectiveStats(p) {
+export function effectiveStats(p, formationMods = null) {
   const fatigueMod = (p.fatigue || 0) > 70 ? 0.85 : (p.fatigue || 0) > 50 ? 0.93 : 1;
-  const clutch = p.trait?.fx === 'clutch' ? 1 : 0;
-  let atk = Math.round(p.atk * fatigueMod);
-  let def = Math.round(p.def * fatigueMod);
-  let spd = Math.round(p.spd * fatigueMod);
+  const fm = formationMods || { atkMult: 1, defMult: 1, spdMult: 1 };
+  let atk = Math.round(p.atk * fatigueMod * fm.atkMult);
+  let def = Math.round(p.def * fatigueMod * fm.defMult);
+  let spd = Math.round(p.spd * fatigueMod * fm.spdMult);
   let sav = Math.round((p.sav || 1) * fatigueMod);
   if (p.trait?.fx === 'tank') { def += 4; spd = Math.max(1, spd - 1); }
   if (p.trait?.fx === 'ghost') atk += 3;
+  if (p.trait?.fx === 'tireless') { atk = Math.round(p.atk * fm.atkMult); def = Math.round(p.def * fm.defMult); spd = Math.round(p.spd * fm.spdMult); }
+  if (p.trait?.fx === 'brute') atk += 2;
   return { atk, def, spd, sav };
+}
+
+export function effectiveStatsWithFormation(p, formation) {
+  const mods = formation?.mods || { atkMult: 1, defMult: 1, spdMult: 1 };
+  return effectiveStats(p, mods);
 }
 
 export function effectiveOvr(p) {
@@ -416,9 +423,23 @@ export function effectiveOvr(p) {
   return Math.round((es.atk + es.def + es.spd) / 3);
 }
 
-export function avgStat(players, stat) {
+export function avgStat(players, stat, formationMods = null) {
   if (!players?.length) return 5;
-  return players.reduce((s, p) => s + (effectiveStats(p)[stat] || p[stat] || 1), 0) / players.length;
+  return players.reduce((s, p) => s + (effectiveStats(p, formationMods)[stat] || p[stat] || 1), 0) / players.length;
+}
+
+export function applyRelicEffects(game, eventType, data = {}) {
+  const relics = game.relics || [];
+  let result = { ...data };
+  if (eventType === 'win_coins' && relics.includes('botines94')) result.coinBonus = (result.coinBonus || 0) + 3;
+  if (eventType === 'streak_coins' && relics.includes('trofeo')) result.coinBonus = (result.coinBonus || 0) + 2 * (game.streak || 0);
+  if (eventType === 'morale_floor' && relics.includes('megafono')) result.moraleFloor = 40;
+  if (eventType === 'chem_floor' && relics.includes('vestuario')) result.chemFloor = 30;
+  if (eventType === 'match_morale_bonus' && relics.includes('mochila')) result.moraleBonus = (result.moraleBonus || 0) + 5;
+  if (eventType === 'obj_bonus' && relics.includes('prensa')) result.objCoinMult = (result.objCoinMult || 1) + 0.5;
+  if (eventType === 'injury_reduce' && relics.includes('amuleto')) result.injuryChanceMult = (result.injuryChanceMult || 1) * 0.9;
+  if (eventType === 'heal_fast' && relics.includes('mendez')) result.healBonus = 1;
+  return result;
 }
 
 export function teamGKRating(players) {
