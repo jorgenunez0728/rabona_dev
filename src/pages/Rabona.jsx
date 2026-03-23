@@ -416,7 +416,7 @@ export default function Rabona() {
         </div>
         <div style={{ flex: 1, overflow: 'auto', padding: '6px 10px 16px' }}>
           <div style={{ maxWidth: 420, margin: '0 auto' }}>
-            <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: T.win, textTransform: 'uppercase', padding: '4px 8px', borderLeft: `3px solid ${T.win}`, display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}><span>Titulares</span><span style={{ color: T.tx3 }}>{starters.length}/5</span></div>
+            <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: T.win, textTransform: 'uppercase', padding: '4px 8px', borderLeft: `3px solid ${T.win}`, display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}><span>Titulares</span><span style={{ color: T.tx3 }}>{starters.length}/6</span></div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>{starters.map(p => (<PlayerCard key={p.id} player={p} isCaptain={p.id === game.captain} onAction={handleAction} onDetail={setDetailPlayer} compact />))}</div>
             <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: T.tx3, textTransform: 'uppercase', padding: '6px 8px 4px', borderLeft: '3px solid #455a64', display: 'flex', justifyContent: 'space-between', marginTop: 8 }}><span>Reserva</span><span>{reserves.length}</span></div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>{reserves.map(p => (<PlayerCard key={p.id} player={p} isCaptain={p.id === game.captain} onAction={handleAction} onDetail={setDetailPlayer} compact />))}</div>
