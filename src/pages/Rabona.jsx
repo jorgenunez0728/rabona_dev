@@ -208,7 +208,7 @@ export default function Rabona() {
       if (coach.fx === 'cheap') startCoins = 80;
       if (isAlien) startCoins = 100;
       if (ascMods.includes('poor_start')) startCoins = Math.max(10, startCoins - 20);
-      const newG = { ...game, roster, captain: roster[0].id, table, league: 0, matchNum: 0, coins: startCoins, coach, ascension: ascLevel, careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {} }, rivalMemory: {}, streak: 0, trainedIds: [] };
+      const newG = { ...game, roster, captain: roster[0].id, table, league: 0, matchNum: 0, coins: startCoins, coach, ascension: ascLevel, formation: 'clasica', relics: [], careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {} }, rivalMemory: {}, streak: 0, trainedIds: [] };
       setGame(newG); autoSave(newG); setHasSave(true); go('table');
     }
 
