@@ -879,7 +879,7 @@ export default function Rabona() {
           } else if (sp() >= 2 && Math.random() < .3) { SFX.play('kick'); addLog('normal', `${S.minute}' ${narrate('atkBuild', 'Halcones', S.rivalName, starters)}`); await sleep(700); }
         } else {
           const rA = avgStat(S.rivalPlayers, 'atk');
-          const tD = avgStat(starters, 'def') + (noFouls ? 2 : 0);
+          const tD = avgStat(starters, 'def', formMods) + (noFouls ? 2 : 0);
           const gkRating = teamGKRating(starters);
           const gkPenalty = gkRating < 3 ? 0.04 : gkRating < 5 ? 0.02 : 0;
           const gc = (rA - tD * .6) * .015 + .02 - moraleMod * .01 - stratDef + diffMod + gkPenalty;
