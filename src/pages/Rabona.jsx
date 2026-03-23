@@ -10,7 +10,7 @@ import {
   generateLivePosts, generateSocialPosts, getRivalKit, drawSprite,
   LEGENDS, CAREER_CAST, CAREER_TEAMS, ALL_CAREER_CARDS, CAREER_CARDS_MIGUEL,
   MATCH_CARDS, BAR_NAMES, BAR_ICONS, BAR_COLORS, CUP_RIVAL_NAMES, TRAITS,
-  FN, LN, _usedNames,
+  FN, LN, _usedNames, FORMATIONS, RELICS, getLevelUpChoices, applyRelicEffects,
 } from "@/game/data";
 import {
   saveGame, loadGame, saveGlobalStats, loadGlobalStats, deleteSave,
