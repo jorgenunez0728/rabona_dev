@@ -945,7 +945,8 @@ export default function Rabona() {
         const roster = g.roster.map(p => ({ ...p, trait: { ...p.trait }, personality: p.personality || pick(PERSONALITIES) }));
         roster.filter(p => p.role === 'st').forEach(p => {
           let xp = xpGain; if (p.trait.fx === 'xp') xp = Math.floor(xp * 1.5);
-          p.xp += xp; while (p.xp >= (p.xpNext || 20)) { p.xp -= (p.xpNext || 20); p.lv++; p.atk += 1 + rnd(0, 1); p.def += 1 + rnd(0, 1); p.spd += rnd(0, 1); p.xpNext = p.lv * 10 + 20; }
+          p.xp += xp;
+          // No auto-level — level up is handled via choice modal after match
         });
         roster.forEach(p => {
           if (p.role === 'st') { p.fatigue = Math.min(100, (p.fatigue || 0) + rnd(20, 30)); p.gamesPlayed = (p.gamesPlayed || 0) + 1; }
