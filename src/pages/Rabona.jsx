@@ -794,9 +794,10 @@ export default function Rabona() {
       return choice;
     }
 
-    async function showPenaltyMinigame() {
+    // mode: 'shoot' (you attack) or 'save' (you defend)
+    async function showPenaltyMinigame(mode = 'shoot') {
       SFX.play('event');
-      sim.current.pendingPenalty = { phase: 'aim', shootDir: null, keeperDir: null, result: null };
+      sim.current.pendingPenalty = { phase: 'aim', mode, shootDir: null, keeperDir: null, result: null };
       const result = await waitForPenalty();
       sim.current.pendingPenalty = null;
       return result;
@@ -805,14 +806,27 @@ export default function Rabona() {
     function handlePenaltyShoot(dir) {
       const S = sim.current;
       if (!S.pendingPenalty || S.pendingPenalty.phase !== 'aim') return;
-      const keeperDir = pick(['left', 'center', 'right']);
-      const scored = dir !== keeperDir || (dir === 'center' && Math.random() < 0.3);
-      S.pendingPenalty = { ...S.pendingPenalty, phase: 'result', shootDir: dir, keeperDir, result: scored };
+      const mode = S.pendingPenalty.mode || 'shoot';
       SFX.play('kick');
-      setTimeout(() => {
-        if (scored) SFX.play('goal'); else SFX.play('card');
-        setTimeout(() => { if (penaltyResolveRef.current) { penaltyResolveRef.current({ scored }); penaltyResolveRef.current = null; } }, 1200);
-      }, 600);
+      if (mode === 'shoot') {
+        // Player chooses where to shoot, keeper guesses
+        const keeperDir = pick(['left', 'center', 'right']);
+        const scored = dir !== keeperDir || (dir === 'center' && Math.random() < 0.3);
+        S.pendingPenalty = { ...S.pendingPenalty, phase: 'result', shootDir: dir, keeperDir, result: scored };
+        setTimeout(() => {
+          if (scored) SFX.play('goal'); else SFX.play('card');
+          setTimeout(() => { if (penaltyResolveRef.current) { penaltyResolveRef.current({ scored }); penaltyResolveRef.current = null; } }, 1200);
+        }, 600);
+      } else {
+        // 'save' mode: player chooses corner to dive, rival shoots randomly
+        const shootDir = pick(['left', 'center', 'right']);
+        const saved = dir === shootDir || (shootDir === 'center' && Math.random() < 0.35);
+        S.pendingPenalty = { ...S.pendingPenalty, phase: 'result', shootDir, keeperDir: dir, result: saved };
+        setTimeout(() => {
+          if (saved) SFX.play('goal'); else SFX.play('goal_rival');
+          setTimeout(() => { if (penaltyResolveRef.current) { penaltyResolveRef.current({ scored: !saved }); penaltyResolveRef.current = null; } }, 1200);
+        }, 600);
+      }
     }
 
     async function runSim() {
