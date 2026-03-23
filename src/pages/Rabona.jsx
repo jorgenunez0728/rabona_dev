@@ -876,7 +876,8 @@ export default function Rabona() {
       const diffMod = game.league <= 1 ? 0.005 : game.league * 0.008;
       let lastEventMin = -10;
       let tacticalEventsShown = 0;
-      const MAX_TACTICAL_EVENTS = 2;
+      const extraEvents = (simRelics.includes('reloj') ? 1 : 0) + (hasDiamanteKey ? 1 : 0);
+      const MAX_TACTICAL_EVENTS = 2 + extraEvents;
       const sp = () => S.speed;
       function addLog(t, x) { S.log.push({ type: t, text: x }); if (S.log.length > 25) S.log.shift(); }
 
