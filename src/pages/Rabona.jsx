@@ -1656,41 +1656,49 @@ export default function Rabona() {
     );
   };
 
-  // ─── CAREER SCREENS ───
-  const CareerCreateScreen = () => {
-    const [name, setName] = useState('');
-    const [pos, setPos] = useState(null);
+  // ─── NODE CHOICE SCREEN ───
+  const NodeChoiceScreen = () => {
+    const nodes = pendingNodeChoice?.nodes || [];
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, background: 'radial-gradient(ellipse at 50% 60%,#1a2a10 0%,#0b1120 70%)', padding: 16, textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 32, color: '#fff', textTransform: 'uppercase' }}>Modo Carrera</div>
-        <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 14, color: '#607d8b' }}>Crea tu jugador. De chamaco a leyenda.</div>
-        <div style={{ width: '100%', maxWidth: 340 }}>
-          <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: '#f0c040', textTransform: 'uppercase', marginBottom: 4 }}>Nombre</div>
-          <div style={{ display: 'flex', gap: 4 }}>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre..." style={{ flex: 1, padding: '8px 12px', background: '#141e3a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, color: '#fff', fontFamily: "'Barlow'", fontSize: 14, outline: 'none' }} />
-            <button onClick={() => setName(`${pick(FN)} ${pick(LN)}`)} style={{ padding: '8px 12px', background: 'rgba(240,192,64,0.1)', border: '1px solid rgba(240,192,64,0.2)', borderRadius: 4, color: '#f0c040', cursor: 'pointer', fontSize: 12 }}>🎲</button>
-          </div>
-        </div>
-        <div style={{ width: '100%', maxWidth: 340 }}>
-          <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: '#f0c040', textTransform: 'uppercase', marginBottom: 4 }}>Posición</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-            {[{ p: 'GK', n: 'Portero', i: '🧤' }, { p: 'DEF', n: 'Defensa', i: '🛡' }, { p: 'MID', n: 'Medio', i: '⚙️' }, { p: 'FWD', n: 'Delantero', i: '⚽' }].map(p => (
-              <div key={p.p} onClick={() => setPos(p.p)} style={{ background: pos === p.p ? 'rgba(240,192,64,0.08)' : '#141e3a', border: `1px solid ${pos === p.p ? 'rgba(240,192,64,0.3)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 6, padding: 10, cursor: 'pointer', textAlign: 'center' }}>
-                <div style={{ fontSize: 24 }}>{p.i}</div>
-                <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, color: pos === p.p ? '#f0c040' : '#fff' }}>{p.n}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+        <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 22, color: T.gold, textTransform: 'uppercase', marginBottom: 4 }}>¿Cómo preparas la jornada?</div>
+        <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: T.tx3, marginBottom: 16 }}>Elige el camino</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 380 }}>
+          {nodes.map((node, i) => (
+            <div key={i} onClick={() => {
+              SFX.play('click');
+              setSelectedNode(node);
+              setPendingNodeChoice(null);
+              if (node.id === 'rest') {
+                setGame(g => ({ ...g, roster: g.roster.map(p => ({ ...p, fatigue: p.role === 'st' ? Math.max(0, (p.fatigue || 0) - 30) : p.fatigue, injuredFor: Math.max(0, (p.injuredFor || 0) - 1) })) }));
+                go('table');
+              } else if (node.id === 'training') {
+                setGame(g => ({ ...g, extraTrainingSlots: 1 })); go('training');
+              } else {
+                setMatchType(node.id === 'elite' ? 'elite' : 'league'); go('prematch');
+              }
+            }} style={{ background: `${node.color}08`, border: `1.5px solid ${node.color}30`, borderRadius: 10, padding: '14px 16px', cursor: 'pointer', display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div style={{ fontSize: 28 }}>{node.i}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 16, color: node.color, textTransform: 'uppercase' }}>{node.n}</div>
+                <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: T.tx2, marginTop: 2 }}>{node.d}</div>
               </div>
-            ))}
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <button onClick={() => { setCareer(null); go('title'); }} style={{ fontFamily: "'Oswald'", fontSize: 12, padding: '8px 16px', border: '1px solid #607d8b', background: 'transparent', color: '#e8eaf6', borderRadius: 4, cursor: 'pointer' }}>Volver</button>
-          <button onClick={() => { if (!name || !pos) return; const c = initCareer(name, pos); c.cardQueue = getCareerCards(c); setCareer(c); setCareerScreen('cards'); SFX.play('whistle'); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '10px 28px', border: 'none', background: (name && pos) ? 'linear-gradient(135deg,#d4a017,#f0c040)' : '#333', color: (name && pos) ? '#1a1a2e' : '#666', clipPath: 'polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)', cursor: (name && pos) ? 'pointer' : 'not-allowed' }}>Comenzar</button>
+            </div>
+          ))}
         </div>
       </div>
     );
   };
 
-  const CareerCardScreen = () => {
+  // ─── CAREER SCREENS (imported — see game/CareerScreens.jsx) ───
+  const careerHelpers = { setCareer, setCareerScreen, go, initCareer, getCareerCards, applyBarEffects, checkCareerEnd, applyAging, getMatchCards };
+  const CareerCreateScreenLocal = () => <CareerCreateScreen {...careerHelpers} />;
+  const CareerCardScreenLocal = () => career ? <CareerCardScreen career={career} {...careerHelpers} /> : null;
+  const CareerMatchScreenLocal = () => career ? <CareerMatchScreen career={career} {...careerHelpers} /> : null;
+  const CareerSeasonEndLocal = () => career ? <CareerSeasonEnd career={career} {...careerHelpers} /> : null;
+  const CareerEndScreenLocal = () => career ? <CareerEndScreen career={career} {...careerHelpers} /> : null;
+
+  const _CareerCardScreen_DELETED = () => {
     const c = career;
     if (!c) return null;
     const [slideDir, setSlideDir] = useState(null);
