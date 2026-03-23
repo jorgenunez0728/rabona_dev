@@ -1738,7 +1738,7 @@ export default function Rabona() {
         {screen === 'champion' && <ChampionScreen />}
         {screen === 'death' && <DeathScreen />}
         {screen === 'stats' && <StatsScreen />}
-        {screen === 'nodeChoice' && <NodeChoiceScreen />}
+
         {screen === 'career' && (
           careerScreen === 'create' ? <CareerCreateScreenLocal /> :
             careerScreen === 'cards' ? <CareerCardScreenLocal /> :
