@@ -863,8 +863,15 @@ export default function Rabona() {
       const simRelics = game.relics || [];
       const moraleFloor = simRelics.includes('megafono') ? 40 : 0;
       const chemFloor = simRelics.includes('vestuario') ? 30 : 0;
-      const hasGkLastMin = simRelics.includes('guantes');   // GK relic: block final goal
-      const hasScoutRival = simRelics.includes('cuaderno'); // Scout relic: +5% possession
+      const hasGkLastMin = simRelics.includes('guantes');
+      const hasScoutRival = simRelics.includes('cuaderno');
+      const hasBlitzBoots = simRelics.includes('blitz_boots') && game.formation === 'blitz';
+      const hasMuroCement = simRelics.includes('muro_cement') && game.formation === 'muro';
+      const hasDiamanteKey = simRelics.includes('diamante_key') && game.formation === 'diamante';
+      const hasCaptainBoost = simRelics.includes('capitania');
+      const captain = game.roster.find(p => p.id === game.captain);
+      // Apply captain boost globally if relic active
+      const captainBoostVal = (hasCaptainBoost && captain) ? 3 : 0;
       const chemBonus = game.chemistry * .001;
       const diffMod = game.league <= 1 ? 0.005 : game.league * 0.008;
       let lastEventMin = -10;
