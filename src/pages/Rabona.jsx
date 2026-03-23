@@ -264,6 +264,7 @@ export default function Rabona() {
     const sorted = [...game.table].sort((a, b) => (b.w * 3 + b.d) - (a.w * 3 + a.d) || (b.gf - b.ga) - (a.gf - a.ga));
     const myPos = sorted.findIndex(t => t.you);
     const starters = game.roster.filter(p => p.role === 'st').sort((a, b) => POS_ORDER[a.pos] - POS_ORDER[b.pos]);
+    const currentFormation = FORMATIONS.find(f => f.id === game.formation) || FORMATIONS[1];
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg }}>
