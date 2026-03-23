@@ -21,7 +21,7 @@ export default function CoachScreen() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: `linear-gradient(180deg,${T.bg},#0f1730)`, position: 'relative' }}>
       <div style={{ padding: '14px 16px 8px', textAlign: 'center' }}>
-        <div className="fw-anim-1" style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 24, color: '#fff', textTransform: 'uppercase' }}>Elige Entrenador</div>
+        <div className="fw-anim-1" style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 20, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>Elige Entrenador</div>
       </div>
       <div style={{ flex: 1, overflow: 'auto', padding: '0 14px 14px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 420, margin: '0 auto' }}>
@@ -36,7 +36,7 @@ export default function CoachScreen() {
                     <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: unlocked ? T.tx : T.tx3, textTransform: 'uppercase' }}>{c.n}</div>
                     <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: unlocked ? T.win : T.tx3 }}>{unlocked ? `✦ ${c.a}` : `🔒 ${c.unlockReq}`}</div>
                   </div>
-                  <div style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx3 }}>{isOpen ? '▲' : '▼'}</div>
+                  <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: T.tx3 }}>{isOpen ? '▲' : '▼'}</div>
                 </div>
                 {isOpen && unlocked && (
                   <div style={{ padding: '0 14px 14px', borderTop: `1px solid ${T.gold}15` }}>
@@ -46,10 +46,10 @@ export default function CoachScreen() {
                         <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: T.gold, textTransform: 'uppercase', marginBottom: 4 }}>⬆ Dificultad</div>
                         <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                           {ASCENSION_MODS.filter(a => a.lv <= maxAsc).map(a => (
-                            <div key={a.lv} onClick={() => setSelectedAsc(a.lv)} style={{ padding: '4px 10px', borderRadius: 4, cursor: 'pointer', background: selectedAsc === a.lv ? `${T.gold}20` : T.bg2, border: `1px solid ${selectedAsc === a.lv ? T.gold : T.border}`, fontFamily: "'Oswald'", fontSize: 11, color: selectedAsc === a.lv ? T.gold : T.tx3 }}>{a.lv}{a.lv === maxAsc && <span style={{ fontSize: 8, color: T.win, marginLeft: 2 }}>MAX</span>}</div>
+                            <div key={a.lv} onClick={() => setSelectedAsc(a.lv)} style={{ padding: '4px 10px', borderRadius: 4, cursor: 'pointer', background: selectedAsc === a.lv ? `${T.gold}20` : T.bg2, border: `1px solid ${selectedAsc === a.lv ? T.gold : T.border}`, fontFamily: "'Oswald'", fontSize: 11, color: selectedAsc === a.lv ? T.gold : T.tx3 }}>{a.lv}{a.lv === maxAsc && <span style={{ fontSize: 11, color: T.win, marginLeft: 2 }}>MAX</span>}</div>
                           ))}
                         </div>
-                        <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: T.tx2, marginTop: 4 }}>{ASCENSION_MODS[selectedAsc]?.d}</div>
+                        <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx2, marginTop: 4 }}>{ASCENSION_MODS[selectedAsc]?.d}</div>
                       </div>
                     )}
                     <button className="fw-btn fw-btn-primary" onClick={() => startRun(c)} style={{ width: '100%', fontSize: 13 }}>⚽ Comenzar{selectedAsc > 0 ? ` · Asc ${selectedAsc}` : ''}</button>

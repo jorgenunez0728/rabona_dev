@@ -16,7 +16,7 @@ export default function RewardsScreen() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', overflow: 'auto', background: T.bg }}>
       <div style={{ width: '100%', background: 'linear-gradient(135deg,#1565c0 0%,#0d47a1 50%,#c62828 100%)', padding: '16px', textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 28, color: resultColor, textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>{resultLabel}</div>
+        <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 22, color: resultColor, textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>{resultLabel}</div>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, margin: '4px 0' }}>
           <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 14, color: '#fff', textTransform: 'uppercase' }}>HALCONES</div>
           <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 48, color: '#fff' }}>{r.ps} - {r.rs}</div>
@@ -64,7 +64,7 @@ export default function RewardsScreen() {
                 ];
                 return statRows.map((s, i) => (
                   <div key={i} style={{ marginBottom: 4 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#e8eaf6', marginBottom: 2 }}><span>{s.h}</span><span style={{ color: '#607d8b', fontSize: 10 }}>{s.l}</span><span>{s.a}</span></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#e8eaf6', marginBottom: 2 }}><span>{s.h}</span><span style={{ color: '#607d8b', fontSize: 11 }}>{s.l}</span><span>{s.a}</span></div>
                     <div style={{ display: 'flex', height: 3, borderRadius: 2, overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
                       <div style={{ width: `${s.hp}%`, background: '#42a5f5', borderRadius: 2 }} /><div style={{ flex: 1, background: 'rgba(239,83,80,0.3)', borderRadius: 2 }} />
                     </div>
@@ -109,7 +109,7 @@ export default function RewardsScreen() {
                       <span style={{ fontSize:16 }}>{r.i}</span>
                       <div>
                         <div style={{ fontFamily:"'Oswald'", fontSize:11, color:T.tx }}>{r.n}</div>
-                        <div style={{ fontFamily:"'Barlow Condensed'", fontSize:10, color:T.tx3 }}>{r.d}</div>
+                        <div style={{ fontFamily:"'Barlow Condensed'", fontSize:11, color:T.tx3 }}>{r.d}</div>
                       </div>
                     </div>
                   ) : null; })}
@@ -126,7 +126,7 @@ export default function RewardsScreen() {
                   <div style={{ width: 36, height: 36, borderRadius: '50%', background: T.bg2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{post.account.av}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, color: T.tx }}>{post.account.n}{post.account.v && <span style={{ color: '#1DA1F2', fontSize: 11, marginLeft: 4 }}>✓</span>}</div>
-                    <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: T.tx3 }}>{post.account.f} · {post.time}</div>
+                    <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx3 }}>{post.account.f} · {post.time}</div>
                   </div>
                 </div>
                 <div style={{ padding: '0 12px 10px', fontFamily: "'Barlow'", fontSize: 14, color: T.tx, lineHeight: 1.5 }}>{post.text}</div>
@@ -143,7 +143,7 @@ export default function RewardsScreen() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {(r.rosterSnapshot || []).sort((a, b) => (a.role === 'st' ? 0 : 1) - (b.role === 'st' ? 0 : 1)).map(p => (
               <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 8px', background: T.bg1, borderRadius: 3, border: '1px solid rgba(255,255,255,0.03)' }}>
-                <span style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 10, color: POS_COLORS[p.pos], minWidth: 26, textAlign: 'center' }}>{PN[p.pos]}</span>
+                <span style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 11, color: POS_COLORS[p.pos], minWidth: 26, textAlign: 'center', letterSpacing: 0.5 }}>{PN[p.pos]}</span>
                 <span style={{ flex: 1, fontFamily: "'Barlow Condensed'", fontWeight: 600, fontSize: 13, color: '#fff', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{p.role === 'st' ? '⚽ ' : ''}{p.name}</span>
                 <span style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 14, color: '#f0c040' }}>{calcOvr(p)}</span>
               </div>
@@ -160,7 +160,7 @@ export default function RewardsScreen() {
               }} style={{ background: rewards.selected === i ? 'rgba(0,200,83,0.04)' : 'linear-gradient(135deg,rgba(20,30,58,0.95),rgba(26,39,68,0.95))', border: `1px solid ${rewards.selected === i ? 'rgba(0,230,118,0.3)' : 'rgba(255,255,255,0.06)'}`, borderLeft: `4px solid ${rewards.selected === i ? '#00e676' : '#455a64'}`, borderRadius: 4, padding: 10, cursor: rewards.selected !== null && rewards.selected !== i ? 'not-allowed' : 'pointer', opacity: rewards.selected !== null && rewards.selected !== i ? .3 : 1 }}>
                 <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: '#f0c040', textTransform: 'uppercase' }}>{rw.title}</div>
                 <div style={{ fontSize: 13, color: '#e8eaf6', lineHeight: 1.2, marginTop: 2 }}>{rw.desc}</div>
-                <div style={{ fontSize: 10, color: '#607d8b', marginTop: 2 }}>{rw.detail}</div>
+                <div style={{ fontSize: 11, color: '#607d8b', marginTop: 2 }}>{rw.detail}</div>
               </div>
             ))}
           </div>

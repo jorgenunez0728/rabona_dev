@@ -51,7 +51,7 @@ export default function BoardEventScreen() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, justifyContent: 'center', alignItems: 'center', padding: 16 }}>
-      <div style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx3, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6 }}>Entre Jornadas · {boardEventIdx + 1}/{boardEvents.length}</div>
+      <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: T.tx3, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6 }}>Entre Jornadas · {boardEventIdx + 1}/{boardEvents.length}</div>
       {phase === 'result' && boardResultData && (
         <div style={{ width: '100%', maxWidth: 360, background: 'linear-gradient(145deg,#141e3a,#1a2744)', border: `1px solid ${T.gold}25`, borderRadius: 12, padding: 20, textAlign: 'center' }}>
           <div style={{ fontSize: 32, marginBottom: 6 }}>📋</div>
@@ -70,12 +70,12 @@ export default function BoardEventScreen() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <button onClick={() => choose('a')} disabled={phase !== 'choose'} style={{ width: '100%', padding: '12px', background: `${T.win}08`, border: `1.5px solid ${T.win}30`, borderRadius: 8, cursor: 'pointer', textAlign: 'left' }}>
               <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: T.win }}>{ev.a.l}</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 4 }}>{previewEffects(ev.a).map((p, i) => (<span key={i} style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: p.c, background: `${p.c}10`, padding: '1px 6px', borderRadius: 6 }}>{p.t}</span>))}</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 4 }}>{previewEffects(ev.a).map((p, i) => (<span key={i} style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: p.c, background: `${p.c}10`, padding: '1px 6px', borderRadius: 6 }}>{p.t}</span>))}</div>
             </button>
             {ev.b && (
               <button onClick={() => choose('b')} disabled={phase !== 'choose'} style={{ width: '100%', padding: '12px', background: `${T.lose}08`, border: `1.5px solid ${T.lose}30`, borderRadius: 8, cursor: 'pointer', textAlign: 'left' }}>
                 <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: T.lose }}>{ev.b.l}</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 4 }}>{previewEffects(ev.b).map((p, i) => (<span key={i} style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: p.c, background: `${p.c}10`, padding: '1px 6px', borderRadius: 6 }}>{p.t}</span>))}</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 4 }}>{previewEffects(ev.b).map((p, i) => (<span key={i} style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: p.c, background: `${p.c}10`, padding: '1px 6px', borderRadius: 6 }}>{p.t}</span>))}</div>
               </button>
             )}
           </div>

@@ -76,7 +76,7 @@ export function CareerCardScreen({ career, setCareer, setCareerScreen, applyBarE
           </div>
         </div>
       </div>
-      <div style={{ textAlign: 'center', padding: 6, fontFamily: "'Barlow Condensed'", fontSize: 10, color: '#455a64' }}>{c.cardQueue.length - 1} decisiones restantes</div>
+      <div style={{ textAlign: 'center', padding: 6, fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#455a64' }}>{c.cardQueue.length - 1} decisiones restantes</div>
     </div>
   );
 }
@@ -158,7 +158,7 @@ export function CareerMatchScreen({ career, setCareer, setCareerScreen, applyBar
           </div>
         </div>
       </div>
-      <div style={{ textAlign: 'center', padding: 6, fontFamily: "'Barlow Condensed'", fontSize: 10, color: '#455a64' }}>Decisión {cardIdx + 1}/{matchCards.length} · Rating: {Math.round(matchScore.rating * 10) / 10}</div>
+      <div style={{ textAlign: 'center', padding: 6, fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#455a64' }}>Decisión {cardIdx + 1}/{matchCards.length} · Rating: {Math.round(matchScore.rating * 10) / 10}</div>
     </div>
   );
 }
@@ -179,7 +179,7 @@ export function CareerSeasonEnd({ career, setCareer, setCareerScreen, applyAging
         {[{ l: 'Rating prom.', v: avgRating, c: avgRating >= 7 ? '#00e676' : '#ffd600' }, { l: 'Goles', v: c.seasonGoals, c: '#42a5f5' }, { l: 'Partidos', v: c.matchesThisSeason, c: '#fff' }].map((s, i) => (
           <div key={i} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 4, padding: '8px', textAlign: 'center' }}>
             <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 22, color: s.c }}>{s.v}</div>
-            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 9, color: '#607d8b' }}>{s.l}</div>
+            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#607d8b', letterSpacing: 0.5 }}>{s.l}</div>
           </div>
         ))}
       </div>
@@ -233,7 +233,7 @@ export function CareerEndScreen({ career, setCareer, setCareerScreen, go }) {
         {[{ l: 'Temporadas', v: c.season - 1, c: '#fff' }, { l: 'Goles', v: c.goals, c: '#42a5f5' }, { l: 'Rating prom.', v: avgRating, c: '#f0c040' }].map((s, i) => (
           <div key={i} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 4, padding: '6px', textAlign: 'center' }}>
             <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 18, color: s.c }}>{s.v}</div>
-            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 8, color: '#607d8b', textTransform: 'uppercase' }}>{s.l}</div>
+            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#607d8b', textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.l}</div>
           </div>
         ))}
       </div>

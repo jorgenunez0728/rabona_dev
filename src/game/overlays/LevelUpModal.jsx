@@ -8,9 +8,9 @@ export default function LevelUpModal() {
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.92)', zIndex: 200, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 16, backdropFilter: 'blur(6px)' }}>
-      <div style={{ background: 'linear-gradient(135deg,#141e3a,#1a2744)', borderRadius: 12, maxWidth: 340, width: '100%', border: `1px solid ${T.gold}30`, padding: 20 }}>
+      <div className="fw-bounceIn" style={{ background: 'linear-gradient(135deg,#141e3a,#1a2744)', borderRadius: 12, maxWidth: 340, width: '100%', border: `1px solid ${T.gold}30`, padding: 20 }}>
         <div style={{ textAlign: 'center', marginBottom: 12 }}>
-          <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 22, color: T.gold, textTransform: 'uppercase' }}>⬆ Subida de Nivel</div>
+          <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 16, color: T.gold, textTransform: 'uppercase', letterSpacing: 1 }}>⬆ Subida de Nivel</div>
           <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 14, color: T.tx, marginTop: 4 }}>{pendingLevelUp.player.name}</div>
           <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx3 }}>Nivel {pendingLevelUp.player.lv} → {pendingLevelUp.player.lv + 1} · Elige una mejora</div>
         </div>

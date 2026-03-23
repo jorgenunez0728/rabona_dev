@@ -42,11 +42,11 @@ export default function RosterScreen() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg }}>
       <div style={{ flexShrink: 0, padding: '8px 10px', background: T.bg, borderBottom: `1px solid ${T.border}` }}>
         <div style={{ display: 'flex', gap: 4, maxWidth: 420, margin: '4px auto 0', flexWrap: 'wrap' }}>
-          <button className="fw-btn fw-btn-outline" onClick={optimizeRoster} style={{ flex: 1, fontSize: 10, padding: '5px 8px', color: T.purple }}>⚡ Optimizar</button>
-          <button className="fw-btn fw-btn-outline" onClick={() => go('table')} style={{ fontSize: 10, padding: '5px 12px', color: T.tx2 }}>Tabla</button>
-          <button className={`fw-btn ${starters.length === 6 ? 'fw-btn-green' : 'fw-btn-outline'}`} onClick={() => starters.length === 6 && go('prematch')} disabled={starters.length < 6} style={{ fontSize: 10, padding: '5px 12px' }}>Previa</button>
+          <button className="fw-btn fw-btn-outline" onClick={optimizeRoster} style={{ flex: 1, fontSize: 11, padding: '5px 8px', color: T.purple }}>⚡ Optimizar</button>
+          <button className="fw-btn fw-btn-outline" onClick={() => go('table')} style={{ fontSize: 11, padding: '5px 12px', color: T.tx2 }}>Tabla</button>
+          <button className={`fw-btn ${starters.length === 6 ? 'fw-btn-green' : 'fw-btn-outline'}`} onClick={() => starters.length === 6 && go('prematch')} disabled={starters.length < 6} style={{ fontSize: 11, padding: '5px 12px' }}>Previa</button>
         </div>
-        {starters.length < 6 && <div style={{ fontSize: 10, color: T.lose, textAlign: 'center', marginTop: 3 }}>⚠ Necesitas 6 titulares ({starters.length}/6)</div>}
+        {starters.length < 6 && <div style={{ fontSize: 11, color: T.lose, textAlign: 'center', marginTop: 3 }}>⚠ Necesitas 6 titulares ({starters.length}/6)</div>}
       </div>
       <div style={{ flex: 1, overflow: 'auto', padding: '6px 10px 16px' }}>
         <div style={{ maxWidth: 420, margin: '0 auto' }}>
