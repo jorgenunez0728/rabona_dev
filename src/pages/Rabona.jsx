@@ -1,100 +1,44 @@
 import { useState, useEffect, useRef } from "react";
 import { SFX, Crowd } from "@/game/audio";
 import {
-  COACHES, ASCENSION_MODS, ACHIEVEMENTS, STADIUMS, LEAGUES, RIVAL_NAMES, RIVAL_COACHES,
-  NEMESIS, getNemesis, COPA_NAMES, initCopaState, CUTSCENES, EVENTS, TACTICS,
-  PN, POS_ORDER, POS_COLORS, T, CARD_TIERS, TRAINING_OPTIONS, PERSONALITIES,
-  MATCH_OBJECTIVES, BOARD_EVENTS, getBoardEvents, applyBoardEffect,
-  genPlayer, rnd, pick, calcOvr, effectiveStats, effectiveOvr,
+  COACHES, ASCENSION_MODS, STADIUMS, LEAGUES, RIVAL_NAMES, RIVAL_COACHES,
+  getNemesis, COPA_NAMES, CUTSCENES, TACTICS,
+  PN, POS_ORDER, POS_COLORS, T, TRAINING_OPTIONS, PERSONALITIES,
+  MATCH_OBJECTIVES, getBoardEvents, applyBoardEffect,
+  genPlayer, rnd, pick, calcOvr, effectiveOvr,
   avgStat, teamGKRating, teamPower, narrate, randomizeEvent,
   generateLivePosts, generateSocialPosts, getRivalKit, drawSprite,
-  LEGENDS, CAREER_CAST, CAREER_TEAMS, ALL_CAREER_CARDS, CAREER_CARDS_MIGUEL,
-  MATCH_CARDS, BAR_NAMES, BAR_ICONS, BAR_COLORS, CUP_RIVAL_NAMES, TRAITS,
-  FN, LN, _usedNames, FORMATIONS, RELICS, getLevelUpChoices, applyRelicEffects,
-  getRelicDraftOptions, STARTING_RELIC_PAIRS,
+  CAREER_CAST, ALL_CAREER_CARDS, CAREER_CARDS_MIGUEL,
+  MATCH_CARDS, TRAITS,
+  FORMATIONS, RELICS, getLevelUpChoices, applyRelicEffects,
+  getRelicDraftOptions, STARTING_RELIC_PAIRS, ACHIEVEMENTS,
 } from "@/game/data";
+import { saveGlobalStats } from "@/game/save";
 import {
-  saveGame, loadGame, saveGlobalStats, loadGlobalStats, deleteSave,
-} from "@/game/save";
-import {
-  CoachPortrait, NemesisPortrait, PosIcon, PlayerCard, PlayerDetailModal,
-  CareerBars, ParticleSystem,
+  CoachPortrait, PlayerCard, PlayerDetailModal,
+  ParticleSystem,
 } from "@/game/components";
 import { CareerCreateScreen, CareerCardScreen, CareerMatchScreen, CareerSeasonEnd, CareerEndScreen } from "@/game/CareerScreens";
+import useGameStore from "@/game/store";
 
 export default function Rabona() {
-  const [screen, setScreen] = useState('loading');
-  const [game, setGame] = useState({
-    coach: null, roster: [], league: 0, matchNum: 0,
-    table: [], captain: null, chemistry: 0, matchesTogether: 0, lastLineup: null, coins: 0,
-    rivalMemory: {}, streak: 0, currentObjectives: [], trainedIds: [],
-    formation: 'clasica', relics: [],
-    careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {} },
-  });
-  const [pendingLevelUp, setPendingLevelUp] = useState(null); // { player, choices }
-  const [match, setMatch] = useState({ ps: 0, rs: 0, minute: 0, speed: 2, running: false, rival: null, rivalPlayers: [], rivalCoach: null, ballX: .5, ballY: .5, possession: true, log: [], eventPopup: null });
-  const [rewards, setRewards] = useState({ options: [], selected: null, stolen: null, xpGain: 0 });
-  const [rewardsTab, setRewardsTab] = useState('summary');
-  const [market, setMarket] = useState({ players: [], open: false });
-  const [hasSave, setHasSave] = useState(false);
-  const [globalStats, setGlobalStats] = useState({ totalRuns: 0, bestLeague: 0, bestLeagueName: '—', totalMatches: 0, totalWins: 0, totalGoals: 0, totalConceded: 0, bestStreak: 0, totalCoins: 0, hallOfFame: [], ascensionLevel: 0, achievements: [], allTimeScorers: {} });
-  const [boardEvents, setBoardEvents] = useState([]);
-  const [boardEventIdx, setBoardEventIdx] = useState(0);
-  const [boardPhase, setBoardPhase] = useState('choose');
-  const [boardSlideDir, setBoardSlideDir] = useState(null);
-  const [boardResultData, setBoardResultData] = useState(null);
-  const [matchType, setMatchType] = useState('league');
-  const [detailPlayer, setDetailPlayer] = useState(null);
-  const [pendingLeague, setPendingLeague] = useState(null);
-  const [career, setCareer] = useState(null);
-  const [careerScreen, setCareerScreen] = useState('create');
-  const [transState, setTransState] = useState('in');
-  const [pendingRelicDraft, setPendingRelicDraft] = useState(null); // { options: [] }
+  // ─── Zustand store ───
+  const {
+    screen, setScreen, game, setGame, match, setMatch,
+    rewards, setRewards, rewardsTab, setRewardsTab,
+    market, setMarket, hasSave, globalStats, setGlobalStats,
+    boardEvents, setBoardEvents, boardEventIdx, setBoardEventIdx,
+    boardPhase, setBoardPhase, boardSlideDir, setBoardSlideDir,
+    boardResultData, setBoardResultData, matchType,
+    detailPlayer, setDetailPlayer, pendingLeague, setPendingLeague,
+    career, setCareer, careerScreen, setCareerScreen,
+    transState, pendingRelicDraft, setPendingRelicDraft,
+    pendingLevelUp, setPendingLevelUp,
+    go, navigateTo, autoSave, openMarket, handleDeleteSave,
+    checkAchievements, isCoachUnlocked, confirmStart, initFromStorage,
+  } = useGameStore();
 
-  function checkAchievements(gs) {
-    const newAchs = [...(gs.achievements || [])];
-    let changed = false;
-    ACHIEVEMENTS.forEach(a => { if (!newAchs.includes(a.id) && a.check(gs)) { newAchs.push(a.id); changed = true; } });
-    return changed ? { ...gs, achievements: newAchs } : gs;
-  }
-  function isCoachUnlocked(coach) { if (coach.unlocked) return true; if (coach.unlockCheck) return coach.unlockCheck(globalStats); return false; }
-
-  function navigateTo(newScreen) {
-    SFX.play('click');
-    setTransState('out');
-    setTimeout(() => { setScreen(newScreen); setTransState('in'); }, 180);
-  }
-  const go = (s) => s === 'match' ? (SFX.play('whistle'), setScreen(s)) : navigateTo(s);
-  function autoSave(gameState) { saveGame(gameState, 'table'); setHasSave(true); }
-
-  useEffect(() => {
-    const data = loadGame();
-    const gs = loadGlobalStats();
-    if (gs) setGlobalStats(gs);
-    if (data) { setGame(data.game); setHasSave(true); }
-    setScreen('title');
-  }, []);
-
-  function handleDeleteSave() { deleteSave(); setHasSave(false); }
-
-  function openMarket() {
-    const lg = LEAGUES[game.league];
-    const players = ['GK', 'DEF', 'MID', 'FWD'].map(pos => {
-      const p = genPlayer(pos, lg.lv[0], lg.lv[1]);
-      p.price = Math.floor(calcOvr(p) * 3 + rnd(5, 20) + (pos === 'GK' ? 5 : 0));
-      return p;
-    });
-    const hof = globalStats.hallOfFame || [];
-    if (hof.length > 0 && Math.random() < 0.15) {
-      const legend = pick(hof);
-      const lp = genPlayer(legend.pos || 'MID', lg.lv[0] + 1, lg.lv[1] + 2);
-      lp.name = '⭐ ' + legend.name; lp.atk = legend.atk || lp.atk; lp.def = legend.def || lp.def;
-      lp.legendary = true; lp.story = `Leyenda del run #${legend.run}.`;
-      lp.price = Math.floor(calcOvr(lp) * 4 + 30);
-      players.push(lp);
-    }
-    setMarket({ players, open: true }); go('market');
-  }
+  useEffect(() => { initFromStorage(); }, []);
 
   // Career helpers
   function initCareer(name, pos) {
@@ -195,41 +139,13 @@ export default function Rabona() {
 
     const [pendingCoach, setPendingCoach] = useState(null);
     const [startingRelicPair, setStartingRelicPair] = useState(null);
-    const [chosenStartRelic, setChosenStartRelic] = useState(null);
-
-    function confirmStart(coach, startRelic) {
-      _usedNames.clear();
-      const ascLevel = Math.min(selectedAsc, maxAsc);
-      const ascMods = ASCENSION_MODS[Math.min(ascLevel, ASCENSION_MODS.length - 1)].mods;
-      const isAlien = coach.fx === 'alien';
-      const starterPositions = isAlien ? ['DEF','DEF','DEF','MID','FWD','FWD','FWD'] : ['GK','DEF','DEF','MID','MID','FWD','FWD'];
-      const reservePositions = ['DEF','MID','FWD'];
-      let roster = [
-        ...starterPositions.map(p => { const pl = genPlayer(p, 1, 3); pl.role = 'st'; if (coach.fx === 'boost') pl.lv++; return pl; }),
-        ...reservePositions.map(p => { const pl = genPlayer(p, 1, 2); pl.role = 'rs'; return pl; }),
-      ];
-      const rns = RIVAL_NAMES[0];
-      const table = [{ name: 'Halcones', you: true, w: 0, d: 0, l: 0, gf: 0, ga: 0 }, ...rns.map(n => ({ name: n, you: false, w: 0, d: 0, l: 0, gf: 0, ga: 0 }))];
-      let startCoins = 50;
-      if (coach.fx === 'cheap') startCoins = 80;
-      if (isAlien) startCoins = 100;
-      if (ascMods.includes('poor_start')) startCoins = Math.max(10, startCoins - 20);
-      // Apply starting relic effects
-      const startRelics = startRelic ? [startRelic.id] : [];
-      if (startRelic?.fx === 'cursed_start') {
-        startCoins = Math.max(0, startCoins - 10);
-        roster = roster.map(p => p.role === 'st' ? { ...p, atk: p.atk + startRelic.val, def: p.def + startRelic.val, spd: p.spd + startRelic.val } : p);
-      }
-      if (startRelic?.fx === 'cursed_steal') startCoins += startRelic.val;
-      const newG = { ...game, roster, captain: roster[0].id, table, league: 0, matchNum: 0, coins: startCoins, coach, ascension: ascLevel, formation: 'clasica', relics: startRelics, careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {} }, rivalMemory: {}, streak: 0, trainedIds: [] };
-      setGame(newG); autoSave(newG); setHasSave(true); go('table');
-    }
+    const [_chosenStartRelic, _setChosenStartRelic] = useState(null);
 
     function startRun(coach) {
       const pair = STARTING_RELIC_PAIRS[Math.floor(Math.random() * STARTING_RELIC_PAIRS.length)];
       setPendingCoach(coach);
       setStartingRelicPair(pair);
-      setChosenStartRelic(null);
+      _setChosenStartRelic(null);
     }
 
     return (
@@ -283,7 +199,7 @@ export default function Rabona() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {startingRelicPair.map((relic, i) => relic ? (
-                  <div key={i} onClick={() => { SFX.play('reward'); const c = pendingCoach; setStartingRelicPair(null); setPendingCoach(null); confirmStart(c, relic); }} style={{ background: `${T.gold}08`, border: `1.5px solid ${T.gold}30`, borderRadius: 10, padding: '14px 16px', cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center' }}>
+                  <div key={i} onClick={() => { SFX.play('reward'); const c = pendingCoach; setStartingRelicPair(null); setPendingCoach(null); confirmStart(c, relic, selectedAsc); }} style={{ background: `${T.gold}08`, border: `1.5px solid ${T.gold}30`, borderRadius: 10, padding: '14px 16px', cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center' }}>
                     <div style={{ fontSize: 32, minWidth: 40, textAlign: 'center' }}>{relic.i}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 16, color: T.gold, textTransform: 'uppercase' }}>{relic.n}</div>
@@ -291,7 +207,7 @@ export default function Rabona() {
                     </div>
                   </div>
                 ) : null)}
-                <button onClick={() => { SFX.play('click'); const c = pendingCoach; setStartingRelicPair(null); setPendingCoach(null); confirmStart(c, null); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, padding: '10px', border: `1px solid ${T.tx3}`, background: 'transparent', color: T.tx2, borderRadius: 8, cursor: 'pointer', marginTop: 4 }}>Sin reliquia →</button>
+                <button onClick={() => { SFX.play('click'); const c = pendingCoach; setStartingRelicPair(null); setPendingCoach(null); confirmStart(c, null, selectedAsc); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, padding: '10px', border: `1px solid ${T.tx3}`, background: 'transparent', color: T.tx2, borderRadius: 8, cursor: 'pointer', marginTop: 4 }}>Sin reliquia →</button>
               </div>
             </div>
           </div>
