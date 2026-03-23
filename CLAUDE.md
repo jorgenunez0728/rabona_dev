@@ -9,7 +9,7 @@ where you manage a team through seasons, training, transfers, and matches.
 npm install
 npm run dev      # Dev server
 npm run build    # Production build
-npm test         # Run 60 tests
+npm test         # Run 116 tests
 npm run lint     # ESLint
 ```
 
@@ -35,6 +35,19 @@ src/
 │   │   ├── visuals.js       # Sprites, colors, social media generators
 │   │   └── career.js        # Career mode constants, card definitions
 │   │
+│   ├── engine/              # Match simulation engine (pure, no React)
+│   │   ├── index.js         # Public API re-exports
+│   │   ├── matchEngine.js   # Generator-based match simulator
+│   │   ├── momentum.js      # Momentum system [-100, +100]
+│   │   ├── possession.js    # Zone-based possession (defense/midfield/attack)
+│   │   ├── chances.js       # Chance generation & goal resolution
+│   │   ├── tactics.js       # Play styles, intensities, formation matchups
+│   │   ├── rivalAI.js       # Adaptive rival strategy state machine
+│   │   ├── matchStats.js    # Stats tracking + Man of the Match
+│   │   ├── substitutions.js # Substitution system with in-match fatigue
+│   │   ├── narration.js     # Contextual match narration
+│   │   └── utils.js         # Shared helpers (re-exports from data/)
+│   │
 │   ├── screens/             # Game screens (one per file)
 │   │   ├── TitleScreen.jsx
 │   │   ├── RosterScreen.jsx
@@ -59,7 +72,8 @@ src/
 │   └── __tests__/           # Test files
 │       ├── helpers.test.js  # 24 tests - utility functions
 │       ├── save.test.js     # 25 tests - save/load + checksum integrity
-│       └── careerLogic.test.js  # 11 tests - career progression
+│       ├── careerLogic.test.js  # 11 tests - career progression
+│       └── engine.test.js   # 56 tests - match engine (all modules)
 │
 ├── components/ui/           # Radix-based UI primitives (shadcn/ui)
 ├── lib/                     # App utilities (cn, query client)
@@ -82,6 +96,25 @@ src/
 - Auto-save on phase transitions
 - `save.js` exports: `saveGame()`, `loadGame()`, `deleteSave()`, `hasSave()`
 
+### Match Engine
+- **Generator pattern** (`engine/matchEngine.js`): `simulateMatch(config)` yields
+  event descriptors (goals, chances, tactical prompts, penalties). The engine never
+  touches the DOM or plays sounds — it returns events for the UI to interpret.
+- **Rabona.jsx** `runEngineLoop()` consumes the generator, plays SFX, updates canvas,
+  and passes user choices back via `engine.next(choice)`.
+- **Momentum** (`momentum.js`): Float value [-100, +100] with decay, goal surges,
+  halftime reset. Affects goal chance (±3%) and possession (±5%).
+- **Zone possession** (`possession.js`): Defense/midfield/attack zones with
+  position-aware stat calculations and counter-attack mechanics.
+- **Rival AI** (`rivalAI.js`): 5 strategies that adapt based on score, minute,
+  and league level.
+- **6 formations** in `items.js`: Muro, Clásica, Diamante, Blitz, Tridente, Cadena.
+  Formation matchup table in `tactics.js`.
+- Import engine modules directly:
+```js
+import { simulateMatch, PLAY_STYLES } from './engine';
+```
+
 ### Game Flow
 ```
 TitleScreen → TutorialScreen → RosterScreen → TrainingScreen
@@ -101,7 +134,7 @@ import { generatePlayer } from './data/players.js';
 ## Testing
 
 ```bash
-npm test              # Run all 60 tests
+npm test              # Run all 116 tests
 npm run test:watch    # Watch mode
 ```
 
@@ -109,6 +142,7 @@ Tests cover:
 - `helpers.js` - Random utilities, formatting, clamping
 - `save.js` - Compression, checksum validation, migration, error handling
 - `careerLogic.js` - Career card selection, season progression
+- `engine.js` - Momentum, possession, chances, tactics, rival AI, stats, substitutions, match integration
 
 ## Key Dependencies
 
@@ -128,6 +162,10 @@ Tests cover:
 
 - `data.js` in game root re-exports everything from `data/` modules for
   backward compatibility. New code should import from specific modules.
+- `engine/` modules are pure functions — no React, no DOM. Import from
+  `engine/index.js`. The engine uses a generator pattern (`function*`).
+- `items.js` has 6 formations (Muro, Clásica, Diamante, Blitz, Tridente,
+  Cadena) and includes the `pizarron` relic for extra substitutions.
 - The game runs entirely client-side. No backend required.
 - `@base44/sdk` and `@base44/vite-plugin` are platform dependencies.
 - Build output goes to `dist/`.
