@@ -1255,23 +1255,34 @@ export default function Rabona() {
         {/* Penalty Mini-Game */}
         {display.pendingPenalty && (() => {
           const pk = display.pendingPenalty;
+          const isSave = pk.mode === 'save';
+          const resultLabel = isSave
+            ? (pk.result ? '❌ ¡GOL EN CONTRA!' : '🧤 ¡¡ATAJADA!!')
+            : (pk.result ? '⚽ ¡¡GOOOL!!' : '❌ ¡ATAJADO!');
+          const resultColor = isSave ? (pk.result ? '#ff1744' : '#f0c040') : (pk.result ? '#f0c040' : '#ff1744');
           return (
             <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.92)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 55, padding: 16 }}>
-              <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 28, color: '#f0c040', textTransform: 'uppercase', textAlign: 'center', marginBottom: 4 }}>‼ PENAL</div>
+              <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 24, color: isSave ? '#ef5350' : '#f0c040', textTransform: 'uppercase', textAlign: 'center', marginBottom: 4 }}>
+                {isSave ? '‼ PENAL EN CONTRA' : '‼ PENAL A FAVOR'}
+              </div>
               <div style={{ width: '100%', maxWidth: 280, height: 90, position: 'relative', marginBottom: 16 }}>
                 <div style={{ position: 'absolute', top: 0, left: '10%', width: '80%', height: '100%', background: 'rgba(255,255,255,0.03)', border: '3px solid #fff', borderBottom: 'none', borderRadius: '4px 4px 0 0' }}>
-                  {pk.phase === 'result' && pk.shootDir && (<div style={{ position: 'absolute', top: pk.result ? '15%' : '30%', left: pk.shootDir === 'left' ? '15%' : pk.shootDir === 'right' ? '60%' : '40%', fontSize: 20, opacity: pk.result ? 1 : 0.5 }}>⚽</div>)}
+                  {pk.phase === 'result' && pk.shootDir && (
+                    <div style={{ position: 'absolute', top: isSave ? (pk.result ? '30%' : '15%') : (pk.result ? '15%' : '30%'), left: pk.shootDir === 'left' ? '15%' : pk.shootDir === 'right' ? '60%' : '40%', fontSize: 20, opacity: 0.9 }}>⚽</div>
+                  )}
                   <div style={{ position: 'absolute', bottom: 4, left: pk.phase === 'result' ? (pk.keeperDir === 'left' ? '5%' : pk.keeperDir === 'right' ? '60%' : '35%') : '35%', fontSize: 22, transition: 'left 0.3s' }}>🧤</div>
                 </div>
                 <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: 4, background: '#2d7018' }} />
               </div>
               {pk.phase === 'aim' ? (
                 <div style={{ width: '100%', maxWidth: 280 }}>
-                  <div style={{ fontFamily: "'Barlow'", fontSize: 13, color: '#e8eaf6', textAlign: 'center', marginBottom: 8 }}>¿A dónde disparas?</div>
+                  <div style={{ fontFamily: "'Barlow'", fontSize: 13, color: '#e8eaf6', textAlign: 'center', marginBottom: 8 }}>
+                    {isSave ? '¿A qué lado te tiras?' : '¿A dónde disparas?'}
+                  </div>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {['left', 'center', 'right'].map(d => (
-                      <button key={d} onClick={() => handlePenaltyShoot(d)} style={{ flex: 1, padding: '12px 6px', background: 'rgba(20,30,58,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                        <div style={{ fontSize: 20 }}>{d === 'left' ? '↙' : d === 'center' ? '⬆' : '↘'}</div>
+                      <button key={d} onClick={() => handlePenaltyShoot(d)} style={{ flex: 1, padding: '12px 6px', background: isSave ? 'rgba(40,10,10,0.95)' : 'rgba(20,30,58,0.95)', border: `1px solid ${isSave ? 'rgba(255,50,50,0.2)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 6, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                        <div style={{ fontSize: 20 }}>{isSave ? (d === 'left' ? '↖' : d === 'center' ? '⬆' : '↗') : (d === 'left' ? '↙' : d === 'center' ? '⬆' : '↘')}</div>
                         <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 10, color: '#fff', textTransform: 'uppercase' }}>{d === 'left' ? 'Izq' : d === 'center' ? 'Centro' : 'Der'}</div>
                       </button>
                     ))}
@@ -1279,7 +1290,7 @@ export default function Rabona() {
                 </div>
               ) : (
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 40, color: pk.result ? '#f0c040' : '#ff1744', textTransform: 'uppercase' }}>{pk.result ? '⚽ ¡¡GOOOL!!' : '❌ ¡ATAJADO!'}</div>
+                  <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 36, color: resultColor, textTransform: 'uppercase' }}>{resultLabel}</div>
                 </div>
               )}
             </div>
