@@ -685,6 +685,27 @@ export default function Rabona() {
         <div style={{ background: T.bg1, padding: '8px 16px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: st.c, textTransform: 'uppercase' }}>{st.n}</div>
         </div>
+        {/* Formation Selector */}
+        <div style={{ padding: '8px 12px', background: T.bg1, borderBottom: `1px solid ${T.border}` }}>
+          <div style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 5 }}>Formación</div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {FORMATIONS.map(f => {
+              const active = game.formation === f.id;
+              return (
+                <div key={f.id} onClick={() => setGame(g => ({ ...g, formation: f.id }))} style={{ flex: 1, padding: '6px 4px', background: active ? `${T.info}15` : T.bg2, border: `1px solid ${active ? T.info + '60' : T.border}`, borderRadius: 5, cursor: 'pointer', textAlign: 'center' }}>
+                  <div style={{ fontSize: 14 }}>{f.i}</div>
+                  <div style={{ fontFamily: "'Oswald'", fontSize: 8, color: active ? T.info : T.tx3, textTransform: 'uppercase', marginTop: 1, lineHeight: 1.2 }}>{f.n.split('(')[1]?.replace(')','') || f.id}</div>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: 2, marginTop: 3, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 7, color: f.mods.atkMult > 1 ? T.win : f.mods.atkMult < 1 ? T.lose : T.tx3 }}>ATK {f.mods.atkMult > 1 ? '▲' : f.mods.atkMult < 1 ? '▼' : '—'}</span>
+                    <span style={{ fontSize: 7, color: f.mods.defMult > 1 ? T.win : f.mods.defMult < 1 ? T.lose : T.tx3 }}>DEF {f.mods.defMult > 1 ? '▲' : f.mods.defMult < 1 ? '▼' : '—'}</span>
+                    <span style={{ fontSize: 7, color: f.mods.spdMult > 1 ? T.win : f.mods.spdMult < 1 ? T.lose : T.tx3 }}>VEL {f.mods.spdMult > 1 ? '▲' : f.mods.spdMult < 1 ? '▼' : '—'}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {currentFormation && <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: T.tx2, marginTop: 4, textAlign: 'center' }}>{currentFormation.desc}</div>}
+        </div>
         {injuredStarters.length > 0 && <div style={{ padding: '10px 14px', background: 'rgba(248,81,73,0.06)', borderBottom: `1px solid rgba(248,81,73,0.15)` }}><div style={{ fontSize: 14, color: T.lose, fontFamily: "'Oswald'", fontWeight: 600 }}>🏥 {injuredStarters.length} LESIONADO(S) — ¡no pueden jugar!</div></div>}
         <div style={{ display: 'flex', gap: 3, padding: 8, flex: 1 }}>
           {[{ t: '🔵 Halcones', p: starters, c: game.coach, h: true }, { t: `🔴 ${rivalName}`, p: rpRef.current, c: rcRef.current, h: false }].map((team, ti) => (
