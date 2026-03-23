@@ -965,17 +965,50 @@ export default function Rabona() {
         return newState;
       });
 
-      // Rewards
+      // Rewards — Level-up with choice (deferred), relic, recruit
       const rwOptions = [];
-      const lu = allRoster.filter(p => p.lv < 20);
-      if (lu.length) { const t = pick(lu); rwOptions.push({ title: '⬆ Subir Nivel', desc: `${t.name} Lv${t.lv}→${t.lv + 1}`, detail: `⚔+2 🛡+2 ⚡+1`, fn: () => { t.lv++; t.atk += 2; t.def += 2; t.spd += 1; } }); }
+
+      // Level up with CHOICE — find eligible players
+      const levelUpPlayers = allRoster.filter(p => p.xp >= (p.xpNext || 20) && p.lv < 20);
+      if (levelUpPlayers.length > 0) {
+        const t = levelUpPlayers[0];
+        const choices = getLevelUpChoices(t);
+        rwOptions.push({
+          title: `⬆ ${t.name} sube de nivel`,
+          desc: `Nivel ${t.lv} → ${t.lv + 1} · Elige mejora`,
+          detail: choices.map(c => c.d).join(' / '),
+          isLevelUp: true,
+          player: t,
+          choices,
+          fn: () => { setPendingLevelUp({ player: t, choices }); },
+        });
+      }
+
+      // Relic reward (if won/drew and has < 3 relics)
+      const currentRelics = game.relics || [];
+      if ((won || drew) && currentRelics.length < 3) {
+        const available = RELICS.filter(r => !currentRelics.includes(r.id));
+        if (available.length >= 2) {
+          const relic = pick(available);
+          rwOptions.push({
+            title: `${relic.i} ${relic.n}`,
+            desc: relic.d,
+            detail: `Reliquia · ${relic.rarity}`,
+            fn: () => { setGame(g => ({ ...g, relics: [...(g.relics||[]), relic.id] })); },
+          });
+        }
+      }
+
+      // Evolve
       if ((won || drew) && allRoster.some(p => p.lv >= 5 && !p.evo)) {
         const evs = allRoster.filter(p => p.lv >= 5 && !p.evo);
         const t = pick(evs); const nt = pick(TRAITS);
         rwOptions.push({ title: '🌟 Evolucionar', desc: `${t.name} → +${nt.n}`, detail: `${nt.d} + ⚔+3 🛡+3 ⚡+2`, fn: () => { t.evo = true; t.trait = { n: t.trait.n + '+' + nt.n, d: t.trait.d + '|' + nt.d, fx: t.trait.fx }; t.atk += 3; t.def += 3; t.spd += 2; } });
       }
-      if (won && allRoster.length < 12) { const r = pick(S.rivalPlayers); rwOptions.push({ title: '🔄 Reclutar', desc: `${r.name} (${PN[r.pos]} OVR${calcOvr(r)})`, detail: `⚔${r.atk} 🛡${r.def} ⚡${r.spd}`, fn: () => { r.role = 'rs'; setGame(g => ({ ...g, roster: [...g.roster, r] })); } }); }
-      else if (allRoster.length < 12) { const lg2 = LEAGUES[game.league]; const fa = genPlayer(pick(['GK', 'DEF', 'MID', 'FWD']), lg2.lv[0], lg2.lv[0] + 2); rwOptions.push({ title: '🆕 Agente Libre', desc: `${fa.name} (${PN[fa.pos]} OVR${calcOvr(fa)})`, detail: `⚔${fa.atk} 🛡${fa.def} ⚡${fa.spd}`, fn: () => { fa.role = 'rs'; setGame(g => ({ ...g, roster: [...g.roster, fa] })); } }); }
+
+      // Recruit / free agent
+      if (won && allRoster.length < 14) { const r = pick(S.rivalPlayers); rwOptions.push({ title: '🔄 Reclutar', desc: `${r.name} (${PN[r.pos]} OVR${calcOvr(r)})`, detail: `⚔${r.atk} 🛡${r.def} ⚡${r.spd}`, fn: () => { r.role = 'rs'; setGame(g => ({ ...g, roster: [...g.roster, r] })); } }); }
+      else if (allRoster.length < 14) { const lg2 = LEAGUES[game.league]; const fa = genPlayer(pick(['GK', 'DEF', 'MID', 'FWD']), lg2.lv[0], lg2.lv[0] + 2); rwOptions.push({ title: '🆕 Agente Libre', desc: `${fa.name} (${PN[fa.pos]} OVR${calcOvr(fa)})`, detail: `⚔${fa.atk} 🛡${fa.def} ⚡${fa.spd}`, fn: () => { fa.role = 'rs'; setGame(g => ({ ...g, roster: [...g.roster, fa] })); } }); }
 
       let stolen = null;
       if (lost) { const stealable = allRoster.filter(p => p.id !== game.captain && p.role === 'st'); if (stealable.length) { stolen = pick(stealable); setGame(g => ({ ...g, roster: g.roster.filter(p => p.id !== stolen.id) })); } }
