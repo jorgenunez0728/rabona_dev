@@ -984,8 +984,15 @@ export default function Rabona() {
       // Rewards — Level-up with choice (deferred), relic, recruit
       const rwOptions = [];
 
-      // Level up with CHOICE — find eligible players
-      const levelUpPlayers = allRoster.filter(p => p.xp >= (p.xpNext || 20) && p.lv < 20);
+      // Level up with CHOICE — use post-XP roster from setGame snapshot
+      // We need to read the updated roster, so defer via a small timeout after setGame settles
+      // For now, detect from allRoster (pre-setGame XP add) — will trigger if xp+xpGain >= xpNext
+      const levelUpPlayers = allRoster
+        .filter(p => p.role === 'st' && p.lv < 20)
+        .filter(p => {
+          const gainedXp = p.trait?.fx === 'xp' ? Math.floor(xpGain * 1.5) : xpGain;
+          return (p.xp + gainedXp) >= (p.xpNext || 20);
+        });
       if (levelUpPlayers.length > 0) {
         const t = levelUpPlayers[0];
         const choices = getLevelUpChoices(t);
