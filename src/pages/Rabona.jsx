@@ -194,15 +194,17 @@ export default function Rabona() {
     const [selectedCoach, setSelectedCoach] = useState(null);
     const [selectedAsc, setSelectedAsc] = useState(maxAsc);
 
-    function startRun(coach) {
+    const [startingRelicPair, setStartingRelicPair] = useState(null);
+    const [chosenStartRelic, setChosenStartRelic] = useState(null);
+
+    function confirmStart(coach, startRelic) {
       _usedNames.clear();
       const ascLevel = Math.min(selectedAsc, maxAsc);
       const ascMods = ASCENSION_MODS[Math.min(ascLevel, ASCENSION_MODS.length - 1)].mods;
       const isAlien = coach.fx === 'alien';
-      // Fut 7: 7 starters (GK + 6), 3 reserves = 10 total
       const starterPositions = isAlien ? ['DEF','DEF','DEF','MID','FWD','FWD','FWD'] : ['GK','DEF','DEF','MID','MID','FWD','FWD'];
       const reservePositions = ['DEF','MID','FWD'];
-      const roster = [
+      let roster = [
         ...starterPositions.map(p => { const pl = genPlayer(p, 1, 3); pl.role = 'st'; if (coach.fx === 'boost') pl.lv++; return pl; }),
         ...reservePositions.map(p => { const pl = genPlayer(p, 1, 2); pl.role = 'rs'; return pl; }),
       ];
@@ -212,8 +214,22 @@ export default function Rabona() {
       if (coach.fx === 'cheap') startCoins = 80;
       if (isAlien) startCoins = 100;
       if (ascMods.includes('poor_start')) startCoins = Math.max(10, startCoins - 20);
-      const newG = { ...game, roster, captain: roster[0].id, table, league: 0, matchNum: 0, coins: startCoins, coach, ascension: ascLevel, formation: 'clasica', relics: [], careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {} }, rivalMemory: {}, streak: 0, trainedIds: [] };
+      // Apply starting relic effects
+      const startRelics = startRelic ? [startRelic.id] : [];
+      if (startRelic?.fx === 'cursed_start') {
+        startCoins = Math.max(0, startCoins - 10);
+        roster = roster.map(p => p.role === 'st' ? { ...p, atk: p.atk + startRelic.val, def: p.def + startRelic.val, spd: p.spd + startRelic.val } : p);
+      }
+      if (startRelic?.fx === 'cursed_steal') startCoins += startRelic.val;
+      const newG = { ...game, roster, captain: roster[0].id, table, league: 0, matchNum: 0, coins: startCoins, coach, ascension: ascLevel, formation: 'clasica', relics: startRelics, careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {} }, rivalMemory: {}, streak: 0, trainedIds: [] };
       setGame(newG); autoSave(newG); setHasSave(true); go('table');
+    }
+
+    function startRun(coach) {
+      // Show starting relic choice
+      const pair = STARTING_RELIC_PAIRS[Math.floor(Math.random() * STARTING_RELIC_PAIRS.length)];
+      setStartingRelicPair(pair);
+      setChosenStartRelic(null);
     }
 
     return (
