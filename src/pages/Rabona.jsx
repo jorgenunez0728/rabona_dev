@@ -298,7 +298,7 @@ export default function Rabona() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 420, margin: '6px auto 0' }}>
-            <button onClick={() => go('roster')} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, padding: '7px 14px', border: `1.5px solid ${starters.length < 5 ? T.lose : T.tx3}`, background: starters.length < 5 ? `${T.lose}10` : 'transparent', color: starters.length < 5 ? T.lose : T.tx, borderRadius: 4, cursor: 'pointer', textTransform: 'uppercase' }}>{starters.length < 5 ? '⚠ ' : ''}Roster</button>
+            <button onClick={() => go('roster')} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, padding: '7px 14px', border: `1.5px solid ${starters.length < 6 ? T.lose : T.tx3}`, background: starters.length < 6 ? `${T.lose}10` : 'transparent', color: starters.length < 6 ? T.lose : T.tx, borderRadius: 4, cursor: 'pointer', textTransform: 'uppercase' }}>{starters.length < 6 ? '⚠ ' : ''}Roster</button>
             <button onClick={() => go('training')} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, padding: '7px 14px', border: `1.5px solid ${T.win}`, background: `${T.win}0F`, color: T.win, borderRadius: 4, cursor: 'pointer', textTransform: 'uppercase' }}>🏋️ Entrenar</button>
             <button onClick={openMarket} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, padding: '7px 14px', border: `1.5px solid ${T.gold}`, background: `${T.gold}0F`, color: T.gold, borderRadius: 4, cursor: 'pointer', textTransform: 'uppercase' }}>🏪 Mercado</button>
             <button onClick={() => {
