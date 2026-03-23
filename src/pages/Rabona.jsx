@@ -1049,17 +1049,18 @@ export default function Rabona() {
         });
       }
 
-      // Relic reward (if won/drew and has < 3 relics)
+      // Relic draft (if won/drew and has < 4 relics) — show 1-of-3 picker after rewards
       const currentRelics = game.relics || [];
-      if ((won || drew) && currentRelics.length < 3) {
-        const available = RELICS.filter(r => !currentRelics.includes(r.id));
-        if (available.length >= 2) {
-          const relic = pick(available);
+      const isEliteMatch = selectedNode?.id === 'elite';
+      if ((won || (drew && isEliteMatch)) && currentRelics.length < 4) {
+        const draftOptions = getRelicDraftOptions(currentRelics, 3);
+        if (draftOptions.length > 0) {
           rwOptions.push({
-            title: `${relic.i} ${relic.n}`,
-            desc: relic.d,
-            detail: `Reliquia · ${relic.rarity}`,
-            fn: () => { setGame(g => ({ ...g, relics: [...(g.relics||[]), relic.id] })); },
+            title: `📿 Elegir Reliquia`,
+            desc: `Elige 1 de ${draftOptions.length} reliquias — ${won ? 'recompensa por victoria' : 'recompensa élite'}`,
+            detail: draftOptions.map(r => `${r.i} ${r.n}`).join(' / '),
+            isRelicDraft: true,
+            fn: () => { setPendingRelicDraft({ options: draftOptions }); },
           });
         }
       }
