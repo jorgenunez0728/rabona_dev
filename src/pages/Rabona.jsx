@@ -379,7 +379,7 @@ export default function Rabona() {
         const roster = g.roster.map(p => ({ ...p }));
         const p = roster.find(x => x.id === player.id);
         if (!p) return g;
-        if (action === 'promote' && roster.filter(x => x.role === 'st').length < 5) p.role = 'st';
+        if (action === 'promote' && roster.filter(x => x.role === 'st').length < 6) p.role = 'st';
         else if (action === 'demote') { p.role = 'rs'; p.tempGK = false; }
         else if (action === 'captain') return { ...g, captain: player.id, roster };
         else if (action === 'tempGK') { roster.forEach(x => { if (x.id !== player.id) x.tempGK = false; }); p.tempGK = !p.tempGK; }
