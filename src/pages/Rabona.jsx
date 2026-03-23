@@ -328,13 +328,9 @@ export default function Rabona() {
                 if (myPos < 2) { const nL = game.league + 1; if (nL >= LEAGUES.length) { go('champion'); return; } setPendingLeague(nL); go('ascension'); }
                 else go('death');
               } else {
-                // Show node choice (StS-style path selection) every match
-                const nodes = generateNodeChoice();
-                setPendingNodeChoice({ nodes });
-                setSelectedNode(null);
                 const evs = getBoardEvents(game);
                 if (evs.length > 0) { setBoardEvents(evs); setBoardEventIdx(0); setBoardPhase('choose'); setBoardResultData(null); go('boardEvent'); }
-                else go('nodeChoice');
+                else go('prematch');
               }
             }} style={{
               fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, padding: '8px 20px', border: 'none',
