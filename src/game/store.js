@@ -327,6 +327,57 @@ const useGameStore = create((set, get) => ({
   },
 
   // ─── Start new run ───
+  // ─── Debug actions ───
+  debugStartAtLeague: (leagueIdx) => {
+    const { autoSave } = get();
+    _usedNames.clear();
+    const league = LEAGUES[leagueIdx] || LEAGUES[0];
+    const [minLv, maxLv] = league.lv;
+    const coach = COACHES[0]; // Don Miguel
+    const starterPositions = ['GK','DEF','DEF','MID','MID','FWD','FWD'];
+    const reservePositions = ['DEF','MID','FWD'];
+    const roster = [
+      ...starterPositions.map(p => { const pl = genPlayer(p, minLv, maxLv); pl.role = 'st'; return pl; }),
+      ...reservePositions.map(p => { const pl = genPlayer(p, minLv, Math.max(1, maxLv - 1)); pl.role = 'rs'; return pl; }),
+    ];
+    const rns = RIVAL_NAMES[leagueIdx] || RIVAL_NAMES[0];
+    const table = [
+      { name: 'Halcones', you: true, w: 0, d: 0, l: 0, gf: 0, ga: 0 },
+      ...rns.map(n => ({ name: n, you: false, w: 0, d: 0, l: 0, gf: 0, ga: 0 })),
+    ];
+    const newG = {
+      ...INITIAL_GAME, roster, captain: roster[0].id, table, league: leagueIdx, matchNum: 0,
+      coins: 500, coach, ascension: 0, formation: 'clasica', relics: [],
+      chemistry: 10, curses: [], coachAbility: COACH_ABILITIES[coach.id] || COACH_ABILITIES.miguel,
+      careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {} },
+      rivalMemory: {}, streak: 0, trainedIds: [],
+      archetype: null, cardLoadout: [], cardCooldowns: {}, activeMutators: [], blessings: [], matchBet: 0,
+    };
+    set({ game: newG, hasSave: true });
+    autoSave(newG);
+    get().go('table');
+  },
+  debugAddCoins: (amount) => {
+    const { game, autoSave } = get();
+    const newG = { ...game, coins: (game.coins || 0) + amount };
+    set({ game: newG });
+    autoSave(newG);
+  },
+  debugUnlockAllLegacy: () => {
+    const { globalStats } = get();
+    const allIds = Object.keys(LEGACY_TREE);
+    const newGs = { ...globalStats, legacyUnlocks: allIds };
+    set({ globalStats: newGs });
+    saveGlobalStats(newGs);
+  },
+  debugMaxAscension: () => {
+    const { globalStats } = get();
+    const newGs = { ...globalStats, ascensionLevel: 6 };
+    set({ globalStats: newGs });
+    saveGlobalStats(newGs);
+  },
+
+  // ─── Start new run ───
   confirmStart: (coach, startRelic, selectedAsc, { archetype: archetypeId, cardLoadout, activeMutators } = {}) => {
     const { game, globalStats, autoSave } = get();
     const maxAsc = globalStats.ascensionLevel || 0;
