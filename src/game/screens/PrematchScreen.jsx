@@ -57,7 +57,7 @@ export default function PrematchScreen() {
         {isCopaMatch && <div style={{ fontSize: 12, color: '#fff', marginTop: 4, background: 'rgba(255,0,0,0.3)', padding: '3px 10px', borderRadius: 4, fontWeight: 700 }}>💀 PERDER = FIN DE LA CARRERA</div>}
       </div>
       {getStadiumFront(game.league) ? (
-        <div style={{ position: 'relative', overflow: 'hidden', maxHeight: 140 }}>
+        <div style={{ position: 'relative', overflow: 'hidden', maxHeight: 140, background: '#0a1628' }}>
           <img src={getStadiumFront(game.league)} alt={st.n} style={{ width: '100%', display: 'block', objectFit: 'cover', objectPosition: 'top' }} />
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.85))', padding: '16px 16px 6px' }}>
             <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: st.c, textTransform: 'uppercase', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{st.n}</div>
