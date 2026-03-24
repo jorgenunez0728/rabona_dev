@@ -88,7 +88,7 @@ export default function DeathScreen() {
                   }}>
                     <div style={{ minWidth: 32, textAlign: 'center' }}>
                       <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 18, color: T.gold }}>{ovr}</div>
-                      <div style={{ fontFamily: "'Oswald'", fontSize: 9, color: POS_COLORS[p.pos] || T.tx2 }}>{PN[p.pos] || p.pos}</div>
+                      <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: POS_COLORS[p.pos] || T.tx2 }}>{PN[p.pos] || p.pos}</div>
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontFamily: "'Barlow Condensed'", fontWeight: 600, fontSize: 13, color: T.tx }}>{p.name}</div>
