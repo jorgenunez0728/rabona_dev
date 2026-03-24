@@ -28,6 +28,13 @@ import { applyRelicEffects } from '../data/helpers.js';
     const finalResult = result.value;  // { result, stats }
 */
 
+function pickInvolvedPlayer(players, zone) {
+  const posMap = { defense: ['GK', 'DEF'], midfield: ['MID', 'DEF'], attack: ['FWD', 'MID'] };
+  const preferred = posMap[zone] || ['MID'];
+  const candidates = players.filter(p => preferred.includes(p.pos));
+  return candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : players[0];
+}
+
 export function* simulateMatch(config) {
   const {
     starters,
@@ -308,11 +315,35 @@ export function* simulateMatch(config) {
 
       recordShot(stats, team, result.isOnTarget);
 
+      // Pick scorer/assister early so they can be referenced in the sequence
+      const scorer = isHomeAttacking ? pickScorer(activePlayers, chanceType, formMods) : pickScorer(away.players, chanceType);
+      const assister = isHomeAttacking ? pickAssister(activePlayers, scorer, chanceType, formMods) : pickAssister(away.players, scorer, chanceType);
+
+      // Phase 1: Approach
+      yield {
+        type: 'chance_approach',
+        minute,
+        team,
+        chanceType: chanceType.id,
+        ballX: 0.3 + Math.random() * 0.4,
+        ballY: isHomeAttacking ? 0.25 : 0.75,
+        involvedPlayer: assister,
+      };
+
+      // Phase 2: Shot
+      yield {
+        type: 'chance_shot',
+        minute,
+        team,
+        chanceType: chanceType.id,
+        ballX: 0.4 + Math.random() * 0.2,
+        ballY: isHomeAttacking ? 0.1 : 0.9,
+        involvedPlayer: scorer,
+      };
+
       if (result.isGoal) {
         if (isHomeAttacking) {
           homeScore++;
-          const scorer = pickScorer(activePlayers, chanceType, formMods);
-          const assister = pickAssister(activePlayers, scorer, chanceType, formMods);
           recordGoal(stats, { minute, team: 'home', scorer, assister, chanceType });
           currentMomentum = updateMomentum(currentMomentum, 'goal');
 
@@ -482,8 +513,10 @@ export function* simulateMatch(config) {
       zone: possResult.zone,
       momentum: currentMomentum.value,
       morale: currentMomentum.morale,
-      ballX: zoneToBallX(possResult.zone, possResult.winner),
+      subZone: possResult.subZone,
+      ballX: zoneToBallX(possResult.zone, possResult.winner, possResult.subZone),
       ballY: zoneToBallY(possResult.zone, possResult.winner),
+      involvedPlayer: possResult.winner === 'home' ? pickInvolvedPlayer(activePlayers, possResult.zone) : null,
     };
   }
 
@@ -536,9 +569,9 @@ export function* simulateMatch(config) {
 }
 
 // Convert zone/possession to ball coordinates for canvas
-function zoneToBallX(zone, team) {
-  // Some randomness in X
-  return 0.3 + Math.random() * 0.4;
+function zoneToBallX(zone, team, subZone) {
+  const base = subZone === 'left' ? 0.25 : subZone === 'right' ? 0.75 : 0.5;
+  return base + (Math.random() - 0.5) * 0.15;
 }
 
 function zoneToBallY(zone, team) {

@@ -7,6 +7,7 @@ export const ZONES = ['defense', 'midfield', 'attack'];
 export function createPossessionState() {
   return {
     zone: 'midfield',
+    subZone: 'center',
     team: 'home',  // 'home' or 'away'
     ticksInZone: 0,
     totalHome: 0,
@@ -128,10 +129,14 @@ export function resolvePossession(state, home, away, modifiers = {}) {
     }
   }
 
+  // Determine sub-zone (lateral position)
+  const subZone = Math.random() < 0.33 ? 'left' : Math.random() < 0.5 ? 'center' : 'right';
+
   // Update stats
   const newState = {
     ...state,
     zone: nextZone,
+    subZone,
     team: winner,
     ticksInZone: nextZone === zone ? state.ticksInZone + 1 : 0,
     totalHome: state.totalHome + (winner === 'home' ? 1 : 0),
@@ -143,6 +148,7 @@ export function resolvePossession(state, home, away, modifiers = {}) {
     state: newState,
     winner,
     zone: nextZone,
+    subZone,
     previousZone: zone,
     isCounterAttack,
   };

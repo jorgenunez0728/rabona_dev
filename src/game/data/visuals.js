@@ -312,16 +312,20 @@ export function getCanvasFormation(formationId) {
 
 // Canvas sprite drawing
 // team: 'home' | 'rival' — rivalVariant: 'red'|'green'|'purple'
-export function drawSprite(ctx, x, y, bodyCol, darkCol, frame, seed, isGK = false, team = 'home', rivalVariant = 'red') {
+export function drawSprite(ctx, x, y, bodyCol, darkCol, frame, seed, isGK = false, team = 'home', rivalVariant = 'red', animState = 'idle') {
   const drawSize = 30;
 
   // Try to draw a loaded sprite image
   let urls = null;
   if (team === 'home') {
-    urls = isGK ? PLAYER_SPRITE_URLS.idle : PLAYER_SPRITE_URLS.idle;
+    urls = PLAYER_SPRITE_URLS[animState] || PLAYER_SPRITE_URLS.idle;
   } else {
     const variant = isGK ? 'gk' : (RIVAL_SPRITE_URLS[rivalVariant] ? rivalVariant : 'red');
-    urls = RIVAL_SPRITE_URLS[variant]?.idle || [];
+    if (animState === 'run' && RIVAL_SPRITE_URLS[variant]?.run) {
+      urls = RIVAL_SPRITE_URLS[variant].run;
+    } else {
+      urls = RIVAL_SPRITE_URLS[variant]?.idle || [];
+    }
   }
 
   if (urls && urls.length > 0) {

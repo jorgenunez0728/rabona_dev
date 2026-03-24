@@ -71,7 +71,7 @@ export default function Rabona() {
     useEffect(() => {
       if (!match.running || simRef.current) return;
       simRef.current = true;
-      sim.current = { ps: 0, rs: 0, minute: 0, speed: 2, ballX: .5, ballY: .5, ballTargetX: .5, ballTargetY: .5, possession: true, log: [], done: false, rivalName: match.rival?.name || 'Rival', rivalPlayers: match.rivalPlayers || [], morale: 50, strategy: 'balanced', shots: 0, possCount: 0, totalTicks: 0, pendingEvent: null, halftimeShown: false, goalEffect: 0, pendingPenalty: null };
+      sim.current = { ps: 0, rs: 0, minute: 0, speed: 2, ballX: .5, ballY: .5, ballTargetX: .5, ballTargetY: .5, possession: true, log: [], done: false, rivalName: match.rival?.name || 'Rival', rivalPlayers: match.rivalPlayers || [], morale: 50, strategy: 'balanced', shots: 0, possCount: 0, totalTicks: 0, pendingEvent: null, halftimeShown: false, goalEffect: 0, pendingPenalty: null, animState: 'idle', celebrateUntil: 0, chanceIndicator: null, involvedPlayer: null };
       hpxRef.current = []; hpyRef.current = []; apxRef.current = []; apyRef.current = [];
       Crowd.start();
       const di = setInterval(() => { const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: s.done, morale: s.morale, pendingEvent: s.pendingEvent, strategy: s.strategy, pendingPenalty: s.pendingPenalty }); }, 150);
@@ -176,18 +176,38 @@ export default function Rabona() {
             addLog('event', ev.text);
             break;
 
+          case 'chance_approach':
+            if (ev.ballX !== undefined) S.ballTargetX = ev.ballX;
+            if (ev.ballY !== undefined) S.ballTargetY = ev.ballY;
+            S.animState = 'run';
+            if (ev.involvedPlayer) S.involvedPlayer = ev.involvedPlayer.name;
+            await sleep(sp() >= 2 ? 400 : sp() === 1 ? 150 : 50);
+            break;
+
+          case 'chance_shot':
+            if (ev.ballX !== undefined) S.ballTargetX = ev.ballX;
+            if (ev.ballY !== undefined) S.ballTargetY = ev.ballY;
+            S.animState = 'kick';
+            if (ev.involvedPlayer) S.involvedPlayer = ev.involvedPlayer.name;
+            if (sp() >= 2) SFX.play('kick');
+            await sleep(sp() >= 2 ? 500 : sp() === 1 ? 150 : 50);
+            break;
+
           case 'goal':
+            if (ev.chanceType) S.chanceIndicator = { type: ev.chanceType, until: frameRef.current + 60 };
             if (ev.team === 'home') {
               S.goalEffect = 1; shakeRef.current = 15; S.ballX = .5; S.ballY = .05; S.ballTargetX = .5; S.ballTargetY = .05;
               SFX.play('goal');
               addLog('goal', ev.text || `⚽ ${ev.minute}' ${narrate('goalHome')}`);
               S.morale = Math.min(99, (S.morale || 50) + 10);
+              S.animState = 'celebrate'; S.celebrateUntil = Date.now() + 2500;
               await sleep(sp() >= 2 ? 2500 : sp() === 1 ? 800 : 200);
             } else {
               S.goalEffect = -1; shakeRef.current = 10; S.ballX = .5; S.ballY = .95; S.ballTargetX = .5; S.ballTargetY = .95;
               SFX.play('goal_rival');
               addLog('goalRival', ev.text || `💀 ${ev.minute}' ${narrate('goalAway')}`);
               S.morale = Math.max(0, (S.morale || 50) - 8);
+              S.animState = 'idle';
               await sleep(sp() >= 2 ? 2500 : sp() === 1 ? 800 : 200);
             }
             S.ballX = .5; S.ballY = .5; S.ballTargetX = .5; S.ballTargetY = .5;
@@ -195,21 +215,30 @@ export default function Rabona() {
             break;
 
           case 'chance':
+            if (ev.chanceType) S.chanceIndicator = { type: ev.chanceType, until: frameRef.current + 60 };
+            S.animState = 'kick';
             if (ev.team === 'home') {
               if (sp() >= 2) { SFX.play('kick'); addLog('normal', ev.text || `${ev.minute}' ${narrate('atkBuild')}`); await sleep(700); }
             }
+            S.animState = 'run';
             S.shots++;
             break;
 
           case 'miss':
+            if (ev.chanceType) S.chanceIndicator = { type: ev.chanceType, until: frameRef.current + 60 };
+            S.animState = 'kick';
             if (ev.team === 'home' && sp() >= 2) {
               addLog('normal', ev.text || `${ev.minute}' ${narrate('atkFail')}`);
             }
+            S.animState = 'run';
             break;
 
           case 'save':
+            if (ev.chanceType) S.chanceIndicator = { type: ev.chanceType, until: frameRef.current + 60 };
+            S.animState = 'kick';
             addLog('event', ev.text);
             S.morale = Math.min(99, (S.morale || 50) + 8);
+            S.animState = 'run';
             break;
 
           case 'halftime': {
@@ -280,6 +309,8 @@ export default function Rabona() {
             break;
 
           case 'tick':
+            S.animState = 'run';
+            S.involvedPlayer = ev.involvedPlayer ? ev.involvedPlayer.name : null;
             if (S.possession) S.possCount++;
             S.totalTicks++;
             await sleep(sp() >= 2 ? 600 : sp() === 1 ? 180 : 100);
@@ -525,13 +556,22 @@ export default function Rabona() {
         for (let c = 0; c < 3; c++) particlesRef.current.emit(gx, gy, 8, pick(col), { spread: 6, upforce: 4, type: 'confetti', size: 3 });
         S.goalEffect = 0;
       }
+      if (S.celebrateUntil > 0 && Date.now() > S.celebrateUntil) { S.animState = 'run'; S.celebrateUntil = 0; }
+      const currentAnim = S.celebrateUntil > Date.now() ? 'celebrate' : (S.animState || 'idle');
+      const rivalAnim = S.animState === 'kick' ? 'idle' : (S.animState === 'celebrate' ? 'idle' : 'run');
       const hStarters = game.roster.filter(p => p.role === 'st').sort((a, b) => POS_ORDER[a.pos] - POS_ORDER[b.pos]);
       const rKit = getRivalKit(game.league || 0);
       for (let i = 0; i < 5; i++) {
         const px = hpxRef.current[i] + Math.sin(f * .016 + i * 1.3) * 1.5, py = hpyRef.current[i] + Math.sin(f * .013 + i) * 1.2;
         const isGK = i === 0 || (hStarters[i] && hStarters[i].pos === 'GK');
+        if (S.involvedPlayer && hStarters[i] && hStarters[i].name === S.involvedPlayer) {
+          ctx.fillStyle = 'rgba(88,166,255,0.25)';
+          ctx.beginPath();
+          ctx.arc(px, py + 5, 18, 0, Math.PI * 2);
+          ctx.fill();
+        }
         ctx.globalAlpha = 1;
-        drawSprite(ctx, px, py, '#1565c0', '#0d47a1', f, i + 100, isGK, 'home');
+        drawSprite(ctx, px, py, '#1565c0', '#0d47a1', f, i + 100, isGK, 'home', 'red', currentAnim);
         ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText(hStarters[i] ? hStarters[i].name.split(' ').pop().substring(0, 8) : '', px, py + 22);
         ctx.textAlign = 'left';
@@ -540,7 +580,7 @@ export default function Rabona() {
       for (let i = 0; i < 5; i++) {
         const px = apxRef.current[i] + Math.sin(f * .018 + i * 1.5) * 1.5, py = apyRef.current[i] + Math.sin(f * .015 + i * 1.1) * 1.2;
         ctx.globalAlpha = 1;
-        drawSprite(ctx, px, py, rKit[0], rKit[1], f, i + 200, i === 0, 'rival', rivalVariant);
+        drawSprite(ctx, px, py, rKit[0], rKit[1], f, i + 200, i === 0, 'rival', rivalVariant, rivalAnim);
         ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText(S.rivalPlayers[i] ? S.rivalPlayers[i].name.split(' ').pop().substring(0, 8) : '', px, py + 22);
         ctx.textAlign = 'left';
@@ -549,6 +589,17 @@ export default function Rabona() {
       ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(bpx + 1, bpy + bs * 0.6, bs * 0.6, bs * 0.2, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(bpx, bpy, 5, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(bpx, bpy, 1.5, 0, Math.PI * 2); ctx.fill();
+      // Chance type indicator
+      if (S.chanceIndicator && frameRef.current < S.chanceIndicator.until) {
+        const alpha = (S.chanceIndicator.until - frameRef.current) / 60;
+        ctx.globalAlpha = alpha * 0.9;
+        const icons = { contraataque: '\u26A1', elaborada: '\u26BD', pelotaParada: '\uD83C\uDFAF', tiroLejano: '\uD83D\uDCA5', errorRival: '\uD83D\uDD25' };
+        ctx.font = '24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(icons[S.chanceIndicator.type] || '\u26BD', bpx, bpy - 20);
+        ctx.globalAlpha = 1;
+        ctx.textAlign = 'left';
+      }
       particlesRef.current.update(ctx);
       if (shakeRef.current > 5) { ctx.fillStyle = shakeRef.current > 12 ? 'rgba(240,192,64,0.15)' : 'rgba(255,23,68,0.1)'; ctx.fillRect(0, 0, W, H); }
       ctx.restore();
