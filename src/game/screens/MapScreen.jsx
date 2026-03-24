@@ -5,6 +5,8 @@ import useGameStore from '@/game/store';
 import { pick, rnd } from '@/game/data/helpers.js';
 import { CURSES } from '@/game/data/progression.js';
 import { hasLegacy } from '@/game/data/progression.js';
+import { TACTICAL_CARDS, getUnlockableCards } from '@/game/data/cards.js';
+import { MANAGER_ARCHETYPES } from '@/game/data/archetypes.js';
 
 // ── Node definitions for between-matchday events ──
 const MAP_NODES = [
@@ -42,6 +44,11 @@ const MAP_NODES = [
     id: 'misterio', n: '???', i: '❓', color: '#607d8b',
     d: 'Nodo ciego. Puede ser cualquier cosa.',
     weight: 1, blind: true,
+  },
+  {
+    id: 'carta_tactica', n: 'Carta Táctica', i: '🎴', color: '#9c27b0',
+    d: 'Encuentra una carta táctica temporal para este run.',
+    weight: 1,
   },
 ];
 
@@ -129,16 +136,31 @@ function resolveNode(nodeId, game, setGame, go, addCurse, removeCurse, globalSta
     case 'curandero': {
       const curses = game.curses || [];
       if (curses.length > 0) {
+        // Pick the curse with highest mastery progress (most invested)
+        const sorted = [...curses].sort((a, b) => (b.masteryProgress || 0) - (a.masteryProgress || 0));
+        const curse = sorted[0];
         const cost = rnd(10, 20);
+        const masteryPct = curse.masteryThreshold ? Math.floor(((curse.masteryProgress || 0) / curse.masteryThreshold) * 100) : 0;
         if (coins >= cost) {
-          const curse = curses[0];
           removeCurse(curse.id);
           setGame(g => ({ ...g, coins: g.coins - cost }));
-          return { text: `Maldición "${curse.n}" removida por ${cost} monedas.`, icon: '🧹' };
+          return { text: `Maldición "${curse.n}" removida por ${cost} monedas.${masteryPct > 50 ? ` (Perdiste ${masteryPct}% de maestría)` : ''}`, icon: '🧹' };
         }
-        return { text: 'No tienes monedas suficientes para el curandero.', icon: '🧹' };
+        return { text: `No tienes ${cost} monedas para el curandero. (${curse.n}: ${masteryPct}% maestría)`, icon: '🧹' };
       }
       return { text: 'No tienes maldiciones activas.', icon: '🧹' };
+    }
+
+    case 'carta_tactica': {
+      // Find a random card not already in loadout
+      const currentLoadout = game.cardLoadout || [];
+      const available = TACTICAL_CARDS.filter(c => !currentLoadout.includes(c.id));
+      if (available.length === 0) {
+        return { text: 'No hay cartas disponibles.', icon: '🎴' };
+      }
+      const card = pick(available);
+      setGame(g => ({ ...g, cardLoadout: [...(g.cardLoadout || []), card.id] }));
+      return { text: `Encontraste: ${card.i} ${card.n} — ${card.d} (solo este run)`, icon: '🎴' };
     }
 
     case 'sponsor': {
@@ -221,16 +243,46 @@ export default function MapScreen() {
         </div>
       </div>
 
-      {/* Active Curses */}
+      {/* Active Curses with mastery bars */}
       {curses.length > 0 && (
         <div style={{ width: '100%', maxWidth: 380, padding: '0 16px', marginBottom: 8 }}>
           <div style={{ fontFamily: T.fontHeading, fontSize: 10, color: '#ef5350', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
             Maldiciones Activas
           </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {curses.map((c, i) => {
+              const masteryPct = c.masteryThreshold ? Math.min(100, Math.floor(((c.masteryProgress || 0) / c.masteryThreshold) * 100)) : 0;
+              return (
+                <div key={i} style={{ background: 'rgba(239,83,80,0.06)', border: '1px solid rgba(239,83,80,0.15)', borderRadius: 6, padding: '6px 10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                    <span style={{ fontSize: 11, color: '#ef5350', fontFamily: T.fontBody }}>
+                      {c.i} {c.n} {c.remaining > 0 ? `(${c.remaining})` : ''}
+                    </span>
+                    {c.blessing && (
+                      <span style={{ fontSize: 9, color: T.gold, fontFamily: T.fontBody }}>{masteryPct}% → {c.blessing.i}</span>
+                    )}
+                  </div>
+                  {c.masteryThreshold && (
+                    <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${masteryPct}%`, background: masteryPct >= 100 ? T.gold : 'linear-gradient(90deg,#ef5350,#ff9800)', borderRadius: 2, transition: 'width 0.3s' }} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {/* Active Blessings */}
+      {(game.blessings || []).length > 0 && (
+        <div style={{ width: '100%', maxWidth: 380, padding: '0 16px', marginBottom: 8 }}>
+          <div style={{ fontFamily: T.fontHeading, fontSize: 10, color: T.gold, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
+            Bendiciones
+          </div>
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            {curses.map((c, i) => (
-              <div key={i} style={{ background: 'rgba(239,83,80,0.1)', border: '1px solid rgba(239,83,80,0.2)', borderRadius: 4, padding: '3px 8px', fontSize: 10, color: '#ef5350', fontFamily: T.fontBody }}>
-                {c.i} {c.n} {c.remaining > 0 ? `(${c.remaining})` : ''}
+            {(game.blessings || []).map((b, i) => (
+              <div key={i} style={{ background: `${T.gold}08`, border: `1px solid ${T.gold}20`, borderRadius: 4, padding: '3px 8px', fontSize: 10, color: T.gold, fontFamily: T.fontBody }}>
+                {b.i} {b.n}
               </div>
             ))}
           </div>

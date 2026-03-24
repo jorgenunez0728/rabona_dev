@@ -11,6 +11,10 @@ import {
 import { getStadiumPitch } from "@/assets/stadiums";
 import { simulateMatch, PLAY_STYLES, INTENSITIES, getManOfTheMatch } from "@/game/engine";
 import { perlin2 } from "@/game/engine/perlin";
+import { MANAGER_ARCHETYPES } from "@/game/data/archetypes.js";
+import { TACTICAL_CARDS } from "@/game/data/cards.js";
+import { ASCENSION_MUTATORS } from "@/game/data/mutators.js";
+
 import { PlayerDetailModal, ParticleSystem } from "@/game/components";
 import { CareerCreateScreen, CareerCardScreen, CareerMatchScreen, CareerSeasonEnd, CareerEndScreen } from "@/game/CareerScreens";
 import useGameStore from "@/game/store";
@@ -157,6 +161,17 @@ export default function Rabona() {
       function addLog(t, x) { S.log.push({ type: t, text: x }); if (S.log.length > 25) S.log.shift(); }
       function narrate(type) { return legacyNarrate(type, 'Halcones', S.rivalName, starters); }
 
+      // Resolve metaprogression data for engine
+      const archetypeData = game.archetype ? MANAGER_ARCHETYPES.find(a => a.id === game.archetype) : null;
+      const archetypeHooks = archetypeData?.engineHooks || {};
+      const tacticalCards = (game.cardLoadout || []).map(id => TACTICAL_CARDS.find(c => c.id === id)).filter(Boolean);
+      // Mutator effects
+      const mutatorEffects = {};
+      for (const mid of (game.activeMutators || [])) {
+        const m = ASCENSION_MUTATORS.find(mu => mu.id === mid);
+        if (m?.engineEffect) Object.assign(mutatorEffects, m.engineEffect);
+      }
+
       // Create the engine generator
       const engine = simulateMatch({
         starters,
@@ -169,6 +184,10 @@ export default function Rabona() {
         chemistry: game.chemistry,
         captain: game.roster.find(p => p.id === game.captain),
         matchType,
+        tacticalCards,
+        archetypeHooks,
+        mutatorEffects,
+        blessings: game.blessings || [],
       });
 
       let result = engine.next();
@@ -311,6 +330,13 @@ export default function Rabona() {
 
           case 'relic_effect':
             addLog('event', ev.text);
+            break;
+
+          case 'card_trigger':
+            if (ev.card && sp() >= 2) {
+              addLog('event', `🎴 ${ev.card.i} ${ev.card.n} se activa!`);
+              S.cardFlash = { icon: ev.card.i, name: ev.card.n, until: Date.now() + 1500 };
+            }
             break;
 
           case 'whistle':

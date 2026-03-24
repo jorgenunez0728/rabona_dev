@@ -9,6 +9,9 @@ import {
   LEGACY_TREE, hasLegacy, calcLegacyPoints, calcSpentLegacy, canUnlockLegacy,
   _usedNames, genPlayer, rnd, pick, calcOvr,
 } from '@/game/data';
+import { MANAGER_ARCHETYPES } from '@/game/data/archetypes.js';
+import { TACTICAL_CARDS } from '@/game/data/cards.js';
+import { calcMutatorLegacyBonus } from '@/game/data/mutators.js';
 import {
   saveGame, loadGame, saveGlobalStats, loadGlobalStats, deleteSave,
 } from '@/game/save';
@@ -21,6 +24,13 @@ const INITIAL_GAME = {
   rivalMemory: {}, streak: 0, currentObjectives: [], trainedIds: [],
   formation: 'clasica', relics: [], ascension: 0, copa: null, curses: [],
   careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {} },
+  // Metaprogression v2
+  archetype: null,          // manager archetype id
+  cardLoadout: [],          // array of tactical card ids for this run
+  cardCooldowns: {},        // { cardId: matchesRemaining }
+  activeMutators: [],       // array of mutator ids
+  blessings: [],            // transformed curses (blessing objects)
+  matchBet: 0,              // coins wagered on current match (apostador)
 };
 
 const INITIAL_MATCH = {
@@ -36,6 +46,10 @@ const INITIAL_GLOBAL_STATS = {
   totalWins: 0, totalGoals: 0, totalConceded: 0, bestStreak: 0, totalCoins: 0,
   hallOfFame: [], ascensionLevel: 0, achievements: [], allTimeScorers: {},
   legacyUnlocks: [],
+  // Metaprogression v2
+  cardCollection: [],         // permanently unlocked card ids
+  curseMasteryProgress: {},   // { curseId: totalMatchesPlayed } persists across runs
+  mutatorBonusTotal: 0,       // cumulative legacy bonus from mutator runs
 };
 
 // ── Store ──
@@ -197,27 +211,90 @@ const useGameStore = create((set, get) => ({
     return true;
   },
 
-  // ─── Curses ───
+  // ─── Curses (with mastery system) ───
   addCurse: (curseId) => {
     const { game } = get();
     const curses = [...(game.curses || [])];
     if (curses.some(c => c.id === curseId)) return;
     const curse = CURSES.find(c => c.id === curseId);
     if (!curse) return;
-    curses.push({ ...curse, remaining: curse.duration });
+    // Carry over global mastery progress
+    const globalProgress = (get().globalStats.curseMasteryProgress || {})[curseId] || 0;
+    curses.push({ ...curse, remaining: curse.duration, masteryProgress: Math.floor(globalProgress * 0.3) });
     set({ game: { ...game, curses } });
   },
   tickCurses: () => {
     const { game } = get();
     if (!game.curses?.length) return;
-    const curses = game.curses
-      .map(c => c.remaining > 0 ? { ...c, remaining: c.remaining - 1 } : c)
-      .filter(c => c.duration === 0 || c.remaining > 0); // duration 0 = permanent until removed
-    set({ game: { ...game, curses } });
+    const archetype = game.archetype ? MANAGER_ARCHETYPES.find(a => a.id === game.archetype) : null;
+    const masterySpeed = archetype?.engineHooks?.curseMasterySpeedMult || 1;
+    const curses = [];
+    const newBlessings = [];
+    for (const c of game.curses) {
+      const updated = { ...c, masteryProgress: (c.masteryProgress || 0) + masterySpeed };
+      if (updated.remaining > 0) updated.remaining--;
+      // Check mastery completion
+      if (c.masteryThreshold && updated.masteryProgress >= c.masteryThreshold && c.blessing) {
+        newBlessings.push(c.blessing);
+      } else if (c.duration === 0 || updated.remaining > 0) {
+        curses.push(updated);
+      }
+      // else: timed curse expired naturally, remove it
+    }
+    const blessings = [...(game.blessings || []), ...newBlessings];
+    set({ game: { ...game, curses, blessings } });
   },
   removeCurse: (curseId) => {
     const { game } = get();
     set({ game: { ...game, curses: (game.curses || []).filter(c => c.id !== curseId) } });
+  },
+
+  // ─── Blessings ───
+  getBlessings: () => get().game.blessings || [],
+
+  // ─── Card cooldowns ───
+  tickCardCooldowns: () => {
+    const { game } = get();
+    const cd = { ...(game.cardCooldowns || {}) };
+    let changed = false;
+    for (const [id, val] of Object.entries(cd)) {
+      if (val > 0) { cd[id] = val - 1; changed = true; }
+      if (cd[id] <= 0) { delete cd[id]; changed = true; }
+    }
+    if (changed) set({ game: { ...game, cardCooldowns: cd } });
+  },
+
+  // ─── Mutator bonus tracking ───
+  saveMutatorBonus: () => {
+    const { game, globalStats } = get();
+    if (!game.activeMutators?.length) return;
+    const bonus = calcMutatorLegacyBonus(game.activeMutators, game.ascension || 0);
+    const newGS = { ...globalStats, mutatorBonusTotal: (globalStats.mutatorBonusTotal || 0) + bonus };
+    set({ globalStats: newGS });
+    saveGlobalStats(newGS);
+  },
+
+  // ─── Card collection (permanent) ───
+  addCardToCollection: (cardId) => {
+    const { globalStats } = get();
+    const collection = [...(globalStats.cardCollection || [])];
+    if (collection.includes(cardId)) return;
+    collection.push(cardId);
+    const newGS = { ...globalStats, cardCollection: collection };
+    set({ globalStats: newGS });
+    saveGlobalStats(newGS);
+  },
+
+  // ─── Save curse mastery progress globally ───
+  saveCurseMasteryProgress: () => {
+    const { game, globalStats } = get();
+    const progress = { ...(globalStats.curseMasteryProgress || {}) };
+    for (const curse of (game.curses || [])) {
+      progress[curse.id] = Math.max(progress[curse.id] || 0, curse.masteryProgress || 0);
+    }
+    const newGS = { ...globalStats, curseMasteryProgress: progress };
+    set({ globalStats: newGS });
+    saveGlobalStats(newGS);
   },
 
   // ─── Immortalize Player (Death Screen: choose 1 player for Hall of Fame) ───
@@ -250,12 +327,13 @@ const useGameStore = create((set, get) => ({
   },
 
   // ─── Start new run ───
-  confirmStart: (coach, startRelic, selectedAsc) => {
+  confirmStart: (coach, startRelic, selectedAsc, { archetype: archetypeId, cardLoadout, activeMutators } = {}) => {
     const { game, globalStats, autoSave } = get();
     const maxAsc = globalStats.ascensionLevel || 0;
     _usedNames.clear();
     const ascLevel = Math.min(selectedAsc, maxAsc);
     const ascMods = ASCENSION_MODS[Math.min(ascLevel, ASCENSION_MODS.length - 1)].mods;
+    const archetype = archetypeId ? MANAGER_ARCHETYPES.find(a => a.id === archetypeId) : null;
     const ability = COACH_ABILITIES[coach.id] || COACH_ABILITIES.miguel;
     const isAlien = coach.fx === 'alien';
     const starterPositions = isAlien ? ['DEF','DEF','DEF','MID','FWD','FWD','FWD'] : ['GK','DEF','DEF','MID','MID','FWD','FWD'];
@@ -266,7 +344,7 @@ const useGameStore = create((set, get) => ({
     ];
     const rns = RIVAL_NAMES[0];
     const table = [{ name: 'Halcones', you: true, w: 0, d: 0, l: 0, gf: 0, ga: 0 }, ...rns.map(n => ({ name: n, you: false, w: 0, d: 0, l: 0, gf: 0, ga: 0 }))];
-    let startCoins = 50 + (ability.extraCoins || 0);
+    let startCoins = 50 + (ability.extraCoins || 0) + (archetype?.startMods?.extraCoins || 0);
     if (coach.fx === 'cheap') startCoins = 80;
     if (isAlien) startCoins = 100;
     if (ascMods.includes('poor_start')) startCoins = Math.max(10, startCoins - 20);
@@ -333,15 +411,48 @@ const useGameStore = create((set, get) => ({
       roster.push(extra);
     }
     // Charisma branch
-    let startChem = ability.chemMod || 0;
+    let startChem = (ability.chemMod || 0) + (archetype?.startMods?.chemBonus || 0);
     if (hasLegacy(gs, 'charisma_1')) startChem += 5;
+    // Archetype stat mods to starters
+    if (archetype?.startMods) {
+      const { atkBonus, defPenalty } = archetype.startMods;
+      if (atkBonus || defPenalty) {
+        roster = roster.map(p => p.role === 'st' ? {
+          ...p,
+          atk: Math.max(1, p.atk + (atkBonus || 0)),
+          def: Math.max(1, p.def + (defPenalty || 0)),
+        } : p);
+      }
+    }
+    // Místico: start with a random curse
+    const startCurses = [];
+    if (archetype?.startMods?.startWithCurse) {
+      const randomCurse = pick(CURSES);
+      if (randomCurse) startCurses.push({ ...randomCurse, remaining: randomCurse.duration, masteryProgress: 0 });
+    }
+    // Maldición Eterna mutator: start with 2 extra curses
+    if ((activeMutators || []).includes('maldicion_eterna')) {
+      const available = CURSES.filter(c => !startCurses.some(sc => sc.id === c.id));
+      for (let i = 0; i < 2 && available.length > 0; i++) {
+        const idx = rnd(0, available.length - 1);
+        const c = available.splice(idx, 1)[0];
+        startCurses.push({ ...c, remaining: c.duration, masteryProgress: 0 });
+      }
+    }
     const newG = {
       ...INITIAL_GAME, roster, captain: roster[0].id, table, league: 0, matchNum: 0,
       coins: startCoins, coach, ascension: ascLevel, formation: 'clasica', relics: startRelics,
-      chemistry: startChem, curses: [],
-      coachAbility: ability, // store ability for runtime checks (market discount, map preview, etc.)
+      chemistry: startChem, curses: startCurses,
+      coachAbility: ability,
       careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {} },
       rivalMemory: {}, streak: 0, trainedIds: [], curseFreeRemoves: ability.curseFreeRemove || 0,
+      // Metaprogression v2
+      archetype: archetypeId || null,
+      cardLoadout: cardLoadout || [],
+      cardCooldowns: {},
+      activeMutators: activeMutators || [],
+      blessings: [],
+      matchBet: 0,
     };
     set({ game: newG, hasSave: true });
     autoSave(newG);

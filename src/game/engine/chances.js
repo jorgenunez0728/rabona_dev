@@ -66,6 +66,7 @@ export function resolveChance(chanceType, attackTeam, defendTeam, modifiers = {}
     relicMods = {},   // { blitzBonus, diamanteBonus }
     difficultyMod = 0,
     matchupMod = 0,
+    cardMod = 0,      // tactical card bonus/penalty
   } = modifiers;
 
   let goalChance = chanceType.baseChance;
@@ -100,6 +101,9 @@ export function resolveChance(chanceType, attackTeam, defendTeam, modifiers = {}
   // Relic bonuses
   goalChance += (relicMods.blitzBonus || 0);
   goalChance += (relicMods.diamanteBonus || 0);
+
+  // Tactical card bonuses
+  goalChance += cardMod;
 
   // Clamp to reasonable range
   goalChance = clamp(goalChance, 0.02, 0.25);

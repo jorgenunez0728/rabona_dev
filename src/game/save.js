@@ -4,7 +4,7 @@
 
 const SAVE_KEY = 'rabona-save';
 const STATS_KEY = 'rabona-stats';
-export const CURRENT_VERSION = '3.1';
+export const CURRENT_VERSION = '3.2';
 
 // ── Simple checksum for integrity ──
 // Not cryptographic — just detects corruption/tampering
@@ -31,8 +31,22 @@ const MIGRATIONS = {
     data.version = '3.1';
     return data;
   },
-  // Future migrations:
-  // '3.1': (data) => { ... data.version = '3.2'; return data; },
+  '3.1': (data) => {
+    const g = data.game;
+    // Metaprogression v2 fields
+    g.archetype = g.archetype || null;
+    g.cardLoadout = g.cardLoadout || [];
+    g.cardCooldowns = g.cardCooldowns || {};
+    g.activeMutators = g.activeMutators || [];
+    g.blessings = g.blessings || [];
+    g.matchBet = g.matchBet || 0;
+    // Add masteryProgress to existing curses
+    if (Array.isArray(g.curses)) {
+      g.curses = g.curses.map(c => ({ ...c, masteryProgress: c.masteryProgress || 0 }));
+    }
+    data.version = '3.2';
+    return data;
+  },
 };
 
 export function migrateSave(data) {

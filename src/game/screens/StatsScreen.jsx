@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { T, PN, POS_COLORS, ACHIEVEMENTS } from "@/game/data";
-import { LEGACY_TREE, LEGACY_BRANCHES, calcLegacyPoints, calcSpentLegacy, canUnlockLegacy, hasLegacy, COACHES, COACH_ABILITIES } from "@/game/data/progression.js";
+import { LEGACY_TREE, LEGACY_BRANCHES, calcLegacyPoints, calcSpentLegacy, canUnlockLegacy, hasLegacy, COACHES, COACH_ABILITIES, CURSES } from "@/game/data/progression.js";
 import { AchIcon } from "@/game/data/chibiAssets";
 import { SFX } from "@/game/audio";
 import { Haptics } from "@/game/haptics";
+import { TACTICAL_CARDS, CARD_RARITIES, getCollectionCards } from "@/game/data/cards.js";
 import useGameStore from "@/game/store";
 
 export default function StatsScreen() {
@@ -18,7 +19,7 @@ export default function StatsScreen() {
         <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 22, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>📖 Compendio</div>
       </div>
       <div style={{ display: 'flex', width: '100%', maxWidth: 440, background: T.bg1, borderBottom: `1px solid ${T.border}` }}>
-        {[{ k: 'stats', l: '📊' }, { k: 'legacy', l: '🌳' }, { k: 'fame', l: '🌟' }, { k: 'achieve', l: '🏆' }].map(t => (
+        {[{ k: 'stats', l: '📊' }, { k: 'legacy', l: '🌳' }, { k: 'cards', l: '🎴' }, { k: 'fame', l: '🌟' }, { k: 'achieve', l: '🏆' }].map(t => (
           <div key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '8px 4px', textAlign: 'center', fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: tab === t.k ? T.gold : T.tx3, cursor: 'pointer', borderBottom: tab === t.k ? `2px solid ${T.gold}` : '2px solid transparent' }}>{t.l}</div>
         ))}
       </div>
@@ -52,7 +53,7 @@ export default function StatsScreen() {
           const totalPts = calcLegacyPoints(gs);
           const spentPts = calcSpentLegacy(gs);
           const availPts = totalPts - spentPts;
-          const branchNames = { scouting: '🔭 Scouting', cantera: '🌱 Cantera', sponsor: '💰 Sponsor', tactics: '📋 Táctica', charisma: '🗣 Carisma' };
+          const branchNames = { scouting: '🔭 Scouting', cantera: '🌱 Cantera', sponsor: '💰 Sponsor', tactics: '📋 Táctica', charisma: '🗣 Carisma', maestria: '🎴 Maestría' };
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ background: T.bg1, borderRadius: 8, padding: 10, border: `1px solid ${T.border}`, textAlign: 'center' }}>
@@ -103,6 +104,70 @@ export default function StatsScreen() {
                   </div>
                 );
               })}
+            </div>
+          );
+        })()}
+        {tab === 'cards' && (() => {
+          const collection = getCollectionCards(gs);
+          const masteryProgress = gs.curseMasteryProgress || {};
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {/* Card Collection */}
+              <div style={{ background: T.bg1, borderRadius: 8, padding: 10, border: `1px solid ${T.border}` }}>
+                <div style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.purple, textTransform: 'uppercase', textAlign: 'center', marginBottom: 6 }}>
+                  Colección: {collection.length}/{TACTICAL_CARDS.length}
+                </div>
+                {collection.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 12, color: T.tx3, fontSize: 12 }}>
+                    Completa runs para desbloquear cartas.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    {collection.map(card => {
+                      const rarity = CARD_RARITIES[card.rarity];
+                      return (
+                        <div key={card.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '6px 8px', background: 'rgba(255,255,255,0.02)', borderRadius: 4, border: `1px solid ${T.border}` }}>
+                          <span style={{ fontSize: 18 }}>{card.i}</span>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.tx }}>{card.n}</div>
+                            <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, lineHeight: 1.2 }}>{card.d}</div>
+                          </div>
+                          <span style={{ fontSize: 8, color: rarity.color, fontFamily: T.fontBody }}>{rarity.n}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              {/* Curse Mastery Progress */}
+              <div style={{ background: T.bg1, borderRadius: 8, padding: 10, border: `1px solid ${T.border}` }}>
+                <div style={{ fontFamily: T.fontHeading, fontSize: 12, color: '#ef5350', textTransform: 'uppercase', textAlign: 'center', marginBottom: 6 }}>
+                  Maestría de Maldiciones
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {CURSES.map(curse => {
+                    const progress = masteryProgress[curse.id] || 0;
+                    const threshold = curse.masteryThreshold || 1;
+                    const pct = Math.min(100, Math.floor((progress / threshold) * 100));
+                    const mastered = pct >= 100;
+                    return (
+                      <div key={curse.id} style={{ padding: '6px 8px', background: mastered ? `${T.gold}08` : 'rgba(255,255,255,0.02)', borderRadius: 4, border: `1px solid ${mastered ? T.gold + '30' : T.border}` }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                          <span style={{ fontSize: 11, color: mastered ? T.gold : '#ef5350', fontFamily: T.fontBody }}>
+                            {curse.i} {curse.n}
+                          </span>
+                          <span style={{ fontSize: 10, color: mastered ? T.gold : T.tx3, fontFamily: T.fontBody }}>
+                            {mastered ? `→ ${curse.blessing?.n}` : `${pct}%`}
+                          </span>
+                        </div>
+                        <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: mastered ? T.gold : '#ef5350', borderRadius: 2 }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           );
         })()}
