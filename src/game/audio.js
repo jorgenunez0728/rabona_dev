@@ -241,7 +241,7 @@ export const SFX = {
 };
 
 // ── Background Music Engine (FIFA-style soundtrack) ──
-// Uses HTML5 Audio for file playback — simpler and more efficient than Tone.js for pre-recorded tracks
+// HTML5 Audio for file playback — simpler and more efficient than Tone.js for pre-recorded tracks
 export const Music = {
   _player: null,
   _playlist: [],        // array of { url, title, artist }
