@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { T, PN, POS_COLORS, ACHIEVEMENTS } from "@/game/data";
+import { LEGACY_TREE, LEGACY_BRANCHES, calcLegacyPoints, calcSpentLegacy, canUnlockLegacy, hasLegacy } from "@/game/data/progression.js";
 import { AchIcon } from "@/game/data/chibiAssets";
 import useGameStore from "@/game/store";
 
 export default function StatsScreen() {
-  const { globalStats, go } = useGameStore();
+  const { globalStats, go, unlockLegacy } = useGameStore();
 
   const gs = globalStats;
   const topScorers = Object.entries(gs.allTimeScorers || {}).sort((a, b) => b[1] - a[1]).slice(0, 8);
@@ -15,7 +16,7 @@ export default function StatsScreen() {
         <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 22, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>📖 Compendio</div>
       </div>
       <div style={{ display: 'flex', width: '100%', maxWidth: 440, background: T.bg1, borderBottom: `1px solid ${T.border}` }}>
-        {[{ k: 'stats', l: '📊' }, { k: 'fame', l: '🌟 HOF' }, { k: 'achieve', l: '🏆' }].map(t => (
+        {[{ k: 'stats', l: '📊' }, { k: 'legacy', l: '🌳' }, { k: 'fame', l: '🌟' }, { k: 'achieve', l: '🏆' }].map(t => (
           <div key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '8px 4px', textAlign: 'center', fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: tab === t.k ? T.gold : T.tx3, cursor: 'pointer', borderBottom: tab === t.k ? `2px solid ${T.gold}` : '2px solid transparent' }}>{t.l}</div>
         ))}
       </div>
@@ -45,6 +46,54 @@ export default function StatsScreen() {
             )}
           </div>
         )}
+        {tab === 'legacy' && (() => {
+          const totalPts = calcLegacyPoints(gs);
+          const spentPts = calcSpentLegacy(gs);
+          const availPts = totalPts - spentPts;
+          const branchNames = { scouting: '🔭 Scouting', cantera: '🌱 Cantera', sponsor: '💰 Sponsor', tactics: '📋 Táctica', charisma: '🗣 Carisma' };
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ background: T.bg1, borderRadius: 8, padding: 10, border: `1px solid ${T.border}`, textAlign: 'center' }}>
+                <div style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.gold, textTransform: 'uppercase', letterSpacing: 1 }}>Puntos de Legado</div>
+                <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 28, color: T.gold }}>{availPts}</div>
+                <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>Ganados: {totalPts} · Gastados: {spentPts}</div>
+              </div>
+              {LEGACY_BRANCHES.map(branch => {
+                const nodes = Object.values(LEGACY_TREE).filter(n => n.branch === branch).sort((a, b) => a.tier - b.tier);
+                return (
+                  <div key={branch} style={{ background: T.bg1, borderRadius: 8, padding: 10, border: `1px solid ${T.border}` }}>
+                    <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 13, color: T.tx, marginBottom: 6 }}>{branchNames[branch] || branch}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {nodes.map(node => {
+                        const owned = hasLegacy(gs, node.id);
+                        const canBuy = canUnlockLegacy(gs, node.id);
+                        return (
+                          <div key={node.id} onClick={() => { if (canBuy) { unlockLegacy(node.id); } }} style={{
+                            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+                            background: owned ? `${T.win}10` : canBuy ? 'rgba(255,215,0,0.05)' : 'rgba(255,255,255,0.01)',
+                            border: `1px solid ${owned ? T.win + '30' : canBuy ? T.gold + '30' : T.border}`,
+                            borderRadius: 6, cursor: canBuy ? 'pointer' : 'default', opacity: owned || canBuy ? 1 : 0.4,
+                            touchAction: 'manipulation', minHeight: 48,
+                          }}>
+                            <div style={{ fontSize: 20, minWidth: 28, textAlign: 'center' }}>{node.i}</div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12, color: owned ? T.win : canBuy ? T.gold : T.tx3 }}>{node.n}</div>
+                              <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>{node.d}</div>
+                            </div>
+                            <div style={{ textAlign: 'right', minWidth: 30 }}>
+                              {owned ? <span style={{ color: T.win, fontFamily: T.fontHeading, fontSize: 12 }}>✓</span>
+                                : <span style={{ color: canBuy ? T.gold : T.tx3, fontFamily: T.fontHeading, fontSize: 11 }}>{node.cost}pt</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
         {tab === 'fame' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {(gs.hallOfFame || []).length === 0 ? (
