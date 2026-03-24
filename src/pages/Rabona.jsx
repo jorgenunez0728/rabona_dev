@@ -364,15 +364,18 @@ export default function Rabona() {
 
       // End of match processing
       const ps = S.ps, rs = S.rs;
-      const won = ps > rs, drew = ps === rs, lost = ps < rs;
+      const won = ps > rs, drew = ps === rs;
+      const archetypeData = game.archetype ? MANAGER_ARCHETYPES.find(a => a.id === game.archetype) : null;
+      const drawIsLoss = drew && archetypeData?.engineHooks?.drawCountsAsLoss;
+      const lost = ps < rs || drawIsLoss;
       const streakBonus = Math.max(0, game.streak) * 3;
       const leagueBonus = Math.floor(game.league * 4);
       const relicCoinBonus = (won && simRelics.includes('botines94') ? 3 : 0)
         + (won && simRelics.includes('trofeo') ? 2 * Math.max(0, game.streak) : 0)
         + (simRelics.includes('prensa') ? 5 : 0);
-      const coinGain = (won ? 25 : drew ? 12 : 5) + streakBonus + leagueBonus + relicCoinBonus;
+      const coinGain = (won ? 25 : (drew && !drawIsLoss) ? 12 : 5) + streakBonus + leagueBonus + relicCoinBonus;
       const hasLossXp = simRelics.includes('sangre');
-      const xpGain = won ? 18 : drew ? 12 : (hasLossXp ? 16 : 8);
+      const xpGain = won ? 18 : (drew && !drawIsLoss) ? 12 : (hasLossXp ? 16 : 8);
       const possPct = Math.round(S.possCount / Math.max(1, S.totalTicks) * 100);
       const objData = { wentBehind: S.log.some(e => e.type === 'goalRival'), fatiguedCount: 0, finalMorale: S.morale, possPct };
       const objResults = (game.currentObjectives || []).map(o => ({ ...o, completed: o.check ? o.check(ps, rs, objData) : false }));
@@ -382,7 +385,7 @@ export default function Rabona() {
 
       setGame(g => {
         const table = [...g.table]; const me = table.find(t => t.you); me.gf += ps; me.ga += rs;
-        if (won) me.w++; else if (drew) me.d++; else me.l++;
+        if (won) me.w++; else if (drew && !drawIsLoss) me.d++; else me.l++;
         table.filter(t => !t.you).forEach(t => { if (Math.random() < .7) { const gf = rnd(0, 3), ga = rnd(0, 2); t.gf += gf; t.ga += ga; if (gf > ga) t.w++; else if (gf === ga) t.d++; else t.l++; } });
         const roster = g.roster.map(p => ({ ...p, trait: { ...p.trait }, personality: p.personality || pick(PERSONALITIES) }));
         roster.filter(p => p.role === 'st').forEach(p => {
@@ -799,7 +802,7 @@ export default function Rabona() {
     }
     const livePosts = socialCacheRef.current.posts;
 
-    const [feedOpen, setFeedOpen] = useState(false);
+    const [feedOpen, setFeedOpen] = useState(true);
     const feedTouchRef = useRef({ startY: 0, startOpen: false });
 
     const handleFeedTouchStart = (e) => {
@@ -847,7 +850,7 @@ export default function Rabona() {
         {/* Collapsible social feed + win prob - swipe up to open */}
         <div
           onTouchStart={handleFeedTouchStart} onTouchEnd={handleFeedTouchEnd}
-          style={{ flex: '0 0 auto', maxHeight: feedOpen ? '40vh' : 36, overflow: 'hidden', background: T.bg1, borderTop: `1px solid ${T.border}`, transition: 'max-height 0.3s ease' }}
+          style={{ flex: '0 0 auto', maxHeight: feedOpen ? '40vh' : 100, overflow: 'hidden', background: T.bg1, borderTop: `1px solid ${T.border}`, transition: 'max-height 0.3s ease' }}
         >
           {/* Pull handle + win probability */}
           <div onClick={() => setFeedOpen(o => !o)} style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', minHeight: 36, touchAction: 'manipulation' }}>
