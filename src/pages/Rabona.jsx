@@ -992,6 +992,8 @@ export default function Rabona() {
         @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500;600&family=Silkscreen:wght@400;700&display=swap');
         @keyframes fw-fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes fw-pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
         @keyframes fw-shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
         @keyframes fw-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
         @keyframes fw-slideIn { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
