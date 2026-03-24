@@ -1,5 +1,5 @@
 import { SFX } from "@/game/audio";
-import { T, applyBoardEffect } from "@/game/data";
+import { T, applyBoardEffect, genPlayer } from "@/game/data";
 import useGameStore from "@/game/store";
 
 export default function BoardEventScreen() {
@@ -36,7 +36,7 @@ export default function BoardEventScreen() {
     SFX.play('click'); setBoardPhase('sliding'); setBoardSlideDir(option === 'a' ? 'left' : 'right');
     const effects = previewEffects(chosen);
     setTimeout(() => {
-      setGame(g => applyBoardEffect(g, chosen.e || {}, chosen.fx));
+      setGame(g => applyBoardEffect(g, chosen.e || {}, chosen.fx, genPlayer));
       setBoardSlideDir(null);
       setBoardResultData({ label: chosen.l, effects, narrative: `Elegiste: "${chosen.l}"` });
       setBoardPhase('result');

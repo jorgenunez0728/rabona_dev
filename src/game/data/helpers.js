@@ -1,7 +1,7 @@
 import { RELICS, NODE_TYPES } from './items.js';
 import { BOARD_EVENTS } from './events.js';
 import { initCopaState } from './leagues.js';
-import { genPlayer } from './players.js';
+
 
 // Helpers
 export function rnd(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
@@ -139,7 +139,7 @@ export function getBoardEvents(game) {
   }).slice(0, 2);
 }
 
-export function applyBoardEffect(gameState, effects, fxKey) {
+export function applyBoardEffect(gameState, effects, fxKey, genPlayerFn) {
   let g = { ...gameState };
   if (effects.coins) g.coins = Math.max(0, (g.coins || 0) + effects.coins);
   if (effects.chem) g.chemistry = Math.max(0, Math.min(99, (g.chemistry || 0) + effects.chem));
@@ -149,7 +149,7 @@ export function applyBoardEffect(gameState, effects, fxKey) {
     if (reserves.length > 0) { g.roster = g.roster.filter(p => p.id !== reserves[0].id); g.coins += 15; }
   }
   if (fxKey === 'addBadPlayer') {
-    const p = genPlayer('MID', 1, 3); p.role = 'rs';
+    const p = genPlayerFn('MID', 1, 3); p.role = 'rs';
     if (g.roster.length < 12) g.roster = [...g.roster, p];
   }
   if (fxKey === 'fatigueAll5') {
@@ -167,7 +167,7 @@ export function applyBoardEffect(gameState, effects, fxKey) {
     if (reserves.length > 1) { const r = reserves[Math.floor(Math.random() * reserves.length)]; g.roster = g.roster.filter(p => p.id !== r.id); }
   }
   if (fxKey === 'addLocalYouth') {
-    const p = genPlayer(pick(['DEF', 'MID']), 1, 4); p.role = 'rs';
+    const p = genPlayerFn(pick(['DEF', 'MID']), 1, 4); p.role = 'rs';
     if (g.roster.length < 12) g.roster = [...g.roster, p];
   }
   if (fxKey === 'friendlyRisk') {

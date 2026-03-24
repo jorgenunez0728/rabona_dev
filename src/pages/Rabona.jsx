@@ -40,6 +40,7 @@ import AscensionScreen from "@/game/screens/AscensionScreen";
 import ChampionScreen from "@/game/screens/ChampionScreen";
 import DeathScreen from "@/game/screens/DeathScreen";
 import StatsScreen from "@/game/screens/StatsScreen";
+import DebugScreen from "@/game/screens/DebugScreen";
 import RelicDraftOverlay from "@/game/overlays/RelicDraftOverlay";
 import LevelUpModal from "@/game/overlays/LevelUpModal";
 
@@ -1049,6 +1050,7 @@ export default function Rabona() {
         {screen === 'champion' && <ChampionScreen />}
         {screen === 'death' && <DeathScreen />}
         {screen === 'stats' && <StatsScreen />}
+        {screen === 'debug' && <DebugScreen />}
 
         {screen === 'career' && (
           careerScreen === 'create' ? <CareerCreateScreenLocal /> :

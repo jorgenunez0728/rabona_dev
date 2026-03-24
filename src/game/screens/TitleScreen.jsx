@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { SFX, Music, startAudio } from '@/game/audio';
 import { T } from '@/game/data';
 import MUSIC_TRACKS from '@/game/data/musicTracks';
@@ -9,6 +9,9 @@ export default function TitleScreen() {
   const [musicStarted, setMusicStarted] = useState(Music.isPlaying());
   const [musicEnabled, setMusicEnabled] = useState(Music._enabled);
   const [currentTrack, setCurrentTrack] = useState(Music.getCurrentTrack());
+  const [debugVisible, setDebugVisible] = useState(false);
+  const tapCount = useRef(0);
+  const tapTimer = useRef(null);
 
   const ensureMusic = async () => {
     await startAudio();
@@ -51,7 +54,8 @@ export default function TitleScreen() {
           {currentTrack.title}{currentTrack.artist ? ` — ${currentTrack.artist}` : ''}
         </div>
       )}
-      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#444', marginTop: 8 }}>Rabona v3.1 · Base44</div>
+      <div onClick={(e) => { e.stopPropagation(); tapCount.current++; clearTimeout(tapTimer.current); tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 2000); if (tapCount.current >= 5) { setDebugVisible(true); tapCount.current = 0; } }} style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: debugVisible ? '#ff4444' : '#444', marginTop: 8, cursor: 'pointer', userSelect: 'none' }}>Rabona v3.1 · Base44</div>
+      {debugVisible && <button className="fw-btn fw-btn-outline" onClick={(e) => { e.stopPropagation(); go('debug'); }} style={{ fontSize: 11, padding: '4px 14px', color: '#ff4444', borderColor: '#ff444440', marginTop: 4 }}>🐛 Debug Menu</button>}
     </div>
   );
 }
