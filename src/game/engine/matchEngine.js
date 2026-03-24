@@ -2,7 +2,7 @@ import { rnd, pick, avgStat, effectiveStats, teamGKRating, clamp } from './utils
 import { createPossessionState, resolvePossession, getPossessionPct } from './possession.js';
 import { generateChanceType, shouldGenerateChance, resolveChance, pickScorer, pickAssister, CHANCE_TYPES } from './chances.js';
 import { createMomentum, updateMomentum, getMomentumModifiers } from './momentum.js';
-import { getTacticalModifiers, HALFTIME_OPTIONS } from './tactics.js';
+import { getTacticalModifiers, getFormationMatchup, HALFTIME_OPTIONS } from './tactics.js';
 import { getRivalStrategy, getRivalModifiers } from './rivalAI.js';
 import { createMatchStats, recordShot, recordChance, recordGoal, recordCard, recordCorner, recordFoul, recordInjury, recordMomentum, recordZone, recordPossession, getFinalStats } from './matchStats.js';
 import { narrate } from './narration.js';
@@ -59,6 +59,7 @@ export function* simulateMatch(config) {
   const momentum = createMomentum(initialMorale);
   const stats = createMatchStats();
   const tacticalMods = getTacticalModifiers(formation, playStyle, intensity);
+  const matchupMods = getFormationMatchup(formation.id, 'clasica');
 
   // Relic flags
   const hasGkLastMin = relics.includes('guantes');
@@ -229,8 +230,12 @@ export function* simulateMatch(config) {
       tacticsMod: {
         homePossBonus: tacticalMods.homePossBonus + (stratMod.atkMod || 0),
         awayPossBonus: rivalMods.rivalPossBonus || 0,
-        counterBonus: tacticalMods.counterBonus || 0,
+        counterBonus: (tacticalMods.counterBonus || 0) + (tacticalMods.counterWeakness || 0),
         rivalCounterBonus: tacticalMods.rivalCounterBonus || 0,
+        defenseZoneBonus: tacticalMods.defenseZoneBonus || 0,
+        midfieldZoneBonus: tacticalMods.midfieldZoneBonus || 0,
+        attackZoneBonus: tacticalMods.attackZoneBonus || 0,
+        possessionRetention: tacticalMods.possessionRetention || 0,
       },
     });
 
@@ -262,7 +267,8 @@ export function* simulateMatch(config) {
     }
 
     // ─── CHANCE GENERATION ───
-    if (shouldGenerateChance(possResult, { intensityMod: tacticalMods.intensityMod })) {
+    const chanceIntensityMod = tacticalMods.intensityMod + (possResult.winner === 'home' ? (tacticalMods.offensiveOutput || 0) : (tacticalMods.rivalChanceBonus || 0));
+    if (shouldGenerateChance(possResult, { intensityMod: chanceIntensityMod })) {
       const isHomeAttacking = possResult.winner === 'home';
       const attackTeam = isHomeAttacking ? home : away;
       const defendTeam = isHomeAttacking ? away : home;
@@ -297,6 +303,7 @@ export function* simulateMatch(config) {
           diamanteBonus: hasDiamanteKey ? 0.03 : 0,
         } : {},
         difficultyMod: isHomeAttacking ? diffMod * 0.5 : -diffMod,
+        matchupMod: isHomeAttacking ? matchupMods[0] : matchupMods[1],
       });
 
       recordShot(stats, team, result.isOnTarget);

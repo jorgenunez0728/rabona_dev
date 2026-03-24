@@ -250,6 +250,66 @@ export const LEGENDS = [
   {name:'El Maradona del Barrio',pos:'MID',img:'dios',trait:{n:'Dios',d:'El mejor de todos',fx:'ghost'},bonus:{atk:7,def:4,spd:8},story:'Dicen que jugó en el barrio hace 30 años.'},
 ];
 
+// Formation-specific canvas positions
+const CANVAS_FORMATIONS = {
+  muro: [
+    { bx: .5, by: .88, pull: .005, minY: .78, maxY: .95 },
+    { bx: .20, by: .72, pull: .02, minY: .55, maxY: .82 },
+    { bx: .50, by: .68, pull: .015, minY: .55, maxY: .80 },
+    { bx: .80, by: .72, pull: .02, minY: .55, maxY: .82 },
+    { bx: .50, by: .30, pull: .08, minY: .15, maxY: .55 },
+  ],
+  clasica: [
+    { bx: .5, by: .88, pull: .005, minY: .78, maxY: .95 },
+    { bx: .25, by: .70, pull: .02, minY: .55, maxY: .82 },
+    { bx: .75, by: .70, pull: .02, minY: .55, maxY: .82 },
+    { bx: .50, by: .52, pull: .06, minY: .35, maxY: .70 },
+    { bx: .50, by: .35, pull: .08, minY: .15, maxY: .60 },
+  ],
+  diamante: [
+    { bx: .5, by: .88, pull: .005, minY: .78, maxY: .95 },
+    { bx: .50, by: .68, pull: .02, minY: .55, maxY: .80 },
+    { bx: .25, by: .52, pull: .04, minY: .35, maxY: .68 },
+    { bx: .75, by: .52, pull: .04, minY: .35, maxY: .68 },
+    { bx: .50, by: .30, pull: .08, minY: .15, maxY: .55 },
+  ],
+  blitz: [
+    { bx: .5, by: .88, pull: .005, minY: .78, maxY: .95 },
+    { bx: .30, by: .70, pull: .02, minY: .55, maxY: .82 },
+    { bx: .70, by: .70, pull: .02, minY: .55, maxY: .82 },
+    { bx: .30, by: .35, pull: .07, minY: .15, maxY: .60 },
+    { bx: .70, by: .35, pull: .07, minY: .15, maxY: .60 },
+  ],
+  tridente: [
+    { bx: .5, by: .88, pull: .005, minY: .78, maxY: .95 },
+    { bx: .50, by: .68, pull: .02, minY: .55, maxY: .80 },
+    { bx: .20, by: .35, pull: .07, minY: .15, maxY: .60 },
+    { bx: .50, by: .30, pull: .08, minY: .15, maxY: .55 },
+    { bx: .80, by: .35, pull: .07, minY: .15, maxY: .60 },
+  ],
+  cadena: [
+    { bx: .5, by: .88, pull: .005, minY: .78, maxY: .95 },
+    { bx: .30, by: .68, pull: .02, minY: .55, maxY: .80 },
+    { bx: .70, by: .68, pull: .02, minY: .55, maxY: .80 },
+    { bx: .25, by: .48, pull: .04, minY: .30, maxY: .65 },
+    { bx: .75, by: .48, pull: .04, minY: .30, maxY: .65 },
+  ],
+};
+
+export function getCanvasFormation(formationId) {
+  const id = (formationId || 'clasica').toString().toLowerCase();
+  const home = CANVAS_FORMATIONS[id] || CANVAS_FORMATIONS.clasica;
+  const away = home.map(p => ({
+    bx: p.bx,
+    by: 1 - p.by,
+    pull: p.pull,
+    minY: 1 - p.maxY,
+    maxY: 1 - p.minY,
+  }));
+  const zeros = [0, 0, 0, 0, 0];
+  return { home, away, homeSpreadX: zeros, awaySpreadX: zeros };
+}
+
 // Canvas sprite drawing
 // team: 'home' | 'rival' — rivalVariant: 'red'|'green'|'purple'
 export function drawSprite(ctx, x, y, bodyCol, darkCol, frame, seed, isGK = false, team = 'home', rivalVariant = 'red') {
