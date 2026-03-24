@@ -53,7 +53,7 @@ export default function BottomNav() {
             <span style={{ fontSize: 18, lineHeight: 1 }}>{tab.icon}</span>
             <span style={{
               fontFamily: "'Oswald'", fontWeight: active ? 700 : 400,
-              fontSize: 9, color: active ? T.gold : T.tx3,
+              fontSize: 10, color: active ? T.gold : T.tx3,
               textTransform: 'uppercase', letterSpacing: 0.5,
             }}>
               {tab.label}

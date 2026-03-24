@@ -80,17 +80,17 @@ export function PlayerCard({ player, isCaptain, onAction, onDetail, compact = fa
       {injured && <span style={{ fontSize: 11 }}>🏥</span>}
       {!injured && fatigued && <span style={{ fontSize: 11, color: T.draw }}>{player.fatigue}%</span>}
       {onAction && (
-        <div style={{ display: 'flex', gap: 2 }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', gap: 3 }} onClick={e => e.stopPropagation()}>
           {player.role === 'rs' && (
-            <button onClick={() => onAction('promote', player)} style={{ fontFamily: "'Oswald'", fontSize: 11, padding: '3px 6px', border: `1px solid ${T.win}`, background: `${T.win}15`, color: T.win, borderRadius: 3, cursor: 'pointer' }}>⬆</button>
+            <button onClick={() => onAction('promote', player)} style={{ fontFamily: "'Oswald'", fontSize: 13, padding: '6px 10px', minWidth: 36, minHeight: 36, border: `1px solid ${T.win}`, background: `${T.win}15`, color: T.win, borderRadius: 4, cursor: 'pointer', touchAction: 'manipulation' }}>⬆</button>
           )}
           {player.role === 'st' && (
-            <button onClick={() => onAction('demote', player)} style={{ fontFamily: "'Oswald'", fontSize: 11, padding: '3px 6px', border: `1px solid ${T.tx3}`, background: 'transparent', color: T.tx3, borderRadius: 3, cursor: 'pointer' }}>⬇</button>
+            <button onClick={() => onAction('demote', player)} style={{ fontFamily: "'Oswald'", fontSize: 13, padding: '6px 10px', minWidth: 36, minHeight: 36, border: `1px solid ${T.tx3}`, background: 'transparent', color: T.tx3, borderRadius: 4, cursor: 'pointer', touchAction: 'manipulation' }}>⬇</button>
           )}
           {player.pos !== 'GK' && player.role === 'rs' && (
-            <button onClick={() => onAction('tempGK', player)} style={{ fontFamily: "'Oswald'", fontSize: 11, padding: '3px 6px', border: `1px solid ${player.tempGK ? '#ffc107' : T.tx3}`, background: player.tempGK ? 'rgba(255,193,7,0.12)' : 'transparent', color: player.tempGK ? '#ffc107' : T.tx3, borderRadius: 3, cursor: 'pointer' }}>🧤</button>
+            <button onClick={() => onAction('tempGK', player)} style={{ fontFamily: "'Oswald'", fontSize: 13, padding: '6px 10px', minWidth: 36, minHeight: 36, border: `1px solid ${player.tempGK ? '#ffc107' : T.tx3}`, background: player.tempGK ? 'rgba(255,193,7,0.12)' : 'transparent', color: player.tempGK ? '#ffc107' : T.tx3, borderRadius: 4, cursor: 'pointer', touchAction: 'manipulation' }}>🧤</button>
           )}
-          <button onClick={() => onAction('captain', player)} style={{ fontFamily: "'Oswald'", fontSize: 11, padding: '3px 6px', border: `1px solid ${isCaptain ? T.gold : T.tx3}`, background: isCaptain ? `${T.gold}15` : 'transparent', color: isCaptain ? T.gold : T.tx3, borderRadius: 3, cursor: 'pointer' }}>©</button>
+          <button onClick={() => onAction('captain', player)} style={{ fontFamily: "'Oswald'", fontSize: 13, padding: '6px 10px', minWidth: 36, minHeight: 36, border: `1px solid ${isCaptain ? T.gold : T.tx3}`, background: isCaptain ? `${T.gold}15` : 'transparent', color: isCaptain ? T.gold : T.tx3, borderRadius: 4, cursor: 'pointer', touchAction: 'manipulation' }}>©</button>
         </div>
       )}
     </div>
@@ -170,9 +170,13 @@ export function CareerBars({ bars }) {
 
 // ── Particle System ──
 export class ParticleSystem {
-  constructor() { this.particles = []; }
+  constructor() {
+    this.particles = [];
+    this.maxParticles = (typeof navigator !== 'undefined' && navigator.deviceMemory && navigator.deviceMemory <= 4) ? 30 : 80;
+  }
   emit(x, y, count, color, opts = {}) {
-    for (let i = 0; i < count; i++) {
+    const effectiveCount = Math.min(count, this.maxParticles - this.particles.length);
+    for (let i = 0; i < effectiveCount; i++) {
       this.particles.push({
         x, y, vx: (Math.random() - 0.5) * (opts.spread || 4), vy: -Math.random() * (opts.upforce || 3) - 1,
         life: 1, decay: 0.01 + Math.random() * 0.02, size: opts.size || (2 + Math.random() * 3),

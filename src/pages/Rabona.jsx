@@ -10,6 +10,11 @@ import {
 } from "@/game/data";
 import { getStadiumPitch } from "@/assets/stadiums";
 import { simulateMatch, PLAY_STYLES, INTENSITIES, getManOfTheMatch } from "@/game/engine";
+import { perlin2 } from "@/game/engine/perlin";
+import { MANAGER_ARCHETYPES } from "@/game/data/archetypes.js";
+import { TACTICAL_CARDS } from "@/game/data/cards.js";
+import { ASCENSION_MUTATORS } from "@/game/data/mutators.js";
+
 import { PlayerDetailModal, ParticleSystem } from "@/game/components";
 import { CareerCreateScreen, CareerCardScreen, CareerMatchScreen, CareerSeasonEnd, CareerEndScreen } from "@/game/CareerScreens";
 import useGameStore from "@/game/store";
@@ -62,6 +67,9 @@ export default function Rabona() {
     const aTrailRef = useRef(Array.from({ length: 7 }, () => []));
     const shakeRef = useRef(0);
     const hpxRef = useRef([]), hpyRef = useRef([]), apxRef = useRef([]), apyRef = useRef([]);
+    const hvxRef = useRef([]), hvyRef = useRef([]), avxRef = useRef([]), avyRef = useRef([]);
+    const ballVxRef = useRef(0), ballVyRef = useRef(0);
+    const ballTrailRef = useRef([]);
     const eventResolveRef = useRef(null);
     const penaltyResolveRef = useRef(null);
     const pitchImgRef = useRef(null);
@@ -77,9 +85,13 @@ export default function Rabona() {
       simRef.current = true;
       sim.current = { ps: 0, rs: 0, minute: 0, speed: 2, ballX: .5, ballY: .5, ballTargetX: .5, ballTargetY: .5, possession: true, log: [], done: false, rivalName: match.rival?.name || 'Rival', rivalPlayers: match.rivalPlayers || [], morale: 50, strategy: 'balanced', shots: 0, possCount: 0, totalTicks: 0, pendingEvent: null, halftimeShown: false, goalEffect: 0, pendingPenalty: null, animState: 'idle', celebrateUntil: 0, chanceIndicator: null, involvedPlayer: null };
       hpxRef.current = []; hpyRef.current = []; apxRef.current = []; apyRef.current = [];
+      hvxRef.current = new Array(7).fill(0); hvyRef.current = new Array(7).fill(0);
+      avxRef.current = new Array(7).fill(0); avyRef.current = new Array(7).fill(0);
+      ballVxRef.current = 0; ballVyRef.current = 0; ballTrailRef.current = [];
       ballDrawX.current = 0.5; ballDrawY.current = 0.5; ballAngle.current = 0;
       Crowd.start();
-      const di = setInterval(() => { const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: s.done, morale: s.morale, pendingEvent: s.pendingEvent, strategy: s.strategy, pendingPenalty: s.pendingPenalty }); }, 150);
+      const displayInterval = (navigator.deviceMemory && navigator.deviceMemory <= 4) ? 250 : 150;
+      const di = setInterval(() => { const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: s.done, morale: s.morale, pendingEvent: s.pendingEvent, strategy: s.strategy, pendingPenalty: s.pendingPenalty }); }, displayInterval);
       const ci = setInterval(() => { const s = sim.current; Crowd.setIntensity(s.morale / 100); }, 1000);
       let animId; function dl() { frameRef.current++; drawPitch(); animId = requestAnimationFrame(dl); } dl();
       runEngineLoop().then(() => { clearInterval(di); clearInterval(ci); cancelAnimationFrame(animId); const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: true, morale: s.morale, pendingEvent: null, strategy: s.strategy }); });
@@ -149,6 +161,17 @@ export default function Rabona() {
       function addLog(t, x) { S.log.push({ type: t, text: x }); if (S.log.length > 25) S.log.shift(); }
       function narrate(type) { return legacyNarrate(type, 'Halcones', S.rivalName, starters); }
 
+      // Resolve metaprogression data for engine
+      const archetypeData = game.archetype ? MANAGER_ARCHETYPES.find(a => a.id === game.archetype) : null;
+      const archetypeHooks = archetypeData?.engineHooks || {};
+      const tacticalCards = (game.cardLoadout || []).map(id => TACTICAL_CARDS.find(c => c.id === id)).filter(Boolean);
+      // Mutator effects
+      const mutatorEffects = {};
+      for (const mid of (game.activeMutators || [])) {
+        const m = ASCENSION_MUTATORS.find(mu => mu.id === mid);
+        if (m?.engineEffect) Object.assign(mutatorEffects, m.engineEffect);
+      }
+
       // Create the engine generator
       const engine = simulateMatch({
         starters,
@@ -161,6 +184,10 @@ export default function Rabona() {
         chemistry: game.chemistry,
         captain: game.roster.find(p => p.id === game.captain),
         matchType,
+        tacticalCards,
+        archetypeHooks,
+        mutatorEffects,
+        blessings: game.blessings || [],
       });
 
       let result = engine.next();
@@ -303,6 +330,13 @@ export default function Rabona() {
 
           case 'relic_effect':
             addLog('event', ev.text);
+            break;
+
+          case 'card_trigger':
+            if (ev.card && sp() >= 2) {
+              addLog('event', `🎴 ${ev.card.i} ${ev.card.n} se activa!`);
+              S.cardFlash = { icon: ev.card.i, name: ev.card.n, until: Date.now() + 1500 };
+            }
             break;
 
           case 'whistle':
@@ -496,9 +530,16 @@ export default function Rabona() {
       const canvas = canvasRef.current; if (!canvas) return;
       const ctx = canvas.getContext('2d');
       ctx.imageSmoothingEnabled = false;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const rect = canvas.parentElement.getBoundingClientRect();
-      if (canvas.width !== Math.floor(rect.width) || canvas.height !== Math.floor(rect.height)) { canvas.width = Math.floor(rect.width); canvas.height = Math.floor(rect.height); }
-      const W = canvas.width, H = canvas.height, f = frameRef.current, S = sim.current;
+      const logW = Math.floor(rect.width), logH = Math.floor(rect.height);
+      const targetW = logW * dpr, targetH = logH * dpr;
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW; canvas.height = targetH;
+        canvas.style.width = logW + 'px'; canvas.style.height = logH + 'px';
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const W = Math.floor(canvas.width / dpr), H = Math.floor(canvas.height / dpr), f = frameRef.current, S = sim.current;
       if (!W || !H) return;
       ctx.save();
       if (shakeRef.current > 0) { const s = shakeRef.current; ctx.translate(Math.sin(f * 0.5) * s * 0.3, Math.cos(f * 0.7) * s * 0.2); shakeRef.current = Math.max(0, shakeRef.current - 0.5); }
@@ -523,26 +564,33 @@ export default function Rabona() {
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.fillRect(W / 2 - gpw / 2, m - 1, gpw, gph); ctx.fillRect(W / 2 - gpw / 2, H - m - gph + 1, gpw, gph);
       }
-      // ── Ball physics: bezier interpolation with deceleration ──
-      const ballDist = Math.hypot(S.ballTargetX - S.ballX, S.ballTargetY - S.ballY);
-      // Adaptive speed: fast when far (counter), slow when close (control)
-      const ballEase = ballDist > 0.3 ? 0.06 : ballDist > 0.1 ? 0.045 : 0.08;
-      // Slight curve offset for organic pase feel
-      if (!S._ballCurve || ballDist > 0.25) {
+      // ── Ball physics: velocity-based with spin/Magnus effect ──
+      if (!S._ballCurve || Math.hypot(S.ballTargetX - S.ballX, S.ballTargetY - S.ballY) > 0.25) {
         S._ballCurve = (Math.random() - 0.5) * 0.04;
       }
-      const perpX = -(S.ballTargetY - S.ballY) * S._ballCurve;
-      const perpY = (S.ballTargetX - S.ballX) * S._ballCurve;
-      S.ballX += ((S.ballTargetX + perpX) - S.ballX) * ballEase;
-      S.ballY += ((S.ballTargetY + perpY) - S.ballY) * ballEase;
+      const bStiff = 0.008;
+      const bDamp = 0.92;
+      const spin = S._ballCurve * 0.001;
+      // Spring toward target with damping
+      ballVxRef.current = (ballVxRef.current + (S.ballTargetX - S.ballX) * bStiff) * bDamp;
+      ballVyRef.current = (ballVyRef.current + (S.ballTargetY - S.ballY) * bStiff) * bDamp;
+      // Magnus spin effect for natural curves
+      ballVxRef.current += spin * ballVyRef.current;
+      ballVyRef.current -= spin * ballVxRef.current;
+      S.ballX += ballVxRef.current;
+      S.ballY += ballVyRef.current;
       // Visual draw position with extra smoothing
-      const drawEase = 0.12;
+      const drawEase = 0.14;
       ballDrawX.current += (S.ballX - ballDrawX.current) * drawEase;
       ballDrawY.current += (S.ballY - ballDrawY.current) * drawEase;
       const dx = S.ballX - ballDrawX.current, dy = S.ballY - ballDrawY.current;
       const ballSpeed = Math.sqrt(dx * dx + dy * dy);
-      ballAngle.current += ballSpeed * 120; // Faster spin when moving fast
+      ballAngle.current += ballSpeed * 120;
       const bpx = m + fw * ballDrawX.current, bpy = m + fh * ballDrawY.current;
+      // Ball trail (last 6 positions with fade)
+      const trail = ballTrailRef.current;
+      trail.push({ x: bpx, y: bpy });
+      if (trail.length > 6) trail.shift();
       const fmCfg = getCanvasFormation(game.formation?.id || game.formation);
       const homeFormation = fmCfg.home;
       const awayFormation = fmCfg.away;
@@ -551,24 +599,31 @@ export default function Rabona() {
       if (!hpxRef.current.length || hpxRef.current.length < 7) {
         homeFormation.forEach((p, i) => { hpxRef.current[i] = m + fw * (p.bx + homeSpreadX[i]); hpyRef.current[i] = m + fh * p.by; });
         awayFormation.forEach((p, i) => { apxRef.current[i] = m + fw * (p.bx + awaySpreadX[i]); apyRef.current[i] = m + fh * p.by; });
+        if (!hvxRef.current.length) { hvxRef.current = new Array(7).fill(0); hvyRef.current = new Array(7).fill(0); }
+        if (!avxRef.current.length) { avxRef.current = new Array(7).fill(0); avyRef.current = new Array(7).fill(0); }
       }
-      // ── Steering behaviors: seek + arrive + separation + context-aware animations ──
+      // ── Steering behaviors: spring physics + Perlin wander + velocity-based movement ──
       const SEPARATION_DIST = fw * 0.08;
       const isCelebrating = S.celebrateUntil > Date.now();
       const isChanceActive = S.animState === 'kick' || S.animState === 'run';
-      const steer = (pxArr, pyArr, formation, spreadX, hasBall, count, isHome) => {
+      const steer = (pxArr, pyArr, vxArr, vyArr, formation, spreadX, hasBall, count, isHome) => {
         formation.forEach((pos, i) => {
           if (i >= count) return;
           const baseX = m + fw * (pos.bx + spreadX[i]), baseY = m + fh * pos.by;
+          // Position-specific physics from formation data
+          const stiffness = pos.stiffness || 0.004;
+          const wanderAmp = pos.wanderAmp || 2.0;
+          const maxSpd = (pos.maxSpeed || 3.0) * (fw / 300); // scale to canvas size
+          const damping = 0.86;
 
           // ── Contextual: group celebration ──
           if (isCelebrating && isHome && S.goalEffect >= 0) {
-            // All home players converge toward upper-center (near rival goal)
             const celebX = W * 0.5 + Math.sin(i * 1.8) * fw * 0.12;
             const celebY = m + fh * 0.15;
-            pxArr[i] += (celebX - pxArr[i]) * 0.04;
-            pyArr[i] += (celebY - pyArr[i]) * 0.03;
-            // Joyful bounce
+            vxArr[i] = (vxArr[i] + (celebX - pxArr[i]) * 0.005) * 0.9;
+            vyArr[i] = (vyArr[i] + (celebY - pyArr[i]) * 0.004) * 0.9;
+            pxArr[i] += vxArr[i];
+            pyArr[i] += vyArr[i];
             pyArr[i] += Math.sin(f * 0.15 + i * 2.0) * 2.5;
             pxArr[i] += Math.cos(f * 0.12 + i * 1.5) * 1.5;
             return;
@@ -577,25 +632,25 @@ export default function Rabona() {
           let pull = hasBall ? pos.pull : pos.pull * 0.4;
           let pushY = hasBall ? -fh * 0.06 : fh * 0.04;
 
-          // ── Contextual: pressing (when team has ball, push formation higher) ──
+          // ── Contextual: pressing ──
           if (hasBall && isChanceActive && i > 0) {
-            pushY -= fh * 0.04; // Extra forward push during active play
-            pull *= 1.5; // Stronger attraction to ball
+            pushY -= fh * 0.04;
+            pull *= 1.5;
           }
 
-          // Seek: move toward tactical position influenced by ball
+          // Seek: tactical position influenced by ball
           let targetX = baseX + (bpx - baseX) * pull * 2;
           let targetY = baseY + pushY + (bpy - baseY) * pull;
           targetY = Math.max(m + fh * pos.minY, Math.min(m + fh * pos.maxY, targetY));
 
-          // ── Contextual: attacking runs (forwards make diagonal runs during chances) ──
+          // ── Contextual: attacking runs ──
           if (isChanceActive && hasBall && i >= count - 2 && i > 0) {
             const runOffset = Math.sin(f * 0.02 + i * 3.0) * fw * 0.06;
             targetX += runOffset;
-            targetY -= fh * 0.03; // Push forward
+            targetY -= fh * 0.03;
           }
 
-          // Separation: avoid overlapping with nearby teammates
+          // Separation: repel from nearby teammates
           let sepX = 0, sepY = 0;
           for (let j = 0; j < count; j++) {
             if (j === i) continue;
@@ -610,22 +665,32 @@ export default function Rabona() {
           targetX += sepX;
           targetY += sepY;
 
-          // Arrive: variable easing (decelerate near target)
-          const distToTarget = Math.hypot(targetX - pxArr[i], targetY - pyArr[i]);
-          const arriveEase = distToTarget > 40 ? 0.06 : distToTarget > 15 ? 0.04 : 0.025;
-          pxArr[i] += (targetX - pxArr[i]) * arriveEase;
-          pyArr[i] += (targetY - pyArr[i]) * arriveEase;
+          // ── Spring physics: acceleration toward target with damping ──
+          const ax = (targetX - pxArr[i]) * stiffness;
+          const ay = (targetY - pyArr[i]) * stiffness;
+          vxArr[i] = (vxArr[i] + ax) * damping;
+          vyArr[i] = (vyArr[i] + ay) * damping;
 
-          // Organic wander: perlin-like noise (dual-frequency sine waves)
-          const seed = i * 3.7 + (hasBall ? 0 : 50);
-          const wanderX = Math.sin(f * 0.005 + seed) * 1.0 + Math.sin(f * 0.013 + seed * 0.6) * 0.5;
-          const wanderY = Math.cos(f * 0.007 + seed * 1.3) * 0.8 + Math.sin(f * 0.011 + seed * 0.9) * 0.4;
-          pxArr[i] += wanderX;
-          pyArr[i] += wanderY;
+          // Clamp to maxSpeed for this position
+          const spd = Math.sqrt(vxArr[i] * vxArr[i] + vyArr[i] * vyArr[i]);
+          if (spd > maxSpd) {
+            vxArr[i] = (vxArr[i] / spd) * maxSpd;
+            vyArr[i] = (vyArr[i] / spd) * maxSpd;
+          }
+
+          pxArr[i] += vxArr[i];
+          pyArr[i] += vyArr[i];
+
+          // ── Perlin noise wander: unique per player, organic and unpredictable ──
+          const seed = i * 7.3 + (isHome ? 0 : 100);
+          const noiseX = perlin2(seed + f * 0.0018, seed * 0.7) * wanderAmp;
+          const noiseY = perlin2(seed * 0.7, seed + f * 0.0022) * wanderAmp * 0.8;
+          pxArr[i] += noiseX;
+          pyArr[i] += noiseY;
         });
       };
-      steer(hpxRef.current, hpyRef.current, homeFormation, homeSpreadX, S.possession, 7, true);
-      steer(apxRef.current, apyRef.current, awayFormation, awaySpreadX, !S.possession, 7, false);
+      steer(hpxRef.current, hpyRef.current, hvxRef.current, hvyRef.current, homeFormation, homeSpreadX, S.possession, 7, true);
+      steer(apxRef.current, apyRef.current, avxRef.current, avyRef.current, awayFormation, awaySpreadX, !S.possession, 7, false);
       if (S.goalEffect !== 0) {
         const gx = W / 2, gy = S.goalEffect > 0 ? m + 20 : H - m - 20;
         const col = S.goalEffect > 0 ? ['#f0c040', '#ffd600', '#fff'] : ['#ff1744', '#ef5350'];
@@ -688,6 +753,16 @@ export default function Rabona() {
           ctx.setLineDash([]);
         }
       }
+      // Ball trail (fading dots behind the ball for motion feel)
+      if (ballSpeed > 0.002) {
+        const bt = ballTrailRef.current;
+        for (let ti = 0; ti < bt.length - 1; ti++) {
+          const alpha = (ti / bt.length) * 0.25;
+          const radius = 1.5 + (ti / bt.length) * 1.5;
+          ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+          ctx.beginPath(); ctx.arc(bt[ti].x, bt[ti].y, radius, 0, Math.PI * 2); ctx.fill();
+        }
+      }
       // Ball with smooth rotation
       ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(bpx + 1, bpy + 8, 5, 2, 0, 0, Math.PI * 2); ctx.fill();
       ctx.save(); ctx.translate(bpx, bpy); ctx.rotate(ballAngle.current);
@@ -724,70 +799,89 @@ export default function Rabona() {
     }
     const livePosts = socialCacheRef.current.posts;
 
+    const [feedOpen, setFeedOpen] = useState(false);
+    const feedTouchRef = useRef({ startY: 0, startOpen: false });
+
+    const handleFeedTouchStart = (e) => {
+      feedTouchRef.current = { startY: e.touches[0].clientY, startOpen: feedOpen };
+    };
+    const handleFeedTouchEnd = (e) => {
+      const dy = feedTouchRef.current.startY - e.changedTouches[0].clientY;
+      if (Math.abs(dy) > 40) setFeedOpen(dy > 0);
+    };
+
     return (
-      <div style={{ display: 'flex', flexDirection: 'row', height: '100%', background: '#000', position: 'relative' }}>
-        {/* Social Feed */}
-        <div style={{ flex: '0 0 28%', display: 'flex', flexDirection: 'column', background: T.bg, borderRight: `1px solid ${T.bg3}`, overflow: 'hidden' }}>
-          <div style={{ padding: '4px 6px', background: T.bg1, borderBottom: `1px solid ${T.border}` }}>
-            <div style={{ fontFamily: "'Oswald'", fontSize: 8, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1 }}>📱 En vivo</div>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#000', position: 'relative' }}>
+        {/* Pitch - full width portrait */}
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+          <canvas ref={canvasRef} onDoubleClick={() => { sim.current.speed = 0; setDisplay(d => ({ ...d, speed: 0 })); }} style={{ width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated', touchAction: 'manipulation' }} />
+          {/* Scoreboard overlay */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 15, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', padding: '6px 10px', minHeight: 44 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderRadius: 4, overflow: 'hidden' }}>
+              <div style={{ padding: '4px 8px', background: '#1565c0', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 12, color: '#fff' }}>HAL</div>
+              <div style={{ padding: '4px 10px', background: '#222', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 18, color: '#fff', minWidth: 48, textAlign: 'center' }}>{display.ps}-{display.rs}</div>
+              <div style={{ padding: '4px 8px', background: '#c62828', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 12, color: '#fff' }}>{match.rival?.name?.substring(0, 4) || 'RIV'}</div>
+              <div style={{ padding: '4px 6px', background: T.accent, fontFamily: "'Oswald'", fontWeight: 700, fontSize: 12, color: '#000' }}>{display.minute}'</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: 40, height: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 2 }}><div style={{ width: `${display.morale}%`, height: '100%', background: moraleColor, borderRadius: 2 }} /></div>
+              <span style={{ fontSize: 11, color: moraleColor, fontFamily: "'Oswald'", fontWeight: 700 }}>{display.morale}</span>
+            </div>
           </div>
-          <div style={{ flex: 1, overflow: 'auto', padding: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {/* Speed controls - floating bottom-right */}
+          <div style={{ position: 'absolute', bottom: 8, right: 8, zIndex: 15, display: 'flex', gap: 4 }}>
+            {[{ l: '⏩', s: 0 }, { l: '▶', s: 1 }, { l: '▶▶', s: 2 }].map(({ l, s }) => (
+              <button key={s} onClick={() => { sim.current.speed = s; setDisplay(d => ({ ...d, speed: s })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, padding: '8px 12px', minWidth: 44, minHeight: 44, border: `1px solid ${display.speed === s ? T.win : 'rgba(255,255,255,0.2)'}`, background: display.speed === s ? `${T.win}30` : 'rgba(0,0,0,0.6)', color: display.speed === s ? T.win : 'rgba(255,255,255,0.5)', borderRadius: 6, cursor: 'pointer', touchAction: 'manipulation', backdropFilter: 'blur(4px)' }}>{l}</button>
+            ))}
+            <button onClick={() => { SFX._muted = !SFX._muted; if (SFX._muted) Crowd.stop(); else if (sim.current && !sim.current.done) Crowd.start(); setDisplay(d => ({ ...d })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '8px 12px', minWidth: 44, minHeight: 44, border: `1px solid ${SFX._muted ? 'rgba(239,83,80,0.4)' : 'rgba(255,255,255,0.2)'}`, background: SFX._muted ? 'rgba(239,83,80,0.15)' : 'rgba(0,0,0,0.6)', color: SFX._muted ? '#ef5350' : 'rgba(255,255,255,0.5)', borderRadius: 6, cursor: 'pointer', touchAction: 'manipulation', backdropFilter: 'blur(4px)' }}>{SFX._muted ? '🔇' : '🔊'}</button>
+          </div>
+        </div>
+        {/* Match log - always visible */}
+        <div style={{ flex: '0 0 auto', maxHeight: 80, overflow: 'auto', background: T.bg, borderTop: `1px solid ${T.bg3}`, padding: '4px 8px' }}>
+          {[...display.log].reverse().slice(0, 4).map((e, i) => (
+            <div key={i} style={{ display: 'flex', padding: '2px 4px', borderLeft: `2px solid ${LC[e.type] || 'transparent'}`, marginBottom: 1 }}>
+              <span style={{ fontFamily: "'Barlow'", fontSize: 12, color: LC[e.type] || T.tx2, fontWeight: (e.type === 'goal' || e.type === 'goalRival') ? 700 : 400, lineHeight: 1.3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{e.text}</span>
+            </div>
+          ))}
+        </div>
+        {/* Collapsible social feed + win prob - swipe up to open */}
+        <div
+          onTouchStart={handleFeedTouchStart} onTouchEnd={handleFeedTouchEnd}
+          style={{ flex: '0 0 auto', maxHeight: feedOpen ? '40vh' : 36, overflow: 'hidden', background: T.bg1, borderTop: `1px solid ${T.border}`, transition: 'max-height 0.3s ease' }}
+        >
+          {/* Pull handle + win probability */}
+          <div onClick={() => setFeedOpen(o => !o)} style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', minHeight: 36, touchAction: 'manipulation' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 28, height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 2 }} />
+              <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1 }}>📱 En vivo</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: '#4DABF7' }}>HAL {winProb}%</span>
+              <div style={{ display: 'flex', width: 40, height: 4, borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ width: `${winProb}%`, background: 'linear-gradient(90deg,#1565c0,#4DABF7)', transition: 'width 0.5s' }} />
+                <div style={{ flex: 1, background: 'linear-gradient(90deg,#FF6B6B,#c62828)' }} />
+              </div>
+              <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: '#FF6B6B' }}>{100 - winProb}%</span>
+            </div>
+          </div>
+          {/* Social posts */}
+          <div style={{ overflow: 'auto', padding: '0 8px 8px', display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 'calc(40vh - 36px)' }}>
             {livePosts.map((p, i) => (
-              <div key={i} style={{ background: T.bg1, borderRadius: 5, padding: '4px 5px', border: `1px solid ${T.border}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 2 }}>
-                  <div style={{ fontSize: 9, flexShrink: 0, width: 14, height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {p.acc?.avImg ? <img src={p.acc.avImg} width={14} height={14} alt="" style={{ imageRendering: 'pixelated', display: 'block' }} /> : (p.acc?.av || '👤')}
+              <div key={i} style={{ background: T.bg, borderRadius: 6, padding: '6px 8px', border: `1px solid ${T.border}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+                  <div style={{ fontSize: 12, flexShrink: 0, width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {p.acc?.avImg ? <img src={p.acc.avImg} width={18} height={18} alt="" style={{ imageRendering: 'pixelated', display: 'block' }} /> : (p.acc?.av || '👤')}
                   </div>
-                  <span style={{ fontFamily: "'Oswald'", fontSize: 7, color: T.tx2, flex: 1 }}>{p.acc?.n}</span>
-                  <span style={{ fontSize: 6, color: T.tx3 }}>{p.t}</span>
+                  <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx2, flex: 1 }}>{p.acc?.n}</span>
+                  <span style={{ fontSize: 10, color: T.tx3 }}>{p.t}</span>
                 </div>
-                <div style={{ fontFamily: "'Barlow'", fontSize: 10, color: T.tx, lineHeight: 1.3 }}>{p.text}</div>
-                <div style={{ display: 'flex', gap: 6, marginTop: 2, fontFamily: "'Barlow Condensed'", fontSize: 7, color: T.tx3 }}>
+                <div style={{ fontFamily: "'Barlow'", fontSize: 12, color: T.tx, lineHeight: 1.3 }}>{p.text}</div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 3, fontFamily: "'Barlow Condensed'", fontSize: 10, color: T.tx3 }}>
                   <span>❤ {p.likes}</span><span>💬 {p.comments}</span>
                 </div>
               </div>
             ))}
-            {livePosts.length === 0 && <div style={{ textAlign: 'center', padding: 8, color: T.tx3, fontSize: 9, fontStyle: 'italic' }}>Esperando...</div>}
-          </div>
-          <div style={{ padding: '4px 6px', background: T.bg1, borderTop: `1px solid ${T.border}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Oswald'", fontSize: 7, color: T.tx3, marginBottom: 1 }}>
-              <span style={{ color: '#4DABF7' }}>HAL {winProb}%</span><span style={{ color: '#FF6B6B' }}>{100 - winProb}%</span>
-            </div>
-            <div style={{ display: 'flex', height: 3, borderRadius: 2, overflow: 'hidden' }}>
-              <div style={{ width: `${winProb}%`, background: 'linear-gradient(90deg,#1565c0,#4DABF7)', transition: 'width 0.5s' }} />
-              <div style={{ flex: 1, background: 'linear-gradient(90deg,#FF6B6B,#c62828)' }} />
-            </div>
-          </div>
-        </div>
-        {/* Pitch */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-            <canvas ref={canvasRef} onDoubleClick={() => { sim.current.speed = 0; setDisplay(d => ({ ...d, speed: 0 })); }} style={{ width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated', touchAction: 'manipulation' }} />
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 15, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.7)', padding: '3px 6px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ padding: '2px 6px', background: '#1565c0', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 11, color: '#fff' }}>HAL</div>
-                <div style={{ padding: '2px 8px', background: '#222', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 16, color: '#fff', minWidth: 40, textAlign: 'center' }}>{display.ps}-{display.rs}</div>
-                <div style={{ padding: '2px 6px', background: '#c62828', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 11, color: '#fff' }}>{match.rival?.name?.substring(0, 4) || 'RIV'}</div>
-                <div style={{ padding: '2px 5px', background: T.accent, fontFamily: "'Oswald'", fontWeight: 700, fontSize: 11, color: '#000' }}>{display.minute}'</div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                <div style={{ width: 36, height: 3, background: 'rgba(255,255,255,0.15)', borderRadius: 2 }}><div style={{ width: `${display.morale}%`, height: '100%', background: moraleColor, borderRadius: 2 }} /></div>
-                <span style={{ fontSize: 9, color: moraleColor, fontFamily: "'Oswald'", fontWeight: 700 }}>{display.morale}</span>
-              </div>
-              <div style={{ display: 'flex', gap: 3 }}>
-                {[{ l: '⏩', s: 0 }, { l: '▶', s: 1 }, { l: '▶▶', s: 2 }].map(({ l, s }) => (
-                  <button key={s} onClick={() => { sim.current.speed = s; setDisplay(d => ({ ...d, speed: s })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 10, padding: '6px 10px', minWidth: 36, minHeight: 32, border: `1px solid ${display.speed === s ? T.win : 'rgba(255,255,255,0.15)'}`, background: display.speed === s ? `${T.win}25` : 'transparent', color: display.speed === s ? T.win : 'rgba(255,255,255,0.4)', borderRadius: 4, cursor: 'pointer', touchAction: 'manipulation' }}>{l}</button>
-                ))}
-                <button onClick={() => { SFX._muted = !SFX._muted; if (SFX._muted) Crowd.stop(); else if (sim.current && !sim.current.done) Crowd.start(); setDisplay(d => ({ ...d })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 10, padding: '6px 10px', minWidth: 36, minHeight: 32, border: `1px solid ${SFX._muted ? 'rgba(239,83,80,0.4)' : 'rgba(255,255,255,0.15)'}`, background: SFX._muted ? 'rgba(239,83,80,0.1)' : 'transparent', color: SFX._muted ? '#ef5350' : 'rgba(255,255,255,0.4)', borderRadius: 4, cursor: 'pointer', marginLeft: 3, touchAction: 'manipulation' }}>{SFX._muted ? '🔇' : '🔊'}</button>
-              </div>
-            </div>
-          </div>
-          <div style={{ flex: '0 0 auto', maxHeight: 70, overflow: 'auto', background: T.bg, borderTop: `1px solid ${T.bg3}`, padding: 4 }}>
-            {[...display.log].reverse().slice(0, 4).map((e, i) => (
-              <div key={i} style={{ display: 'flex', padding: '1px 4px', borderLeft: `2px solid ${LC[e.type] || 'transparent'}`, marginBottom: 1 }}>
-                <span style={{ fontFamily: "'Barlow'", fontSize: 11, color: LC[e.type] || T.tx2, fontWeight: (e.type === 'goal' || e.type === 'goalRival') ? 700 : 400, lineHeight: 1.2, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{e.text}</span>
-              </div>
-            ))}
+            {livePosts.length === 0 && <div style={{ textAlign: 'center', padding: 10, color: T.tx3, fontSize: 11, fontStyle: 'italic' }}>Esperando...</div>}
           </div>
         </div>
         {/* Tactical Event */}
@@ -842,7 +936,7 @@ export default function Rabona() {
                     {['left', 'center', 'right'].map(d => (
                       <button key={d} onClick={() => handlePenaltyShoot(d)} style={{ flex: 1, padding: '14px 8px', minHeight: 56, background: isSave ? 'rgba(40,10,10,0.95)' : 'rgba(20,30,58,0.95)', border: `1px solid ${isSave ? 'rgba(255,50,50,0.2)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 6, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, touchAction: 'manipulation' }}>
                         <div style={{ fontSize: 20 }}>{isSave ? (d === 'left' ? '↖' : d === 'center' ? '⬆' : '↗') : (d === 'left' ? '↙' : d === 'center' ? '⬆' : '↘')}</div>
-                        <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 10, color: '#fff', textTransform: 'uppercase' }}>{d === 'left' ? 'Izq' : d === 'center' ? 'Centro' : 'Der'}</div>
+                        <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, color: '#fff', textTransform: 'uppercase' }}>{d === 'left' ? 'Izq' : d === 'center' ? 'Centro' : 'Der'}</div>
                       </button>
                     ))}
                   </div>
@@ -868,6 +962,27 @@ export default function Rabona() {
   const CareerSeasonEndLocal = () => career ? <CareerSeasonEnd career={career} {...careerHelpers} /> : null;
   const CareerEndScreenLocal = () => career ? <CareerEndScreen career={career} {...careerHelpers} /> : null;
 
+  // ─── SWIPE NAVIGATION for hub screens ───
+  const HUB_SCREENS = ['table', 'roster', 'training', 'market', 'stats'];
+  const swipeRef = useRef({ startX: 0, startY: 0 });
+  const handleSwipeStart = (e) => {
+    swipeRef.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY };
+  };
+  const handleSwipeEnd = (e) => {
+    const dx = swipeRef.current.startX - e.changedTouches[0].clientX;
+    const dy = Math.abs(swipeRef.current.startY - e.changedTouches[0].clientY);
+    if (Math.abs(dx) < 60 || dy > Math.abs(dx) * 0.7) return; // too short or too vertical
+    const idx = HUB_SCREENS.indexOf(screen);
+    if (idx === -1) return;
+    const next = dx > 0 ? idx + 1 : idx - 1;
+    if (next >= 0 && next < HUB_SCREENS.length) {
+      SFX.play('click');
+      Haptics.light();
+      go(HUB_SCREENS[next]);
+    }
+  };
+  const isHubScreen = HUB_SCREENS.includes(screen);
+
   // ─── RENDER ───
   const transStyle = { opacity: transState === 'out' ? 0 : 1, transform: transState === 'out' ? 'scale(0.97)' : 'scale(1)', transition: 'opacity 0.22s ease, transform 0.22s ease' };
 
@@ -877,6 +992,8 @@ export default function Rabona() {
         @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500;600&family=Silkscreen:wght@400;700&display=swap');
         @keyframes fw-fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes fw-pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
         @keyframes fw-shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
         @keyframes fw-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
         @keyframes fw-slideIn { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
@@ -894,7 +1011,11 @@ export default function Rabona() {
         .fw-bg-pattern{background-image:radial-gradient(circle,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:20px 20px}
         *{box-sizing:border-box}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
       `}</style>
-      <div style={{ ...transStyle, width: '100%', height: '100%', position: 'relative', paddingBottom: ['table','roster','training','market','stats'].includes(screen) ? 52 : 0 }}>
+      <div
+        onTouchStart={isHubScreen ? handleSwipeStart : undefined}
+        onTouchEnd={isHubScreen ? handleSwipeEnd : undefined}
+        style={{ ...transStyle, width: '100%', height: '100%', position: 'relative', paddingBottom: isHubScreen ? 52 : 0 }}
+      >
         {screen === 'loading' && <LoadingScreen />}
         {screen === 'title' && <TitleScreen />}
         {screen === 'tutorial' && <TutorialScreen />}

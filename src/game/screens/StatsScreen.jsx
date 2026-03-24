@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { T, PN, POS_COLORS, ACHIEVEMENTS } from "@/game/data";
-import { LEGACY_TREE, LEGACY_BRANCHES, calcLegacyPoints, calcSpentLegacy, canUnlockLegacy, hasLegacy } from "@/game/data/progression.js";
+import { LEGACY_TREE, LEGACY_BRANCHES, calcLegacyPoints, calcSpentLegacy, canUnlockLegacy, hasLegacy, COACHES, COACH_ABILITIES, CURSES } from "@/game/data/progression.js";
 import { AchIcon } from "@/game/data/chibiAssets";
+import { SFX } from "@/game/audio";
+import { Haptics } from "@/game/haptics";
+import { TACTICAL_CARDS, CARD_RARITIES, getCollectionCards } from "@/game/data/cards.js";
 import useGameStore from "@/game/store";
 
 export default function StatsScreen() {
@@ -16,7 +19,7 @@ export default function StatsScreen() {
         <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 22, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>📖 Compendio</div>
       </div>
       <div style={{ display: 'flex', width: '100%', maxWidth: 440, background: T.bg1, borderBottom: `1px solid ${T.border}` }}>
-        {[{ k: 'stats', l: '📊' }, { k: 'legacy', l: '🌳' }, { k: 'fame', l: '🌟' }, { k: 'achieve', l: '🏆' }].map(t => (
+        {[{ k: 'stats', l: '📊' }, { k: 'legacy', l: '🌳' }, { k: 'cards', l: '🎴' }, { k: 'fame', l: '🌟' }, { k: 'achieve', l: '🏆' }].map(t => (
           <div key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '8px 4px', textAlign: 'center', fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: tab === t.k ? T.gold : T.tx3, cursor: 'pointer', borderBottom: tab === t.k ? `2px solid ${T.gold}` : '2px solid transparent' }}>{t.l}</div>
         ))}
       </div>
@@ -50,7 +53,7 @@ export default function StatsScreen() {
           const totalPts = calcLegacyPoints(gs);
           const spentPts = calcSpentLegacy(gs);
           const availPts = totalPts - spentPts;
-          const branchNames = { scouting: '🔭 Scouting', cantera: '🌱 Cantera', sponsor: '💰 Sponsor', tactics: '📋 Táctica', charisma: '🗣 Carisma' };
+          const branchNames = { scouting: '🔭 Scouting', cantera: '🌱 Cantera', sponsor: '💰 Sponsor', tactics: '📋 Táctica', charisma: '🗣 Carisma', maestria: '🎴 Maestría' };
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ background: T.bg1, borderRadius: 8, padding: 10, border: `1px solid ${T.border}`, textAlign: 'center' }}>
@@ -63,26 +66,36 @@ export default function StatsScreen() {
                 return (
                   <div key={branch} style={{ background: T.bg1, borderRadius: 8, padding: 10, border: `1px solid ${T.border}` }}>
                     <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 13, color: T.tx, marginBottom: 6 }}>{branchNames[branch] || branch}</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      {nodes.map(node => {
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                      {nodes.map((node, ni) => {
                         const owned = hasLegacy(gs, node.id);
                         const canBuy = canUnlockLegacy(gs, node.id);
                         return (
-                          <div key={node.id} onClick={() => { if (canBuy) { unlockLegacy(node.id); } }} style={{
-                            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
-                            background: owned ? `${T.win}10` : canBuy ? 'rgba(255,215,0,0.05)' : 'rgba(255,255,255,0.01)',
-                            border: `1px solid ${owned ? T.win + '30' : canBuy ? T.gold + '30' : T.border}`,
-                            borderRadius: 6, cursor: canBuy ? 'pointer' : 'default', opacity: owned || canBuy ? 1 : 0.4,
-                            touchAction: 'manipulation', minHeight: 48,
-                          }}>
-                            <div style={{ fontSize: 20, minWidth: 28, textAlign: 'center' }}>{node.i}</div>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12, color: owned ? T.win : canBuy ? T.gold : T.tx3 }}>{node.n}</div>
-                              <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>{node.d}</div>
-                            </div>
-                            <div style={{ textAlign: 'right', minWidth: 30 }}>
-                              {owned ? <span style={{ color: T.win, fontFamily: T.fontHeading, fontSize: 12 }}>✓</span>
-                                : <span style={{ color: canBuy ? T.gold : T.tx3, fontFamily: T.fontHeading, fontSize: 11 }}>{node.cost}pt</span>}
+                          <div key={node.id}>
+                            {/* Connector line between tiers */}
+                            {ni > 0 && (
+                              <div style={{ display: 'flex', justifyContent: 'center', height: 16 }}>
+                                <div style={{ width: 2, height: '100%', background: hasLegacy(gs, nodes[ni - 1].id) ? T.win : T.border }} />
+                              </div>
+                            )}
+                            <div onClick={() => { if (canBuy) { unlockLegacy(node.id); SFX.play('reward'); Haptics.success(); } }} style={{
+                              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+                              background: owned ? `${T.win}10` : canBuy ? 'rgba(255,215,0,0.05)' : 'rgba(255,255,255,0.01)',
+                              border: `1.5px solid ${owned ? T.win + '40' : canBuy ? T.gold + '40' : T.border}`,
+                              borderRadius: 8, cursor: canBuy ? 'pointer' : 'default', opacity: owned || canBuy ? 1 : 0.35,
+                              touchAction: 'manipulation', minHeight: 48,
+                              boxShadow: owned ? `0 0 8px ${T.win}15` : canBuy ? `0 0 8px ${T.gold}15` : 'none',
+                              transition: 'all 0.2s ease',
+                            }}>
+                              <div style={{ fontSize: 22, minWidth: 32, textAlign: 'center', filter: owned ? 'none' : 'grayscale(0.5)' }}>{node.i}</div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12, color: owned ? T.win : canBuy ? T.gold : T.tx3 }}>{node.n}</div>
+                                <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, lineHeight: 1.3 }}>{node.d}</div>
+                              </div>
+                              <div style={{ textAlign: 'right', minWidth: 34 }}>
+                                {owned ? <span style={{ color: T.win, fontFamily: T.fontHeading, fontSize: 14, fontWeight: 700 }}>✓</span>
+                                  : <div style={{ background: canBuy ? `${T.gold}20` : 'transparent', borderRadius: 4, padding: '2px 6px' }}><span style={{ color: canBuy ? T.gold : T.tx3, fontFamily: T.fontHeading, fontSize: 11, fontWeight: 700 }}>{node.cost}pt</span></div>}
+                              </div>
                             </div>
                           </div>
                         );
@@ -94,26 +107,106 @@ export default function StatsScreen() {
             </div>
           );
         })()}
+        {tab === 'cards' && (() => {
+          const collection = getCollectionCards(gs);
+          const masteryProgress = gs.curseMasteryProgress || {};
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {/* Card Collection */}
+              <div style={{ background: T.bg1, borderRadius: 8, padding: 10, border: `1px solid ${T.border}` }}>
+                <div style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.purple, textTransform: 'uppercase', textAlign: 'center', marginBottom: 6 }}>
+                  Colección: {collection.length}/{TACTICAL_CARDS.length}
+                </div>
+                {collection.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 12, color: T.tx3, fontSize: 12 }}>
+                    Completa runs para desbloquear cartas.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    {collection.map(card => {
+                      const rarity = CARD_RARITIES[card.rarity];
+                      return (
+                        <div key={card.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '6px 8px', background: 'rgba(255,255,255,0.02)', borderRadius: 4, border: `1px solid ${T.border}` }}>
+                          <span style={{ fontSize: 18 }}>{card.i}</span>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.tx }}>{card.n}</div>
+                            <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, lineHeight: 1.2 }}>{card.d}</div>
+                          </div>
+                          <span style={{ fontSize: 8, color: rarity.color, fontFamily: T.fontBody }}>{rarity.n}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              {/* Curse Mastery Progress */}
+              <div style={{ background: T.bg1, borderRadius: 8, padding: 10, border: `1px solid ${T.border}` }}>
+                <div style={{ fontFamily: T.fontHeading, fontSize: 12, color: '#ef5350', textTransform: 'uppercase', textAlign: 'center', marginBottom: 6 }}>
+                  Maestría de Maldiciones
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {CURSES.map(curse => {
+                    const progress = masteryProgress[curse.id] || 0;
+                    const threshold = curse.masteryThreshold || 1;
+                    const pct = Math.min(100, Math.floor((progress / threshold) * 100));
+                    const mastered = pct >= 100;
+                    return (
+                      <div key={curse.id} style={{ padding: '6px 8px', background: mastered ? `${T.gold}08` : 'rgba(255,255,255,0.02)', borderRadius: 4, border: `1px solid ${mastered ? T.gold + '30' : T.border}` }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                          <span style={{ fontSize: 11, color: mastered ? T.gold : '#ef5350', fontFamily: T.fontBody }}>
+                            {curse.i} {curse.n}
+                          </span>
+                          <span style={{ fontSize: 10, color: mastered ? T.gold : T.tx3, fontFamily: T.fontBody }}>
+                            {mastered ? `→ ${curse.blessing?.n}` : `${pct}%`}
+                          </span>
+                        </div>
+                        <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: mastered ? T.gold : '#ef5350', borderRadius: 2 }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
         {tab === 'fame' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {(gs.hallOfFame || []).length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 20, color: T.tx3, fontSize: 13 }}>Completa tu primer run para añadir leyendas.</div>
-            ) : (gs.hallOfFame || []).slice().reverse().map((p, i) => (
-              <div key={i} style={{ background: 'linear-gradient(145deg,#2a2510,#3a3215)', borderRadius: 8, padding: 10, border: `1px solid ${T.gold}20`, display: 'flex', gap: 8, alignItems: 'center' }}>
-                <div style={{ textAlign: 'center', minWidth: 36 }}>
-                  <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 22, color: T.gold }}>{p.ovr}</div>
-                  <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: POS_COLORS[p.pos] || T.tx2, letterSpacing: 0.5 }}>{PN[p.pos] || p.pos}</div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'Barlow Condensed'", fontWeight: 600, fontSize: 14, color: T.tx }}>⭐ {p.name}</div>
-                  {p.trait && <div style={{ fontSize: 11, color: T.purple, marginTop: 1 }}>✦ {p.trait}</div>}
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx2 }}>Run #{p.run}</div>
-                  <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.gold }}>{p.league}</div>
-                </div>
+              <div style={{ textAlign: 'center', padding: 20, color: T.tx3, fontSize: 13, lineHeight: 1.5 }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>🌟</div>
+                Completa tu primer run e inmortaliza a un jugador para añadirlo al Hall of Fame.
+                <div style={{ fontSize: 11, color: T.tx3, marginTop: 8 }}>Los legendarios aparecerán en el mercado de futuras runs.</div>
               </div>
-            ))}
+            ) : (
+              <>
+                <div style={{ textAlign: 'center', marginBottom: 4 }}>
+                  <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: T.gold }}>{(gs.hallOfFame || []).length}/20 Legendarios</div>
+                </div>
+                {(gs.hallOfFame || []).slice().reverse().map((p, i) => (
+                  <div key={i} style={{ background: 'linear-gradient(145deg,#2a2510,#3a3215)', borderRadius: 10, padding: 12, border: `1px solid ${T.gold}25`, display: 'flex', gap: 10, alignItems: 'center', boxShadow: `0 0 12px ${T.gold}08` }}>
+                    <div style={{ textAlign: 'center', minWidth: 40 }}>
+                      <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 24, color: T.gold, textShadow: `0 0 8px ${T.gold}40` }}>{p.ovr}</div>
+                      <div style={{ fontFamily: "'Oswald'", fontSize: 10, color: POS_COLORS[p.pos] || T.tx2, letterSpacing: 0.5, textTransform: 'uppercase' }}>{PN[p.pos] || p.pos}</div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: "'Barlow Condensed'", fontWeight: 600, fontSize: 14, color: T.tx }}>{p.name}</div>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                        <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx3 }}>ATK {p.atk}</span>
+                        <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx3 }}>DEF {p.def}</span>
+                        <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx3 }}>VEL {p.spd}</span>
+                      </div>
+                      {p.trait && <div style={{ fontSize: 10, color: T.purple, marginTop: 2 }}>✦ {p.trait}</div>}
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx2 }}>Run #{p.run}</div>
+                      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.gold }}>{p.league}</div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         )}
         {tab === 'achieve' && (

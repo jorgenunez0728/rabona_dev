@@ -49,6 +49,11 @@ export function* simulateMatch(config) {
     matchType = 'normal',
     playStyle = null,
     intensity = null,
+    // Metaprogression v2
+    tacticalCards = [],
+    archetypeHooks = {},
+    mutatorEffects = {},
+    blessings = [],
   } = config;
 
   // Resolve formation
@@ -93,8 +98,27 @@ export function* simulateMatch(config) {
   let halftimeShown = false;
   let tacticalEventsShown = 0;
   let lastEventMin = -10;
-  const extraEvents = (relics.includes('reloj') ? 1 : 0) + (hasDiamanteKey ? 1 : 0);
+  const extraEvents = (relics.includes('reloj') ? 1 : 0) + (hasDiamanteKey ? 1 : 0)
+    + (archetypeHooks.extraTacticalEvents || 0);
   const MAX_TACTICAL_EVENTS = 2 + extraEvents;
+  const matchLength = mutatorEffects.matchLength || 90;
+  let rivalChanceCount = 0;
+  let homeGoalCount = 0;
+  let tikiTakaUsed = false;
+
+  // Card-based match-start effects
+  let cardInjuryMult = 1;
+  let cardGoalBonusPermanent = 0;
+  let cardRivalCardMult = 1;
+  let cardOwnCardMult = 1;
+  for (const card of tacticalCards) {
+    if (card.trigger === 'on_match_start') {
+      if (card.effect.injuryMult) cardInjuryMult *= card.effect.injuryMult;
+      if (card.effect.goalChanceBonusPermanent) cardGoalBonusPermanent += card.effect.goalChanceBonusPermanent;
+      if (card.effect.rivalCardMult) cardRivalCardMult *= card.effect.rivalCardMult;
+      if (card.effect.ownCardMult) cardOwnCardMult *= card.effect.ownCardMult;
+    }
+  }
   let strategy = 'balanced';  // halftime strategy
   let stratMod = { atkMod: 0, defMod: 0 };
   let currentMomentum = { ...momentum };
@@ -122,12 +146,12 @@ export function* simulateMatch(config) {
   // ══════════════════════════════════════════
   // MAIN MATCH LOOP
   // ══════════════════════════════════════════
-  while (minute < 90) {
+  while (minute < matchLength) {
     minute += rnd(2, 4);
-    if (minute > 90) minute = 90;
+    if (minute > matchLength) minute = matchLength;
 
     // ─── HALFTIME ───
-    if (minute >= 45 && !halftimeShown) {
+    if (minute >= Math.floor(matchLength / 2) && !halftimeShown) {
       halftimeShown = true;
       currentMomentum = updateMomentum(currentMomentum, 'halftime');
 
@@ -299,6 +323,40 @@ export function* simulateMatch(config) {
       const goleadorActive = isHomeAttacking &&
         activePlayers.some(p => p.trait?.fx === 'atk');
 
+      // Calculate card-based chance bonuses
+      let cardChanceBonus = 0;
+      if (isHomeAttacking) {
+        cardChanceBonus += cardGoalBonusPermanent;
+        // Archetype: Caudillo — +25% ATK when losing
+        if (archetypeHooks.onLosing?.atkMult && homeScore < awayScore) {
+          cardChanceBonus += 0.05;
+        }
+        // Card trigger: on_chance cards
+        for (const card of tacticalCards) {
+          if (card.trigger !== 'on_chance') continue;
+          const cond = card.triggerCondition || {};
+          if (cond.team && cond.team !== 'home') continue;
+          if (cond.minuteMin && minute < cond.minuteMin) continue;
+          if (cond.chanceType && cond.chanceType !== chanceType.id) continue;
+          cardChanceBonus += card.effect.goalChanceBonus || 0;
+        }
+        // Cerrojo: defensive card (reduces rival, but check handled on rival side)
+      } else {
+        // Defensive cards that reduce rival goal chance
+        rivalChanceCount++;
+        for (const card of tacticalCards) {
+          if (card.trigger !== 'on_rival_chance') continue;
+          const cond = card.triggerCondition || {};
+          if (cond.firstRivalChance && rivalChanceCount > 1) continue;
+          if (cond.minuteMax && minute > cond.minuteMax) continue;
+          if (cond.scoreDiff !== undefined && (homeScore - awayScore) !== cond.scoreDiff) continue;
+          cardChanceBonus += card.effect.rivalGoalPenalty || 0;
+          if (card.effect.rivalGoalBlock && (homeScore - awayScore) === (cond.scoreDiff || 0)) {
+            cardChanceBonus -= 0.50; // effectively blocks the goal
+          }
+        }
+      }
+
       const result = resolveChance(chanceType, attackTeam, defendTeam, {
         formMods: attackFormMods,
         rivalFormMods: defendFormMods,
@@ -311,6 +369,7 @@ export function* simulateMatch(config) {
         } : {},
         difficultyMod: isHomeAttacking ? diffMod * 0.5 : -diffMod,
         matchupMod: isHomeAttacking ? matchupMods[0] : matchupMods[1],
+        cardMod: cardChanceBonus,
       });
 
       recordShot(stats, team, result.isOnTarget);
@@ -344,8 +403,17 @@ export function* simulateMatch(config) {
       if (result.isGoal) {
         if (isHomeAttacking) {
           homeScore++;
+          homeGoalCount++;
           recordGoal(stats, { minute, team: 'home', scorer, assister, chanceType });
           currentMomentum = updateMomentum(currentMomentum, 'goal');
+          // Archetype: Caudillo — double morale on goal
+          if (archetypeHooks.onGoalScored?.moraleBoost) {
+            currentMomentum = updateMomentum(currentMomentum, 'tactical_success');
+          }
+          // Mutator: Karma — own goal gives rival morale
+          if (mutatorEffects.karmaGoalMorale) {
+            currentMomentum = updateMomentum(currentMomentum, 'card_own');
+          }
 
           yield {
             type: 'goal', minute, team: 'home',
@@ -354,6 +422,22 @@ export function* simulateMatch(config) {
             text: narrate('goalHome', baseCtx(), { scorer, assister }),
             chanceType: chanceType.id,
           };
+
+          // Card: Inspiración — first goal extra morale
+          if (homeGoalCount === 1) {
+            for (const card of tacticalCards) {
+              if (card.trigger === 'on_goal_scored' && card.triggerCondition?.firstGoal && card.effect.moraleBoost) {
+                currentMomentum = updateMomentum(currentMomentum, 'tactical_success');
+                yield { type: 'card_trigger', minute, card, team: 'home' };
+              }
+            }
+          }
+          // Card: Bono por Gol — coins (tracked, resolved post-match)
+          for (const card of tacticalCards) {
+            if (card.trigger === 'on_goal_scored' && card.triggerCondition?.team === 'home' && card.effect.coinBonus && !card.triggerCondition?.firstGoal) {
+              yield { type: 'card_trigger', minute, card, team: 'home' };
+            }
+          }
         } else {
           awayScore++;
           recordGoal(stats, { minute, team: 'away', scorer: null, assister: null, chanceType });
@@ -445,7 +529,8 @@ export function* simulateMatch(config) {
     }
 
     // ─── RANDOM CARD ───
-    if (Math.random() < 0.035 * (tacticalMods.cardChanceMult || 1)) {
+    const cardMult = (tacticalMods.cardChanceMult || 1) * (Math.random() < 0.5 ? cardOwnCardMult : cardRivalCardMult);
+    if (Math.random() < 0.035 * cardMult) {
       const cardTeam = Math.random() < 0.6 ? 'home' : 'away';
       const cardPlayer = cardTeam === 'home' ? pick(activePlayers) : pick(away.players);
       recordFoul(stats, cardTeam);
@@ -456,7 +541,8 @@ export function* simulateMatch(config) {
     }
 
     // ─── INJURY CHECK ───
-    if (Math.random() < 0.015 * (tacticalMods.injuryMult || 1)) {
+    const injuryMultTotal = (tacticalMods.injuryMult || 1) * cardInjuryMult * (mutatorEffects.injuryMult || 1);
+    if (Math.random() < 0.015 * injuryMultTotal) {
       const injuredPlayer = pick(activePlayers.filter(p => p.pos !== 'GK'));
       if (injuredPlayer) {
         recordInjury(stats, minute, injuredPlayer, 'home');
@@ -527,7 +613,7 @@ export function* simulateMatch(config) {
   // Relic: Guantes de Hierro — if losing 1-0, block the goal
   if (hasGkLastMin && homeScore < awayScore && awayScore - homeScore === 1) {
     awayScore = Math.max(homeScore, awayScore - 1);
-    yield { type: 'relic_effect', minute: 90, relic: 'guantes',
+    yield { type: 'relic_effect', minute: matchLength, relic: 'guantes',
       text: '🧤 ¡Los Guantes de Hierro salvan el marcador al final!',
       homeScore, awayScore };
   }
@@ -535,14 +621,14 @@ export function* simulateMatch(config) {
   // Relic: Cemento Táctico — reduce goals conceded by 1
   if (hasMuroCement && awayScore > 0) {
     awayScore = Math.max(0, awayScore - 1);
-    yield { type: 'relic_effect', minute: 90, relic: 'muro_cement',
+    yield { type: 'relic_effect', minute: matchLength, relic: 'muro_cement',
       text: '🧱 Cemento Táctico: gol rival anulado por la muralla.',
       homeScore, awayScore };
   }
 
   // Final whistle
   yield {
-    type: 'whistle', minute: 90, final: true,
+    type: 'whistle', minute: matchLength, final: true,
     homeScore, awayScore,
     text: narrate('finalWhistle', baseCtx()),
   };
@@ -553,6 +639,9 @@ export function* simulateMatch(config) {
   const drew = homeScore === awayScore;
   const lost = homeScore < awayScore;
 
+  // Archetype: draws count as loss for Caudillo/Apostador
+  const effectiveLoss = lost || (drew && archetypeHooks.drawCountsAsLoss);
+
   return {
     result: {
       homeScore,
@@ -560,9 +649,11 @@ export function* simulateMatch(config) {
       won,
       drew,
       lost,
+      effectiveLoss,
       rivalName: away.name,
       morale: currentMomentum.morale,
-      activePlayers, // may have changed due to injuries
+      activePlayers,
+      homeGoalCount,
     },
     stats: finalStats,
   };

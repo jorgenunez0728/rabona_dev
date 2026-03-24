@@ -80,9 +80,9 @@ export default function PrematchScreen() {
                 <FormIcon id={f.id} size={28} />
                 <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: active ? T.info : T.tx3, textTransform: 'uppercase', marginTop: 1, lineHeight: 1.2, letterSpacing: 0.5 }}>{f.n.split('(')[1]?.replace(')','') || f.id}</div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 2, marginTop: 3, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 9, color: f.mods.atkMult > 1 ? T.win : f.mods.atkMult < 1 ? T.lose : T.tx3 }}>ATK {f.mods.atkMult > 1 ? '▲' : f.mods.atkMult < 1 ? '▼' : '—'}</span>
-                  <span style={{ fontSize: 9, color: f.mods.defMult > 1 ? T.win : f.mods.defMult < 1 ? T.lose : T.tx3 }}>DEF {f.mods.defMult > 1 ? '▲' : f.mods.defMult < 1 ? '▼' : '—'}</span>
-                  <span style={{ fontSize: 9, color: f.mods.spdMult > 1 ? T.win : f.mods.spdMult < 1 ? T.lose : T.tx3 }}>VEL {f.mods.spdMult > 1 ? '▲' : f.mods.spdMult < 1 ? '▼' : '—'}</span>
+                  <span style={{ fontSize: 10, color: f.mods.atkMult > 1 ? T.win : f.mods.atkMult < 1 ? T.lose : T.tx3 }}>ATK {f.mods.atkMult > 1 ? '▲' : f.mods.atkMult < 1 ? '▼' : '—'}</span>
+                  <span style={{ fontSize: 10, color: f.mods.defMult > 1 ? T.win : f.mods.defMult < 1 ? T.lose : T.tx3 }}>DEF {f.mods.defMult > 1 ? '▲' : f.mods.defMult < 1 ? '▼' : '—'}</span>
+                  <span style={{ fontSize: 10, color: f.mods.spdMult > 1 ? T.win : f.mods.spdMult < 1 ? T.lose : T.tx3 }}>VEL {f.mods.spdMult > 1 ? '▲' : f.mods.spdMult < 1 ? '▼' : '—'}</span>
                 </div>
               </div>
             );
