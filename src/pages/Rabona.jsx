@@ -549,18 +549,49 @@ export default function Rabona() {
         homeFormation.forEach((p, i) => { hpxRef.current[i] = m + fw * (p.bx + homeSpreadX[i]); hpyRef.current[i] = m + fh * p.by; });
         awayFormation.forEach((p, i) => { apxRef.current[i] = m + fw * (p.bx + awaySpreadX[i]); apyRef.current[i] = m + fh * p.by; });
       }
-      // ── Steering behaviors: seek + arrive + separation + idle wander ──
-      const SEPARATION_DIST = fw * 0.08; // Min distance between teammates
-      const steer = (pxArr, pyArr, formation, spreadX, hasBall, count) => {
+      // ── Steering behaviors: seek + arrive + separation + context-aware animations ──
+      const SEPARATION_DIST = fw * 0.08;
+      const isCelebrating = S.celebrateUntil > Date.now();
+      const isChanceActive = S.animState === 'kick' || S.animState === 'run';
+      const steer = (pxArr, pyArr, formation, spreadX, hasBall, count, isHome) => {
         formation.forEach((pos, i) => {
           if (i >= count) return;
           const baseX = m + fw * (pos.bx + spreadX[i]), baseY = m + fh * pos.by;
-          const pull = hasBall ? pos.pull : pos.pull * 0.4;
-          const pushY = hasBall ? -fh * 0.06 : fh * 0.04;
+
+          // ── Contextual: group celebration ──
+          if (isCelebrating && isHome && S.goalEffect >= 0) {
+            // All home players converge toward upper-center (near rival goal)
+            const celebX = W * 0.5 + Math.sin(i * 1.8) * fw * 0.12;
+            const celebY = m + fh * 0.15;
+            pxArr[i] += (celebX - pxArr[i]) * 0.04;
+            pyArr[i] += (celebY - pyArr[i]) * 0.03;
+            // Joyful bounce
+            pyArr[i] += Math.sin(f * 0.15 + i * 2.0) * 2.5;
+            pxArr[i] += Math.cos(f * 0.12 + i * 1.5) * 1.5;
+            return;
+          }
+
+          let pull = hasBall ? pos.pull : pos.pull * 0.4;
+          let pushY = hasBall ? -fh * 0.06 : fh * 0.04;
+
+          // ── Contextual: pressing (when team has ball, push formation higher) ──
+          if (hasBall && isChanceActive && i > 0) {
+            pushY -= fh * 0.04; // Extra forward push during active play
+            pull *= 1.5; // Stronger attraction to ball
+          }
+
           // Seek: move toward tactical position influenced by ball
           let targetX = baseX + (bpx - baseX) * pull * 2;
           let targetY = baseY + pushY + (bpy - baseY) * pull;
           targetY = Math.max(m + fh * pos.minY, Math.min(m + fh * pos.maxY, targetY));
+
+          // ── Contextual: attacking runs (forwards make diagonal runs during chances) ──
+          if (isChanceActive && hasBall && i >= count - 2 && i > 0) {
+            const runOffset = Math.sin(f * 0.02 + i * 3.0) * fw * 0.06;
+            targetX += runOffset;
+            targetY -= fh * 0.03; // Push forward
+          }
+
           // Separation: avoid overlapping with nearby teammates
           let sepX = 0, sepY = 0;
           for (let j = 0; j < count; j++) {
@@ -575,12 +606,14 @@ export default function Rabona() {
           }
           targetX += sepX;
           targetY += sepY;
-          // Arrive: variable easing based on distance (slow near target, fast far)
+
+          // Arrive: variable easing (decelerate near target)
           const distToTarget = Math.hypot(targetX - pxArr[i], targetY - pyArr[i]);
           const arriveEase = distToTarget > 40 ? 0.06 : distToTarget > 15 ? 0.04 : 0.025;
           pxArr[i] += (targetX - pxArr[i]) * arriveEase;
           pyArr[i] += (targetY - pyArr[i]) * arriveEase;
-          // Organic wander: perlin-like noise using dual sine waves at different frequencies
+
+          // Organic wander: perlin-like noise (dual-frequency sine waves)
           const seed = i * 3.7 + (hasBall ? 0 : 50);
           const wanderX = Math.sin(f * 0.005 + seed) * 1.0 + Math.sin(f * 0.013 + seed * 0.6) * 0.5;
           const wanderY = Math.cos(f * 0.007 + seed * 1.3) * 0.8 + Math.sin(f * 0.011 + seed * 0.9) * 0.4;
@@ -588,8 +621,8 @@ export default function Rabona() {
           pyArr[i] += wanderY;
         });
       };
-      steer(hpxRef.current, hpyRef.current, homeFormation, homeSpreadX, S.possession, 7);
-      steer(apxRef.current, apyRef.current, awayFormation, awaySpreadX, !S.possession, 7);
+      steer(hpxRef.current, hpyRef.current, homeFormation, homeSpreadX, S.possession, 7, true);
+      steer(apxRef.current, apyRef.current, awayFormation, awaySpreadX, !S.possession, 7, false);
       if (S.goalEffect !== 0) {
         const gx = W / 2, gy = S.goalEffect > 0 ? m + 20 : H - m - 20;
         const col = S.goalEffect > 0 ? ['#f0c040', '#ffd600', '#fff'] : ['#ff1744', '#ef5350'];
@@ -629,6 +662,28 @@ export default function Rabona() {
         ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText(S.rivalPlayers[i] ? S.rivalPlayers[i].name.split(' ').pop().substring(0, 7) : '', px, py + 18);
         ctx.textAlign = 'left';
+      }
+      // ── Pass trail: fading line from nearest player to ball during active play ──
+      if (isChanceActive && S.possession) {
+        let nearIdx = 1, nearDist = Infinity;
+        for (let i = 1; i < TEAM_SIZE; i++) {
+          const d = Math.hypot(hpxRef.current[i] - bpx, hpyRef.current[i] - bpy);
+          if (d < nearDist) { nearDist = d; nearIdx = i; }
+        }
+        if (nearDist < fw * 0.35 && nearDist > 15) {
+          const grad = ctx.createLinearGradient(hpxRef.current[nearIdx], hpyRef.current[nearIdx], bpx, bpy);
+          grad.addColorStop(0, 'rgba(88,166,255,0.0)');
+          grad.addColorStop(0.4, 'rgba(88,166,255,0.15)');
+          grad.addColorStop(1, 'rgba(88,166,255,0.0)');
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.moveTo(hpxRef.current[nearIdx], hpyRef.current[nearIdx]);
+          ctx.lineTo(bpx, bpy);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
       }
       // Ball with smooth rotation
       ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(bpx + 1, bpy + 8, 5, 2, 0, 0, Math.PI * 2); ctx.fill();
@@ -704,7 +759,7 @@ export default function Rabona() {
         {/* Pitch */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-            <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated' }} />
+            <canvas ref={canvasRef} onDoubleClick={() => { sim.current.speed = 0; setDisplay(d => ({ ...d, speed: 0 })); }} style={{ width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated', touchAction: 'manipulation' }} />
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 15, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.7)', padding: '3px 6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderRadius: 4, overflow: 'hidden' }}>
                 <div style={{ padding: '2px 6px', background: '#1565c0', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 11, color: '#fff' }}>HAL</div>
@@ -716,11 +771,11 @@ export default function Rabona() {
                 <div style={{ width: 36, height: 3, background: 'rgba(255,255,255,0.15)', borderRadius: 2 }}><div style={{ width: `${display.morale}%`, height: '100%', background: moraleColor, borderRadius: 2 }} /></div>
                 <span style={{ fontSize: 9, color: moraleColor, fontFamily: "'Oswald'", fontWeight: 700 }}>{display.morale}</span>
               </div>
-              <div style={{ display: 'flex', gap: 2 }}>
+              <div style={{ display: 'flex', gap: 3 }}>
                 {[{ l: '⏩', s: 0 }, { l: '▶', s: 1 }, { l: '▶▶', s: 2 }].map(({ l, s }) => (
-                  <button key={s} onClick={() => { sim.current.speed = s; setDisplay(d => ({ ...d, speed: s })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 8, padding: '2px 5px', border: `1px solid ${display.speed === s ? T.win : 'rgba(255,255,255,0.15)'}`, background: display.speed === s ? `${T.win}25` : 'transparent', color: display.speed === s ? T.win : 'rgba(255,255,255,0.4)', borderRadius: 3, cursor: 'pointer' }}>{l}</button>
+                  <button key={s} onClick={() => { sim.current.speed = s; setDisplay(d => ({ ...d, speed: s })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 10, padding: '6px 10px', minWidth: 36, minHeight: 32, border: `1px solid ${display.speed === s ? T.win : 'rgba(255,255,255,0.15)'}`, background: display.speed === s ? `${T.win}25` : 'transparent', color: display.speed === s ? T.win : 'rgba(255,255,255,0.4)', borderRadius: 4, cursor: 'pointer', touchAction: 'manipulation' }}>{l}</button>
                 ))}
-                <button onClick={() => { SFX._muted = !SFX._muted; if (SFX._muted) Crowd.stop(); else if (sim.current && !sim.current.done) Crowd.start(); setDisplay(d => ({ ...d })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 8, padding: '2px 5px', border: `1px solid ${SFX._muted ? 'rgba(239,83,80,0.4)' : 'rgba(255,255,255,0.15)'}`, background: SFX._muted ? 'rgba(239,83,80,0.1)' : 'transparent', color: SFX._muted ? '#ef5350' : 'rgba(255,255,255,0.4)', borderRadius: 3, cursor: 'pointer', marginLeft: 3 }}>{SFX._muted ? '🔇' : '🔊'}</button>
+                <button onClick={() => { SFX._muted = !SFX._muted; if (SFX._muted) Crowd.stop(); else if (sim.current && !sim.current.done) Crowd.start(); setDisplay(d => ({ ...d })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 10, padding: '6px 10px', minWidth: 36, minHeight: 32, border: `1px solid ${SFX._muted ? 'rgba(239,83,80,0.4)' : 'rgba(255,255,255,0.15)'}`, background: SFX._muted ? 'rgba(239,83,80,0.1)' : 'transparent', color: SFX._muted ? '#ef5350' : 'rgba(255,255,255,0.4)', borderRadius: 4, cursor: 'pointer', marginLeft: 3, touchAction: 'manipulation' }}>{SFX._muted ? '🔇' : '🔊'}</button>
               </div>
             </div>
           </div>
@@ -741,7 +796,7 @@ export default function Rabona() {
               <div style={{ fontSize: 14, color: '#e8eaf6', textAlign: 'center', lineHeight: 1.3, whiteSpace: 'pre-line', margin: '8px 0' }}>{ev.d}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {ev.o.map((opt, i) => (
-                  <div key={i} onClick={() => { SFX.play('click'); handleEventChoice(i); }} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 4, padding: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div key={i} onClick={() => { SFX.play('click'); handleEventChoice(i); }} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, padding: '12px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, minHeight: 48, touchAction: 'manipulation' }}>
                     {opt.i && <div style={{ fontSize: 18, minWidth: 24, textAlign: 'center' }}>{opt.i}</div>}
                     <div style={{ flex: 1 }}>
                       <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: '#fff', textTransform: 'uppercase' }}>{opt.n}</div>
@@ -782,7 +837,7 @@ export default function Rabona() {
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {['left', 'center', 'right'].map(d => (
-                      <button key={d} onClick={() => handlePenaltyShoot(d)} style={{ flex: 1, padding: '12px 6px', background: isSave ? 'rgba(40,10,10,0.95)' : 'rgba(20,30,58,0.95)', border: `1px solid ${isSave ? 'rgba(255,50,50,0.2)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 6, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                      <button key={d} onClick={() => handlePenaltyShoot(d)} style={{ flex: 1, padding: '14px 8px', minHeight: 56, background: isSave ? 'rgba(40,10,10,0.95)' : 'rgba(20,30,58,0.95)', border: `1px solid ${isSave ? 'rgba(255,50,50,0.2)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 6, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, touchAction: 'manipulation' }}>
                         <div style={{ fontSize: 20 }}>{isSave ? (d === 'left' ? '↖' : d === 'center' ? '⬆' : '↗') : (d === 'left' ? '↙' : d === 'center' ? '⬆' : '↘')}</div>
                         <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 10, color: '#fff', textTransform: 'uppercase' }}>{d === 'left' ? 'Izq' : d === 'center' ? 'Centro' : 'Der'}</div>
                       </button>
