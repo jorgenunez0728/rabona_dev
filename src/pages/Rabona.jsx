@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { SFX, Crowd } from "@/game/audio";
+import { SFX, Crowd, Music } from "@/game/audio";
 import {
   TACTICS, POS_ORDER, T, PERSONALITIES,
   rnd, pick, calcOvr,
@@ -7,6 +7,7 @@ import {
   generateLivePosts, generateSocialPosts, getRivalKit, drawSprite, getRivalSpriteVariant,
   FORMATIONS, getLevelUpChoices, applyRelicEffects,
   getRelicDraftOptions, PN, LEAGUES, genPlayer, TRAITS, getCanvasFormation,
+  preloadAllSprites,
 } from "@/game/data";
 import { getStadiumPitch } from "@/assets/stadiums";
 import { simulateMatch, PLAY_STYLES, INTENSITIES, getManOfTheMatch } from "@/game/engine";
@@ -68,6 +69,7 @@ export default function Rabona() {
     const shakeRef = useRef(0);
     const hpxRef = useRef([]), hpyRef = useRef([]), apxRef = useRef([]), apyRef = useRef([]);
     const hvxRef = useRef([]), hvyRef = useRef([]), avxRef = useRef([]), avyRef = useRef([]);
+    const hStartersRef = useRef([]);
     const ballVxRef = useRef(0), ballVyRef = useRef(0);
     const ballTrailRef = useRef([]);
     const eventResolveRef = useRef(null);
@@ -89,13 +91,20 @@ export default function Rabona() {
       avxRef.current = new Array(7).fill(0); avyRef.current = new Array(7).fill(0);
       ballVxRef.current = 0; ballVyRef.current = 0; ballTrailRef.current = [];
       ballDrawX.current = 0.5; ballDrawY.current = 0.5; ballAngle.current = 0;
+      // Cache stable-sorted starters (tiebreak by id to prevent index flipping)
+      hStartersRef.current = game.roster
+        .filter(p => p.role === 'st')
+        .sort((a, b) => POS_ORDER[a.pos] - POS_ORDER[b.pos] || (a.id || a.name).localeCompare(b.id || b.name));
+      // Preload all sprites before starting animation to prevent procedural↔image flicker
+      preloadAllSprites();
       Crowd.start();
+      Music.duck(); // Lower music volume during match
       const displayInterval = (navigator.deviceMemory && navigator.deviceMemory <= 4) ? 250 : 150;
       const di = setInterval(() => { const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: s.done, morale: s.morale, pendingEvent: s.pendingEvent, strategy: s.strategy, pendingPenalty: s.pendingPenalty }); }, displayInterval);
       const ci = setInterval(() => { const s = sim.current; Crowd.setIntensity(s.morale / 100); }, 1000);
       let animId; function dl() { frameRef.current++; drawPitch(); animId = requestAnimationFrame(dl); } dl();
       runEngineLoop().then(() => { clearInterval(di); clearInterval(ci); cancelAnimationFrame(animId); const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: true, morale: s.morale, pendingEvent: null, strategy: s.strategy }); });
-      return () => { clearInterval(di); clearInterval(ci); cancelAnimationFrame(animId); Crowd.stop(); };
+      return () => { clearInterval(di); clearInterval(ci); cancelAnimationFrame(animId); Crowd.stop(); Music.unduck(); };
     }, [match.running]);
 
     useEffect(() => {
@@ -540,6 +549,8 @@ export default function Rabona() {
       if (canvas.width !== targetW || canvas.height !== targetH) {
         canvas.width = targetW; canvas.height = targetH;
         canvas.style.width = logW + 'px'; canvas.style.height = logH + 'px';
+        // Force position arrays to reinitialize to new canvas dimensions
+        hpxRef.current = []; apxRef.current = [];
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const W = Math.floor(canvas.width / dpr), H = Math.floor(canvas.height / dpr), f = frameRef.current, S = sim.current;
@@ -703,13 +714,15 @@ export default function Rabona() {
       if (S.celebrateUntil > 0 && Date.now() > S.celebrateUntil) { S.animState = 'run'; S.celebrateUntil = 0; }
       const currentAnim = S.celebrateUntil > Date.now() ? 'celebrate' : (S.animState || 'idle');
       const rivalAnim = S.animState === 'kick' ? 'idle' : (S.animState === 'celebrate' ? 'idle' : 'run');
-      const hStarters = game.roster.filter(p => p.role === 'st').sort((a, b) => POS_ORDER[a.pos] - POS_ORDER[b.pos]);
+      // Use cached stable-sorted starters (updated on match start and substitutions)
+      const hStarters = hStartersRef.current;
       const rKit = getRivalKit(game.league || 0);
       const TEAM_SIZE = 7;
       // Home team sprites (fut7: GK + 6)
       for (let i = 0; i < TEAM_SIZE; i++) {
         const px = hpxRef.current[i], py = hpyRef.current[i];
         if (px === undefined || py === undefined) continue;
+        ctx.save();
         const isGK = i === 0 || (hStarters[i] && hStarters[i].pos === 'GK');
         if (S.involvedPlayer && hStarters[i] && hStarters[i].name === S.involvedPlayer) {
           ctx.fillStyle = 'rgba(88,166,255,0.25)';
@@ -721,18 +734,19 @@ export default function Rabona() {
         drawSprite(ctx, px, py, '#1565c0', '#0d47a1', f, i + 100, isGK, 'home', 'red', currentAnim);
         ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText(hStarters[i] ? hStarters[i].name.split(' ').pop().substring(0, 7) : '', px, py + 18);
-        ctx.textAlign = 'left';
+        ctx.restore();
       }
       // Rival team sprites (fut7: GK + 6)
       const rivalVariant = getRivalSpriteVariant(rKit[0]);
       for (let i = 0; i < TEAM_SIZE; i++) {
         const px = apxRef.current[i], py = apyRef.current[i];
         if (px === undefined || py === undefined) continue;
+        ctx.save();
         ctx.globalAlpha = 1;
         drawSprite(ctx, px, py, rKit[0], rKit[1], f, i + 200, i === 0, 'rival', rivalVariant, rivalAnim);
         ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText(S.rivalPlayers[i] ? S.rivalPlayers[i].name.split(' ').pop().substring(0, 7) : '', px, py + 18);
-        ctx.textAlign = 'left';
+        ctx.restore();
       }
       // ── Pass trail: fading line from nearest player to ball during active play ──
       if (isChanceActive && S.possession) {
@@ -836,7 +850,7 @@ export default function Rabona() {
             {[{ l: '⏩', s: 0 }, { l: '▶', s: 1 }, { l: '▶▶', s: 2 }].map(({ l, s }) => (
               <button key={s} onClick={() => { sim.current.speed = s; setDisplay(d => ({ ...d, speed: s })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, padding: '8px 12px', minWidth: 44, minHeight: 44, border: `1px solid ${display.speed === s ? T.win : 'rgba(255,255,255,0.2)'}`, background: display.speed === s ? `${T.win}30` : 'rgba(0,0,0,0.6)', color: display.speed === s ? T.win : 'rgba(255,255,255,0.5)', borderRadius: 6, cursor: 'pointer', touchAction: 'manipulation', backdropFilter: 'blur(4px)' }}>{l}</button>
             ))}
-            <button onClick={() => { SFX._muted = !SFX._muted; if (SFX._muted) Crowd.stop(); else if (sim.current && !sim.current.done) Crowd.start(); setDisplay(d => ({ ...d })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '8px 12px', minWidth: 44, minHeight: 44, border: `1px solid ${SFX._muted ? 'rgba(239,83,80,0.4)' : 'rgba(255,255,255,0.2)'}`, background: SFX._muted ? 'rgba(239,83,80,0.15)' : 'rgba(0,0,0,0.6)', color: SFX._muted ? '#ef5350' : 'rgba(255,255,255,0.5)', borderRadius: 6, cursor: 'pointer', touchAction: 'manipulation', backdropFilter: 'blur(4px)' }}>{SFX._muted ? '🔇' : '🔊'}</button>
+            <button onClick={() => { SFX._muted = !SFX._muted; if (SFX._muted) { Crowd.stop(); Music.pause(); } else { if (sim.current && !sim.current.done) Crowd.start(); Music.play(); } setDisplay(d => ({ ...d })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '8px 12px', minWidth: 44, minHeight: 44, border: `1px solid ${SFX._muted ? 'rgba(239,83,80,0.4)' : 'rgba(255,255,255,0.2)'}`, background: SFX._muted ? 'rgba(239,83,80,0.15)' : 'rgba(0,0,0,0.6)', color: SFX._muted ? '#ef5350' : 'rgba(255,255,255,0.5)', borderRadius: 6, cursor: 'pointer', touchAction: 'manipulation', backdropFilter: 'blur(4px)' }}>{SFX._muted ? '🔇' : '🔊'}</button>
           </div>
         </div>
         {/* Match log - always visible */}
