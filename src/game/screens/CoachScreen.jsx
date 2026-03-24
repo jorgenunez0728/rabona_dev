@@ -9,10 +9,10 @@ import useGameStore from '@/game/store';
 import ArchetypeScreen from './ArchetypeScreen';
 import CardLoadoutScreen from './CardLoadoutScreen';
 
-// Steps: 1=archetype, 2=coach, 3=cards, 4=relic, 5=ascension+mutators → start
+// Steps: 1=coach, 2=archetype, 3=cards, 4=relic, 5=ascension+mutators → start
 const STEPS = [
-  { id: 'archetype', label: 'Filosofía' },
   { id: 'coach', label: 'Entrenador' },
+  { id: 'archetype', label: 'Filosofía' },
   { id: 'cards', label: 'Cartas' },
   { id: 'relic', label: 'Reliquia' },
   { id: 'ascension', label: 'Dificultad' },
@@ -38,30 +38,33 @@ export default function CoachScreen() {
 
   function goNext() {
     SFX.play('click');
-    // Skip cards step if no cards in collection
-    if (step === 1 && !hasCards) {
-      setStep(3); // skip to relic
+    const nextStep = step + 1;
+    // Skip cards step (2) if no cards in collection
+    if (nextStep === 2 && !hasCards) {
+      setStep(3); // skip cards, go to relic
     } else {
-      setStep(step + 1);
+      setStep(nextStep);
     }
   }
 
   function goBack() {
     SFX.play('click');
-    if (step === 3 && !hasCards) {
-      setStep(1); // skip back over cards
+    const prevStep = step - 1;
+    // Skip cards step (2) when going back if no cards
+    if (prevStep === 2 && !hasCards) {
+      setStep(1); // skip back over cards to archetype
     } else {
-      setStep(step - 1);
+      setStep(prevStep);
     }
-  }
-
-  function handleArchetypeSelect(arch) {
-    setChosenArchetype(arch);
-    goNext();
   }
 
   function handleCoachSelect(coach) {
     setChosenCoach(coach);
+    goNext();
+  }
+
+  function handleArchetypeSelect(arch) {
+    setChosenArchetype(arch);
     // Generate relic pair for step 3
     const pair = STARTING_RELIC_PAIRS[Math.floor(Math.random() * STARTING_RELIC_PAIRS.length)];
     setStartingRelicPair(pair);
@@ -113,17 +116,8 @@ export default function CoachScreen() {
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', padding: '8px 14px 14px' }}>
-        {/* ═══ STEP 0: ARCHETYPE ═══ */}
+        {/* ═══ STEP 0: COACH ═══ */}
         {step === 0 && (
-          <ArchetypeScreen
-            globalStats={globalStats}
-            onSelect={handleArchetypeSelect}
-            selectedCoachId={null}
-          />
-        )}
-
-        {/* ═══ STEP 1: COACH ═══ */}
-        {step === 1 && (
           <div>
             <div style={{ textAlign: 'center', marginBottom: 8 }}>
               <div className="fw-anim-1" style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 18, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>Elige Entrenador</div>
@@ -167,6 +161,17 @@ export default function CoachScreen() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* ═══ STEP 1: ARCHETYPE ═══ */}
+        {step === 1 && (
+          <div>
+            <ArchetypeScreen
+              globalStats={globalStats}
+              onSelect={handleArchetypeSelect}
+              selectedCoachId={chosenCoach?.id}
+            />
             <button onClick={goBack} style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 11, padding: '8px 16px', border: `1px solid ${T.tx3}`, background: 'transparent', color: T.tx3, borderRadius: 4, cursor: 'pointer', textTransform: 'uppercase', marginTop: 8, display: 'block', margin: '8px auto 0' }}>
               ← Volver
             </button>
