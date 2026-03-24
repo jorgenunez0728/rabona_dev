@@ -55,8 +55,8 @@ export default function Rabona() {
     const canvasRef = useRef(null);
     const frameRef = useRef(0);
     const particlesRef = useRef(new ParticleSystem());
-    const hTrailRef = useRef(Array.from({ length: 5 }, () => []));
-    const aTrailRef = useRef(Array.from({ length: 5 }, () => []));
+    const hTrailRef = useRef(Array.from({ length: 7 }, () => []));
+    const aTrailRef = useRef(Array.from({ length: 7 }, () => []));
     const shakeRef = useRef(0);
     const hpxRef = useRef([]), hpyRef = useRef([]), apxRef = useRef([]), apyRef = useRef([]);
     const eventResolveRef = useRef(null);
@@ -520,43 +520,76 @@ export default function Rabona() {
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.fillRect(W / 2 - gpw / 2, m - 1, gpw, gph); ctx.fillRect(W / 2 - gpw / 2, H - m - gph + 1, gpw, gph);
       }
-      // Smooth ball interpolation with target system
-      S.ballX += (S.ballTargetX - S.ballX) * 0.08;
-      S.ballY += (S.ballTargetY - S.ballY) * 0.08;
-      ballDrawX.current += (S.ballX - ballDrawX.current) * 0.08;
-      ballDrawY.current += (S.ballY - ballDrawY.current) * 0.08;
+      // ── Ball physics: bezier interpolation with deceleration ──
+      const ballDist = Math.hypot(S.ballTargetX - S.ballX, S.ballTargetY - S.ballY);
+      // Adaptive speed: fast when far (counter), slow when close (control)
+      const ballEase = ballDist > 0.3 ? 0.06 : ballDist > 0.1 ? 0.045 : 0.08;
+      // Slight curve offset for organic pase feel
+      if (!S._ballCurve || ballDist > 0.25) {
+        S._ballCurve = (Math.random() - 0.5) * 0.04;
+      }
+      const perpX = -(S.ballTargetY - S.ballY) * S._ballCurve;
+      const perpY = (S.ballTargetX - S.ballX) * S._ballCurve;
+      S.ballX += ((S.ballTargetX + perpX) - S.ballX) * ballEase;
+      S.ballY += ((S.ballTargetY + perpY) - S.ballY) * ballEase;
+      // Visual draw position with extra smoothing
+      const drawEase = 0.12;
+      ballDrawX.current += (S.ballX - ballDrawX.current) * drawEase;
+      ballDrawY.current += (S.ballY - ballDrawY.current) * drawEase;
       const dx = S.ballX - ballDrawX.current, dy = S.ballY - ballDrawY.current;
-      ballAngle.current += Math.sqrt(dx * dx + dy * dy) * 80;
+      const ballSpeed = Math.sqrt(dx * dx + dy * dy);
+      ballAngle.current += ballSpeed * 120; // Faster spin when moving fast
       const bpx = m + fw * ballDrawX.current, bpy = m + fh * ballDrawY.current;
       const fmCfg = getCanvasFormation(game.formation?.id || game.formation);
       const homeFormation = fmCfg.home;
       const awayFormation = fmCfg.away;
       const homeSpreadX = fmCfg.homeSpreadX;
       const awaySpreadX = fmCfg.awaySpreadX;
-      if (!hpxRef.current.length) {
+      if (!hpxRef.current.length || hpxRef.current.length < 7) {
         homeFormation.forEach((p, i) => { hpxRef.current[i] = m + fw * (p.bx + homeSpreadX[i]); hpyRef.current[i] = m + fh * p.by; });
         awayFormation.forEach((p, i) => { apxRef.current[i] = m + fw * (p.bx + awaySpreadX[i]); apyRef.current[i] = m + fh * p.by; });
       }
-      homeFormation.forEach((pos, i) => {
-        const baseX = m + fw * (pos.bx + homeSpreadX[i]), baseY = m + fh * pos.by;
-        const pull = S.possession ? pos.pull : pos.pull * 0.4;
-        const pushY = S.possession ? -fh * 0.06 : fh * 0.04;
-        const targetX = baseX + (bpx - baseX) * pull * 2;
-        const targetY = Math.max(m + fh * pos.minY, Math.min(m + fh * pos.maxY, baseY + pushY + (bpy - baseY) * pull));
-        hpxRef.current[i] += (targetX - hpxRef.current[i]) * .045;
-        hpyRef.current[i] += (targetY - hpyRef.current[i]) * .045;
-        hpxRef.current[i] += Math.sin(f * .008 + i * 2.1) * 0.3;
-      });
-      awayFormation.forEach((pos, i) => {
-        const baseX = m + fw * (pos.bx + awaySpreadX[i]), baseY = m + fh * pos.by;
-        const pull = S.possession ? pos.pull * 0.4 : pos.pull;
-        const pushY = S.possession ? fh * 0.04 : -fh * 0.06;
-        const targetX = baseX + (bpx - baseX) * pull * 2;
-        const targetY = Math.max(m + fh * pos.minY, Math.min(m + fh * pos.maxY, baseY + pushY + (bpy - baseY) * pull));
-        apxRef.current[i] += (targetX - apxRef.current[i]) * .04;
-        apyRef.current[i] += (targetY - apyRef.current[i]) * .04;
-        apxRef.current[i] += Math.sin(f * .009 + i * 1.7) * 0.3;
-      });
+      // ── Steering behaviors: seek + arrive + separation + idle wander ──
+      const SEPARATION_DIST = fw * 0.08; // Min distance between teammates
+      const steer = (pxArr, pyArr, formation, spreadX, hasBall, count) => {
+        formation.forEach((pos, i) => {
+          if (i >= count) return;
+          const baseX = m + fw * (pos.bx + spreadX[i]), baseY = m + fh * pos.by;
+          const pull = hasBall ? pos.pull : pos.pull * 0.4;
+          const pushY = hasBall ? -fh * 0.06 : fh * 0.04;
+          // Seek: move toward tactical position influenced by ball
+          let targetX = baseX + (bpx - baseX) * pull * 2;
+          let targetY = baseY + pushY + (bpy - baseY) * pull;
+          targetY = Math.max(m + fh * pos.minY, Math.min(m + fh * pos.maxY, targetY));
+          // Separation: avoid overlapping with nearby teammates
+          let sepX = 0, sepY = 0;
+          for (let j = 0; j < count; j++) {
+            if (j === i) continue;
+            const sdx = pxArr[i] - pxArr[j], sdy = pyArr[i] - pyArr[j];
+            const sd = Math.sqrt(sdx * sdx + sdy * sdy) || 1;
+            if (sd < SEPARATION_DIST) {
+              const force = (SEPARATION_DIST - sd) / SEPARATION_DIST;
+              sepX += (sdx / sd) * force * 1.5;
+              sepY += (sdy / sd) * force * 1.5;
+            }
+          }
+          targetX += sepX;
+          targetY += sepY;
+          // Arrive: variable easing based on distance (slow near target, fast far)
+          const distToTarget = Math.hypot(targetX - pxArr[i], targetY - pyArr[i]);
+          const arriveEase = distToTarget > 40 ? 0.06 : distToTarget > 15 ? 0.04 : 0.025;
+          pxArr[i] += (targetX - pxArr[i]) * arriveEase;
+          pyArr[i] += (targetY - pyArr[i]) * arriveEase;
+          // Organic wander: perlin-like noise using dual sine waves at different frequencies
+          const seed = i * 3.7 + (hasBall ? 0 : 50);
+          const wanderX = Math.sin(f * 0.005 + seed) * 1.0 + Math.sin(f * 0.013 + seed * 0.6) * 0.5;
+          const wanderY = Math.cos(f * 0.007 + seed * 1.3) * 0.8 + Math.sin(f * 0.011 + seed * 0.9) * 0.4;
+          pxArr[i] += wanderX;
+          pyArr[i] += wanderY;
+        });
+      };
+      steer(hpxRef.current, hpyRef.current, homeFormation, homeSpreadX, S.possession, 7);
+      steer(apxRef.current, apyRef.current, awayFormation, awaySpreadX, !S.possession, 7);
       if (S.goalEffect !== 0) {
         const gx = W / 2, gy = S.goalEffect > 0 ? m + 20 : H - m - 20;
         const col = S.goalEffect > 0 ? ['#f0c040', '#ffd600', '#fff'] : ['#ff1744', '#ef5350'];
@@ -568,9 +601,11 @@ export default function Rabona() {
       const rivalAnim = S.animState === 'kick' ? 'idle' : (S.animState === 'celebrate' ? 'idle' : 'run');
       const hStarters = game.roster.filter(p => p.role === 'st').sort((a, b) => POS_ORDER[a.pos] - POS_ORDER[b.pos]);
       const rKit = getRivalKit(game.league || 0);
-      // Home team sprites
-      for (let i = 0; i < 5; i++) {
-        const px = hpxRef.current[i] + Math.sin(f * .016 + i * 1.3) * 1.5, py = hpyRef.current[i] + Math.sin(f * .013 + i) * 1.2;
+      const TEAM_SIZE = 7;
+      // Home team sprites (fut7: GK + 6)
+      for (let i = 0; i < TEAM_SIZE; i++) {
+        const px = hpxRef.current[i], py = hpyRef.current[i];
+        if (px === undefined || py === undefined) continue;
         const isGK = i === 0 || (hStarters[i] && hStarters[i].pos === 'GK');
         if (S.involvedPlayer && hStarters[i] && hStarters[i].name === S.involvedPlayer) {
           ctx.fillStyle = 'rgba(88,166,255,0.25)';
@@ -580,18 +615,19 @@ export default function Rabona() {
         }
         ctx.globalAlpha = 1;
         drawSprite(ctx, px, py, '#1565c0', '#0d47a1', f, i + 100, isGK, 'home', 'red', currentAnim);
-        ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(hStarters[i] ? hStarters[i].name.split(' ').pop().substring(0, 8) : '', px, py + 18);
+        ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(hStarters[i] ? hStarters[i].name.split(' ').pop().substring(0, 7) : '', px, py + 18);
         ctx.textAlign = 'left';
       }
-      // Rival team sprites
+      // Rival team sprites (fut7: GK + 6)
       const rivalVariant = getRivalSpriteVariant(rKit[0]);
-      for (let i = 0; i < 5; i++) {
-        const px = apxRef.current[i] + Math.sin(f * .018 + i * 1.5) * 1.5, py = apyRef.current[i] + Math.sin(f * .015 + i * 1.1) * 1.2;
+      for (let i = 0; i < TEAM_SIZE; i++) {
+        const px = apxRef.current[i], py = apyRef.current[i];
+        if (px === undefined || py === undefined) continue;
         ctx.globalAlpha = 1;
         drawSprite(ctx, px, py, rKit[0], rKit[1], f, i + 200, i === 0, 'rival', rivalVariant, rivalAnim);
-        ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(S.rivalPlayers[i] ? S.rivalPlayers[i].name.split(' ').pop().substring(0, 8) : '', px, py + 18);
+        ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(S.rivalPlayers[i] ? S.rivalPlayers[i].name.split(' ').pop().substring(0, 7) : '', px, py + 18);
         ctx.textAlign = 'left';
       }
       // Ball with smooth rotation
