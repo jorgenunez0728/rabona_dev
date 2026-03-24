@@ -116,6 +116,9 @@ export function ChibiImg({ asset, size = 32, style = {} }) {
       onError={() => setFailed(true)}
       style={{
         imageRendering: 'pixelated',
+        objectFit: 'contain',
+        objectPosition: 'center',
+        display: 'block',
         ...style,
       }}
     />

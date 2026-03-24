@@ -1,5 +1,53 @@
 import { rnd, pick } from './helpers.js';
 
+// ── Player & Rival Sprite Loading ──
+const playerSpriteMods = import.meta.glob('../../assets/chibi/icons/player-sprites/*.png', { eager: true, query: '?url', import: 'default' });
+const rivalSpriteMods = import.meta.glob('../../assets/chibi/icons/rival-sprites/*.png', { eager: true, query: '?url', import: 'default' });
+
+function spriteUrl(mods, name) {
+  const key = Object.keys(mods).find(k => k.endsWith(`/${name}.png`));
+  return key ? mods[key] : null;
+}
+
+const _spriteImgCache = {};
+function loadSpriteImg(url) {
+  if (!url) return null;
+  if (!_spriteImgCache[url]) {
+    const img = new Image();
+    img.src = url;
+    _spriteImgCache[url] = img;
+  }
+  return _spriteImgCache[url];
+}
+
+// Pre-build sprite URL arrays
+const PLAYER_SPRITE_URLS = {
+  idle: [1,2,3,4].map(i => spriteUrl(playerSpriteMods, `player-idle-${i}`)).filter(Boolean),
+  run: [1,2,3,4,5,6].map(i => spriteUrl(playerSpriteMods, `player-run-${i}`)).filter(Boolean),
+  kick: [1,2,3,4,5,6].map(i => spriteUrl(playerSpriteMods, `player-kick-${i}`)).filter(Boolean),
+  celebrate: Array.from({length:10}, (_,i) => spriteUrl(playerSpriteMods, `player-celebrate-${i+1}`)).filter(Boolean),
+};
+
+const RIVAL_SPRITE_URLS = {
+  red:    { idle: [1,2,3,4].map(i => spriteUrl(rivalSpriteMods, `rival-red-idle-${i}`)).filter(Boolean),
+            run:  [1,2,3,4].map(i => spriteUrl(rivalSpriteMods, `rival-red-run-${i}`)).filter(Boolean) },
+  green:  { idle: [1,2].map(i => spriteUrl(rivalSpriteMods, `rival-green-idle-${i}`)).filter(Boolean),
+            run:  [1,2].map(i => spriteUrl(rivalSpriteMods, `rival-green-run-${i}`)).filter(Boolean) },
+  purple: { idle: [1,2].map(i => spriteUrl(rivalSpriteMods, `rival-purple-idle-${i}`)).filter(Boolean),
+            run:  [1,2].map(i => spriteUrl(rivalSpriteMods, `rival-purple-run-${i}`)).filter(Boolean) },
+  gk:     { idle: [1,2,3,4].map(i => spriteUrl(rivalSpriteMods, `rival-gk-idle-${i}`)).filter(Boolean),
+            run:  [1,2,3,4].map(i => spriteUrl(rivalSpriteMods, `rival-gk-idle-${i}`)).filter(Boolean) },
+};
+
+// Map rival kit primary color to sprite variant
+export function getRivalSpriteVariant(kitColor) {
+  if (!kitColor) return 'red';
+  const c = kitColor.toLowerCase();
+  if (c.includes('9a') || c.includes('4a14') || c.includes('855')) return 'purple';
+  if (c.includes('7d32') || c.includes('5e20') || c.includes('474f') || c.includes('3238')) return 'green';
+  return 'red'; // red, orange, blue, etc. default to red variant
+}
+
 export const PN={GK:'POR',DEF:'DEF',MID:'MED',FWD:'DEL'};
 export const PC={GK:'gk',DEF:'df',MID:'md',FWD:'fw'};
 export const POS_ORDER={GK:0,DEF:1,MID:2,FWD:3};
@@ -22,41 +70,61 @@ export const CARD_TIERS = {
   legendary: { bg: 'linear-gradient(135deg,#2a2510,#3a3215)', border: 'rgba(255,215,0,0.4)', glow: '0 0 30px rgba(255,215,0,0.2)' },
 };
 
+// Social emoji image URLs
+const _socialMods = import.meta.glob('../../assets/chibi/icons/social/*.png', { eager: true, query: '?url', import: 'default' });
+function _socialImg(name) { const k = Object.keys(_socialMods).find(k => k.endsWith(`/${name}.png`)); return k ? _socialMods[k] : null; }
+
+export const SOCIAL_EMOJIS = {
+  soccer: _socialImg('social-soccer-ball'),
+  gamepad: _socialImg('social-gamepad'),
+  checklist: _socialImg('social-checklist'),
+  scoreboard: _socialImg('social-scoreboard'),
+  skull: _socialImg('social-skull-1'),
+  whistle: _socialImg('social-whistle'),
+  phone: _socialImg('social-phone'),
+  angry: _socialImg('social-angry-face'),
+  sad: _socialImg('social-sad-face'),
+  medical: _socialImg('social-medical-cross'),
+  arrowUp: _socialImg('social-arrow-up'),
+  dumbbell: _socialImg('social-dumbbell'),
+  bag: _socialImg('social-shopping-bag'),
+};
+
 const SOCIAL_ACCOUNTS = [
   [
-    { n: '@TioChuyFutbol', v: false, f: '234', av: '👴' },
-    { n: '@LaComadreDeportiva', v: false, f: '89', av: '👩' },
-    { n: '@FutbolDeBarro', v: false, f: '1.2K', av: '⚽' },
+    { n: '@TioChuyFutbol', v: false, f: '234', av: '👴', avImg: SOCIAL_EMOJIS.gamepad },
+    { n: '@LaComadreDeportiva', v: false, f: '89', av: '👩', avImg: SOCIAL_EMOJIS.checklist },
+    { n: '@FutbolDeBarro', v: false, f: '1.2K', av: '⚽', avImg: SOCIAL_EMOJIS.soccer },
   ],
   [
-    { n: '@DeportesMunicipal', v: true, f: '12K', av: '📰' },
-    { n: '@ElChivoFutbolero', v: false, f: '3.4K', av: '🐐' },
-    { n: '@FabrizioRomano', v: true, f: '18M', av: '📡' },
+    { n: '@DeportesMunicipal', v: true, f: '12K', av: '📰', avImg: SOCIAL_EMOJIS.scoreboard },
+    { n: '@ElChivoFutbolero', v: false, f: '3.4K', av: '🐐', avImg: SOCIAL_EMOJIS.soccer },
+    { n: '@FabrizioRomano', v: true, f: '18M', av: '📡', avImg: SOCIAL_EMOJIS.whistle },
   ],
   [
-    { n: '@EstatalDeportes', v: true, f: '45K', av: '🏛' },
-    { n: '@CrackDelNorte', v: false, f: '23K', av: '⭐' },
-    { n: '@FabrizioRomano', v: true, f: '18M', av: '📡' },
+    { n: '@EstatalDeportes', v: true, f: '45K', av: '🏛', avImg: SOCIAL_EMOJIS.scoreboard },
+    { n: '@CrackDelNorte', v: false, f: '23K', av: '⭐', avImg: SOCIAL_EMOJIS.soccer },
+    { n: '@FabrizioRomano', v: true, f: '18M', av: '📡', avImg: SOCIAL_EMOJIS.whistle },
   ],
   [
-    { n: '@TDNMéxico', v: true, f: '890K', av: '📺' },
-    { n: '@TUDN', v: true, f: '2.1M', av: '🎙' },
-    { n: '@FabrizioRomano', v: true, f: '18M', av: '📡' },
+    { n: '@TDNMéxico', v: true, f: '890K', av: '📺', avImg: SOCIAL_EMOJIS.phone },
+    { n: '@TUDN', v: true, f: '2.1M', av: '🎙', avImg: SOCIAL_EMOJIS.whistle },
+    { n: '@FabrizioRomano', v: true, f: '18M', av: '📡', avImg: SOCIAL_EMOJIS.whistle },
   ],
   [
-    { n: '@ESPN_MX', v: true, f: '5.6M', av: '🎯' },
-    { n: '@FutbolTotal', v: true, f: '8M', av: '🌎' },
-    { n: '@FabrizioRomano', v: true, f: '18M', av: '📡' },
+    { n: '@ESPN_MX', v: true, f: '5.6M', av: '🎯', avImg: SOCIAL_EMOJIS.soccer },
+    { n: '@FutbolTotal', v: true, f: '8M', av: '🌎', avImg: SOCIAL_EMOJIS.soccer },
+    { n: '@FabrizioRomano', v: true, f: '18M', av: '📡', avImg: SOCIAL_EMOJIS.whistle },
   ],
   [
-    { n: '@BBC_Sport', v: true, f: '42M', av: '🌍' },
-    { n: '@SkySports', v: true, f: '38M', av: '🔵' },
-    { n: '@FabrizioRomano', v: true, f: '18M', av: '📡' },
+    { n: '@BBC_Sport', v: true, f: '42M', av: '🌍', avImg: SOCIAL_EMOJIS.soccer },
+    { n: '@SkySports', v: true, f: '38M', av: '🔵', avImg: SOCIAL_EMOJIS.soccer },
+    { n: '@FabrizioRomano', v: true, f: '18M', av: '📡', avImg: SOCIAL_EMOJIS.whistle },
   ],
   [
-    { n: '@GalacticSports', v: true, f: '900M', av: '🛸' },
-    { n: '@InterstellarFC', v: true, f: '2.1B', av: '🌌' },
-    { n: '@FabrizioRomano', v: true, f: '18M', av: '📡' },
+    { n: '@GalacticSports', v: true, f: '900M', av: '🛸', avImg: SOCIAL_EMOJIS.gamepad },
+    { n: '@InterstellarFC', v: true, f: '2.1B', av: '🌌', avImg: SOCIAL_EMOJIS.gamepad },
+    { n: '@FabrizioRomano', v: true, f: '18M', av: '📡', avImg: SOCIAL_EMOJIS.whistle },
   ],
 ];
 
@@ -134,7 +202,7 @@ export function generateSocialPosts(league, won, drew, rivalName, ps, rs, streak
   if (league >= 1 && Math.random() < 0.4) {
     const fab = pick(POST_TEMPLATES.fabrizio);
     posts.push({
-      account: { n: '@FabrizioRomano', v: true, f: '18M', av: '📡' },
+      account: { n: '@FabrizioRomano', v: true, f: '18M', av: '📡', avImg: SOCIAL_EMOJIS.whistle },
       text: fab('Halcones', rivalName),
       likes: `${rnd(5000, 50000)}`,
       comments: rnd(500, 5000),
@@ -183,32 +251,53 @@ export const LEGENDS = [
 ];
 
 // Canvas sprite drawing
-export function drawSprite(ctx, x, y, bodyCol, darkCol, frame, seed, isGK = false) {
+// team: 'home' | 'rival' — rivalVariant: 'red'|'green'|'purple'
+export function drawSprite(ctx, x, y, bodyCol, darkCol, frame, seed, isGK = false, team = 'home', rivalVariant = 'red') {
+  const drawSize = 30;
+
+  // Try to draw a loaded sprite image
+  let urls = null;
+  if (team === 'home') {
+    urls = isGK ? PLAYER_SPRITE_URLS.idle : PLAYER_SPRITE_URLS.idle;
+  } else {
+    const variant = isGK ? 'gk' : (RIVAL_SPRITE_URLS[rivalVariant] ? rivalVariant : 'red');
+    urls = RIVAL_SPRITE_URLS[variant]?.idle || [];
+  }
+
+  if (urls && urls.length > 0) {
+    const frameIdx = Math.floor(frame / 12 + seed) % urls.length;
+    const img = loadSpriteImg(urls[frameIdx]);
+    if (img && img.complete && img.naturalWidth > 0) {
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.beginPath();
+      ctx.ellipse(x, y + drawSize * 0.45, drawSize * 0.35, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.drawImage(img, x - drawSize / 2, y - drawSize / 2, drawSize, drawSize);
+      return;
+    }
+  }
+
+  // Fallback: procedural drawing
   const s = 14;
-  // Shadow
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
   ctx.beginPath();
   ctx.ellipse(x, y + s + 2, s * 0.7, 3, 0, 0, Math.PI * 2);
   ctx.fill();
-  // Body
   const bobY = Math.sin(frame * 0.12 + seed * 0.7) * 1.2;
   ctx.fillStyle = isGK ? '#ffc107' : bodyCol;
   ctx.fillRect(x - s * 0.5, y - s * 0.3 + bobY, s, s * 1.1);
-  // Head
   ctx.fillStyle = '#f5c5a3';
   ctx.beginPath();
   ctx.arc(x, y - s * 0.5 + bobY, s * 0.42, 0, Math.PI * 2);
   ctx.fill();
-  // Shorts
   ctx.fillStyle = darkCol;
   ctx.fillRect(x - s * 0.5, y + s * 0.6 + bobY, s * 0.45, s * 0.5);
   ctx.fillRect(x + s * 0.05, y + s * 0.6 + bobY, s * 0.45, s * 0.5);
-  // Legs
   const legSwing = Math.sin(frame * 0.18 + seed) * 3;
   ctx.fillStyle = '#f5c5a3';
   ctx.fillRect(x - s * 0.35, y + s * 1.05 + bobY - legSwing, s * 0.28, s * 0.7);
   ctx.fillRect(x + s * 0.07, y + s * 1.05 + bobY + legSwing, s * 0.28, s * 0.7);
-  // Boots
   ctx.fillStyle = '#1a1a2e';
   ctx.fillRect(x - s * 0.38, y + s * 1.65 + bobY, s * 0.34, s * 0.28);
   ctx.fillRect(x + s * 0.05, y + s * 1.65 + bobY, s * 0.34, s * 0.28);

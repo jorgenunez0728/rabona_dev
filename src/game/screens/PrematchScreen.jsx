@@ -45,7 +45,7 @@ export default function PrematchScreen() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'auto', background: T.bg }}>
-      <div style={{ background: isNemesisMatch ? 'linear-gradient(135deg,#4a148c,#880e4f)' : isCopaMatch ? 'linear-gradient(135deg,#f9a825,#e65100)' : 'linear-gradient(135deg,#1565c0,#c62828)', padding: '14px 16px', textAlign: 'center' }}>
+      <div style={{ background: isNemesisMatch ? 'linear-gradient(135deg,#4a148c,#880e4f)' : isCopaMatch ? 'linear-gradient(135deg,#f9a825,#e65100)' : 'linear-gradient(135deg,#4FC3F7,#0288D1)', padding: '14px 16px', textAlign: 'center' }}>
         <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: 'rgba(255,255,255,0.7)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>
           {isCopaMatch ? `🏆 Copa · Ronda ${(copa?.round || 0) + 1}` : isNemesisMatch ? '⚔️ DUELO DE RIVALES' : `${lg.i} Jornada ${game.matchNum + 1}`}
         </div>
