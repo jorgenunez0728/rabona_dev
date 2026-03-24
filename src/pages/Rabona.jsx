@@ -10,6 +10,19 @@ import {
 } from "@/game/data";
 import { getStadiumPitch } from "@/assets/stadiums";
 import { simulateMatch, PLAY_STYLES, INTENSITIES, getManOfTheMatch } from "@/game/engine";
+
+// ─── Preload sprite images ───
+const spriteModules = import.meta.glob('/src/assets/chibi/icons/{player-sprites,rival-sprites}/*.png', { eager: true, query: '?url', import: 'default' });
+const spriteCache = {};
+for (const [path, url] of Object.entries(spriteModules)) {
+  const name = path.split('/').pop().replace('.png', '');
+  const img = new Image();
+  img.src = url;
+  spriteCache[name] = img;
+}
+function getRivalSpriteColor(league) {
+  return ['red', 'green', 'purple', 'red', 'green', 'purple', 'red'][league % 7];
+}
 import { PlayerDetailModal, ParticleSystem } from "@/game/components";
 import { CareerCreateScreen, CareerCardScreen, CareerMatchScreen, CareerSeasonEnd, CareerEndScreen } from "@/game/CareerScreens";
 import useGameStore from "@/game/store";
@@ -62,6 +75,7 @@ export default function Rabona() {
     const eventResolveRef = useRef(null);
     const penaltyResolveRef = useRef(null);
     const pitchImgRef = useRef(null);
+    const ballDrawX = useRef(0.5), ballDrawY = useRef(0.5), ballAngle = useRef(0);
     const sim = useRef({ ps: 0, rs: 0, minute: 0, speed: 2, ballX: .5, ballY: .5, possession: true, log: [], done: false, rivalName: '', rivalPlayers: [], morale: 50, strategy: 'balanced', shots: 0, possCount: 0, totalTicks: 0, pendingEvent: null, halftimeShown: false, goalEffect: 0, pendingPenalty: null });
     const [display, setDisplay] = useState({ ps: 0, rs: 0, minute: 0, speed: 2, log: [], done: false, morale: 50, pendingEvent: null, strategy: 'balanced', pendingPenalty: null });
 
@@ -73,6 +87,7 @@ export default function Rabona() {
       simRef.current = true;
       sim.current = { ps: 0, rs: 0, minute: 0, speed: 2, ballX: .5, ballY: .5, possession: true, log: [], done: false, rivalName: match.rival?.name || 'Rival', rivalPlayers: match.rivalPlayers || [], morale: 50, strategy: 'balanced', shots: 0, possCount: 0, totalTicks: 0, pendingEvent: null, halftimeShown: false, goalEffect: 0, pendingPenalty: null };
       hpxRef.current = []; hpyRef.current = []; apxRef.current = []; apyRef.current = [];
+      ballDrawX.current = 0.5; ballDrawY.current = 0.5; ballAngle.current = 0;
       Crowd.start();
       const di = setInterval(() => { const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: s.done, morale: s.morale, pendingEvent: s.pendingEvent, strategy: s.strategy, pendingPenalty: s.pendingPenalty }); }, 150);
       const ci = setInterval(() => { const s = sim.current; Crowd.setIntensity(s.morale / 100); }, 1000);
@@ -480,7 +495,12 @@ export default function Rabona() {
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.fillRect(W / 2 - gpw / 2, m - 1, gpw, gph); ctx.fillRect(W / 2 - gpw / 2, H - m - gph + 1, gpw, gph);
       }
-      const bpx = m + fw * S.ballX, bpy = m + fh * S.ballY;
+      // Smooth ball interpolation
+      ballDrawX.current += (S.ballX - ballDrawX.current) * 0.08;
+      ballDrawY.current += (S.ballY - ballDrawY.current) * 0.08;
+      const dx = S.ballX - ballDrawX.current, dy = S.ballY - ballDrawY.current;
+      ballAngle.current += Math.sqrt(dx * dx + dy * dy) * 80;
+      const bpx = m + fw * ballDrawX.current, bpy = m + fh * ballDrawY.current;
       const homeFormation = [{ bx: .5, by: .88, pull: .005, minY: .78, maxY: .95 }, { bx: .25, by: .70, pull: .02, minY: .55, maxY: .82 }, { bx: .75, by: .70, pull: .02, minY: .55, maxY: .82 }, { bx: .5, by: .52, pull: .06, minY: .35, maxY: .70 }, { bx: .5, by: .35, pull: .08, minY: .15, maxY: .60 }];
       const awayFormation = [{ bx: .5, by: .12, pull: .005, minY: .05, maxY: .22 }, { bx: .3, by: .28, pull: .02, minY: .18, maxY: .45 }, { bx: .7, by: .28, pull: .02, minY: .18, maxY: .45 }, { bx: .5, by: .42, pull: .06, minY: .30, maxY: .60 }, { bx: .5, by: .55, pull: .08, minY: .35, maxY: .80 }];
       const homeSpreadX = [0, -0.22, 0.22, 0, 0], awaySpreadX = [0, -0.18, 0.18, 0, 0];
@@ -516,27 +536,53 @@ export default function Rabona() {
       }
       const hStarters = game.roster.filter(p => p.role === 'st').sort((a, b) => POS_ORDER[a.pos] - POS_ORDER[b.pos]);
       const rKit = getRivalKit(game.league || 0);
+      const spriteSize = 28;
+      const rivalColor = getRivalSpriteColor(game.league || 0);
+      // Home team sprites
       for (let i = 0; i < 5; i++) {
         const px = hpxRef.current[i] + Math.sin(f * .016 + i * 1.3) * 1.5, py = hpyRef.current[i] + Math.sin(f * .013 + i) * 1.2;
-        const isGK = i === 0 || (hStarters[i] && hStarters[i].pos === 'GK');
         ctx.globalAlpha = 1;
-        drawSprite(ctx, px, py, '#1565c0', '#0d47a1', f, i + 100, isGK);
+        const hFrame = Math.floor(f / 10) % 6 + 1;
+        const hKey = `player-run-${hFrame}`;
+        const hSprite = spriteCache[hKey];
+        if (hSprite && hSprite.complete && hSprite.naturalWidth) {
+          ctx.drawImage(hSprite, px - spriteSize / 2, py - spriteSize / 2, spriteSize, spriteSize);
+        } else {
+          drawSprite(ctx, px, py, '#1565c0', '#0d47a1', f, i + 100, i === 0);
+        }
         ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(hStarters[i] ? hStarters[i].name.split(' ').pop().substring(0, 8) : '', px, py + 22);
+        ctx.fillText(hStarters[i] ? hStarters[i].name.split(' ').pop().substring(0, 8) : '', px, py + 18);
         ctx.textAlign = 'left';
       }
+      // Rival team sprites
       for (let i = 0; i < 5; i++) {
         const px = apxRef.current[i] + Math.sin(f * .018 + i * 1.5) * 1.5, py = apyRef.current[i] + Math.sin(f * .015 + i * 1.1) * 1.2;
         ctx.globalAlpha = 1;
-        drawSprite(ctx, px, py, rKit[0], rKit[1], f, i + 200, i === 0);
+        const isGK = i === 0;
+        let rKey;
+        if (isGK) {
+          rKey = `rival-gk-idle-${(Math.floor(f / 15) % 4) + 1}`;
+        } else {
+          const rFrame = Math.floor(f / 12) % 2 + 1;
+          rKey = `rival-${rivalColor}-run-${rFrame}`;
+        }
+        const rSprite = spriteCache[rKey];
+        if (rSprite && rSprite.complete && rSprite.naturalWidth) {
+          ctx.drawImage(rSprite, px - spriteSize / 2, py - spriteSize / 2, spriteSize, spriteSize);
+        } else {
+          drawSprite(ctx, px, py, rKit[0], rKit[1], f, i + 200, isGK);
+        }
         ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(S.rivalPlayers[i] ? S.rivalPlayers[i].name.split(' ').pop().substring(0, 8) : '', px, py + 22);
+        ctx.fillText(S.rivalPlayers[i] ? S.rivalPlayers[i].name.split(' ').pop().substring(0, 8) : '', px, py + 18);
         ctx.textAlign = 'left';
       }
-      const bs = 12;
-      ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(bpx + 1, bpy + bs * 0.6, bs * 0.6, bs * 0.2, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(bpx, bpy, 5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(bpx, bpy, 1.5, 0, Math.PI * 2); ctx.fill();
+      // Ball with smooth rotation
+      ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(bpx + 1, bpy + 8, 5, 2, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.save(); ctx.translate(bpx, bpy); ctx.rotate(ballAngle.current);
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#333';
+      for (let p = 0; p < 5; p++) { const a = (Math.PI * 2 / 5) * p; ctx.beginPath(); ctx.arc(Math.cos(a) * 3, Math.sin(a) * 3, 1.2, 0, Math.PI * 2); ctx.fill(); }
+      ctx.restore();
       particlesRef.current.update(ctx);
       if (shakeRef.current > 5) { ctx.fillStyle = shakeRef.current > 12 ? 'rgba(240,192,64,0.15)' : 'rgba(255,23,68,0.1)'; ctx.fillRect(0, 0, W, H); }
       ctx.restore();
