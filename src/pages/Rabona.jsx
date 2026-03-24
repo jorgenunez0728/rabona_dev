@@ -62,6 +62,7 @@ export default function Rabona() {
     const eventResolveRef = useRef(null);
     const penaltyResolveRef = useRef(null);
     const pitchImgRef = useRef(null);
+    const ballDrawX = useRef(0.5), ballDrawY = useRef(0.5), ballAngle = useRef(0);
     const sim = useRef({ ps: 0, rs: 0, minute: 0, speed: 2, ballX: .5, ballY: .5, ballTargetX: .5, ballTargetY: .5, possession: true, log: [], done: false, rivalName: '', rivalPlayers: [], morale: 50, strategy: 'balanced', shots: 0, possCount: 0, totalTicks: 0, pendingEvent: null, halftimeShown: false, goalEffect: 0, pendingPenalty: null });
     const [display, setDisplay] = useState({ ps: 0, rs: 0, minute: 0, speed: 2, log: [], done: false, morale: 50, pendingEvent: null, strategy: 'balanced', pendingPenalty: null });
 
@@ -73,6 +74,7 @@ export default function Rabona() {
       simRef.current = true;
       sim.current = { ps: 0, rs: 0, minute: 0, speed: 2, ballX: .5, ballY: .5, ballTargetX: .5, ballTargetY: .5, possession: true, log: [], done: false, rivalName: match.rival?.name || 'Rival', rivalPlayers: match.rivalPlayers || [], morale: 50, strategy: 'balanced', shots: 0, possCount: 0, totalTicks: 0, pendingEvent: null, halftimeShown: false, goalEffect: 0, pendingPenalty: null, animState: 'idle', celebrateUntil: 0, chanceIndicator: null, involvedPlayer: null };
       hpxRef.current = []; hpyRef.current = []; apxRef.current = []; apyRef.current = [];
+      ballDrawX.current = 0.5; ballDrawY.current = 0.5; ballAngle.current = 0;
       Crowd.start();
       const di = setInterval(() => { const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: s.done, morale: s.morale, pendingEvent: s.pendingEvent, strategy: s.strategy, pendingPenalty: s.pendingPenalty }); }, 150);
       const ci = setInterval(() => { const s = sim.current; Crowd.setIntensity(s.morale / 100); }, 1000);
@@ -518,9 +520,14 @@ export default function Rabona() {
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.fillRect(W / 2 - gpw / 2, m - 1, gpw, gph); ctx.fillRect(W / 2 - gpw / 2, H - m - gph + 1, gpw, gph);
       }
+      // Smooth ball interpolation with target system
       S.ballX += (S.ballTargetX - S.ballX) * 0.08;
       S.ballY += (S.ballTargetY - S.ballY) * 0.08;
-      const bpx = m + fw * S.ballX, bpy = m + fh * S.ballY;
+      ballDrawX.current += (S.ballX - ballDrawX.current) * 0.08;
+      ballDrawY.current += (S.ballY - ballDrawY.current) * 0.08;
+      const dx = S.ballX - ballDrawX.current, dy = S.ballY - ballDrawY.current;
+      ballAngle.current += Math.sqrt(dx * dx + dy * dy) * 80;
+      const bpx = m + fw * ballDrawX.current, bpy = m + fh * ballDrawY.current;
       const fmCfg = getCanvasFormation(game.formation?.id || game.formation);
       const homeFormation = fmCfg.home;
       const awayFormation = fmCfg.away;
@@ -561,6 +568,7 @@ export default function Rabona() {
       const rivalAnim = S.animState === 'kick' ? 'idle' : (S.animState === 'celebrate' ? 'idle' : 'run');
       const hStarters = game.roster.filter(p => p.role === 'st').sort((a, b) => POS_ORDER[a.pos] - POS_ORDER[b.pos]);
       const rKit = getRivalKit(game.league || 0);
+      // Home team sprites
       for (let i = 0; i < 5; i++) {
         const px = hpxRef.current[i] + Math.sin(f * .016 + i * 1.3) * 1.5, py = hpyRef.current[i] + Math.sin(f * .013 + i) * 1.2;
         const isGK = i === 0 || (hStarters[i] && hStarters[i].pos === 'GK');
@@ -573,22 +581,26 @@ export default function Rabona() {
         ctx.globalAlpha = 1;
         drawSprite(ctx, px, py, '#1565c0', '#0d47a1', f, i + 100, isGK, 'home', 'red', currentAnim);
         ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(hStarters[i] ? hStarters[i].name.split(' ').pop().substring(0, 8) : '', px, py + 22);
+        ctx.fillText(hStarters[i] ? hStarters[i].name.split(' ').pop().substring(0, 8) : '', px, py + 18);
         ctx.textAlign = 'left';
       }
+      // Rival team sprites
       const rivalVariant = getRivalSpriteVariant(rKit[0]);
       for (let i = 0; i < 5; i++) {
         const px = apxRef.current[i] + Math.sin(f * .018 + i * 1.5) * 1.5, py = apyRef.current[i] + Math.sin(f * .015 + i * 1.1) * 1.2;
         ctx.globalAlpha = 1;
         drawSprite(ctx, px, py, rKit[0], rKit[1], f, i + 200, i === 0, 'rival', rivalVariant, rivalAnim);
         ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(S.rivalPlayers[i] ? S.rivalPlayers[i].name.split(' ').pop().substring(0, 8) : '', px, py + 22);
+        ctx.fillText(S.rivalPlayers[i] ? S.rivalPlayers[i].name.split(' ').pop().substring(0, 8) : '', px, py + 18);
         ctx.textAlign = 'left';
       }
-      const bs = 12;
-      ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(bpx + 1, bpy + bs * 0.6, bs * 0.6, bs * 0.2, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(bpx, bpy, 5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(bpx, bpy, 1.5, 0, Math.PI * 2); ctx.fill();
+      // Ball with smooth rotation
+      ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(bpx + 1, bpy + 8, 5, 2, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.save(); ctx.translate(bpx, bpy); ctx.rotate(ballAngle.current);
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#333';
+      for (let p = 0; p < 5; p++) { const a = (Math.PI * 2 / 5) * p; ctx.beginPath(); ctx.arc(Math.cos(a) * 3, Math.sin(a) * 3, 1.2, 0, Math.PI * 2); ctx.fill(); }
+      ctx.restore();
       // Chance type indicator
       if (S.chanceIndicator && frameRef.current < S.chanceIndicator.until) {
         const alpha = (S.chanceIndicator.until - frameRef.current) / 60;
