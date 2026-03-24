@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="32" fill="#0b1120"/>
+  <circle cx="96" cy="86" r="40" fill="#fff"/>
+  <circle cx="82" cy="76" r="5" fill="#333"/>
+  <circle cx="110" cy="76" r="5" fill="#333"/>
+  <circle cx="96" cy="96" r="5" fill="#333"/>
+  <circle cx="82" cy="96" r="5" fill="#333"/>
+  <circle cx="110" cy="96" r="5" fill="#333"/>
+  <text x="96" y="160" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="24" fill="#f0c040">RABONA</text>
+</svg>

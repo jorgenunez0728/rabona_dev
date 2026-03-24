@@ -14,7 +14,7 @@ export default function BoardEventScreen() {
 
   const ev = boardEvents[boardEventIdx];
   const phase = boardPhase;
-  if (!ev) { setTimeout(() => go('prematch'), 50); return null; }
+  if (!ev) { setTimeout(() => go('map'), 50); return null; }
 
   function previewEffects(opt) {
     const parts = [];
@@ -46,7 +46,7 @@ export default function BoardEventScreen() {
   function advance() {
     setBoardPhase('choose'); setBoardResultData(null);
     if (boardEventIdx + 1 < boardEvents.length) setBoardEventIdx(boardEventIdx + 1);
-    else { setBoardEvents([]); setBoardEventIdx(0); go('prematch'); }
+    else { setBoardEvents([]); setBoardEventIdx(0); go('map'); }
   }
 
   return (

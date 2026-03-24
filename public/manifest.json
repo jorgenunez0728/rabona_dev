@@ -1,0 +1,19 @@
+{
+  "name": "Rabona - Football Manager",
+  "short_name": "Rabona",
+  "description": "Roguelike football manager. Build your team from the barrio to the stars.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1120",
+  "theme_color": "#0b1120",
+  "categories": ["games", "sports"],
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

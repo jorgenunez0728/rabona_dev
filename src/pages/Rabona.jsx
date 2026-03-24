@@ -25,7 +25,10 @@ import RosterScreen from "@/game/screens/RosterScreen";
 import MarketScreen from "@/game/screens/MarketScreen";
 import TrainingScreen from "@/game/screens/TrainingScreen";
 import BoardEventScreen from "@/game/screens/BoardEventScreen";
+import MapScreen from "@/game/screens/MapScreen";
 import PrematchScreen from "@/game/screens/PrematchScreen";
+import { Haptics } from "@/game/haptics";
+import BottomNav from "@/game/components/BottomNav";
 import RewardsScreen from "@/game/screens/RewardsScreen";
 import AscensionScreen from "@/game/screens/AscensionScreen";
 import ChampionScreen from "@/game/screens/ChampionScreen";
@@ -55,8 +58,8 @@ export default function Rabona() {
     const canvasRef = useRef(null);
     const frameRef = useRef(0);
     const particlesRef = useRef(new ParticleSystem());
-    const hTrailRef = useRef(Array.from({ length: 5 }, () => []));
-    const aTrailRef = useRef(Array.from({ length: 5 }, () => []));
+    const hTrailRef = useRef(Array.from({ length: 7 }, () => []));
+    const aTrailRef = useRef(Array.from({ length: 7 }, () => []));
     const shakeRef = useRef(0);
     const hpxRef = useRef([]), hpyRef = useRef([]), apxRef = useRef([]), apyRef = useRef([]);
     const eventResolveRef = useRef(null);
@@ -199,14 +202,14 @@ export default function Rabona() {
             if (ev.chanceType) S.chanceIndicator = { type: ev.chanceType, until: frameRef.current + 60 };
             if (ev.team === 'home') {
               S.goalEffect = 1; shakeRef.current = 15; S.ballX = .5; S.ballY = .05; S.ballTargetX = .5; S.ballTargetY = .05;
-              SFX.play('goal');
+              SFX.play('goal'); Haptics.heavy();
               addLog('goal', ev.text || `⚽ ${ev.minute}' ${narrate('goalHome')}`);
               S.morale = Math.min(99, (S.morale || 50) + 10);
               S.animState = 'celebrate'; S.celebrateUntil = Date.now() + 2500;
               await sleep(sp() >= 2 ? 2500 : sp() === 1 ? 800 : 200);
             } else {
               S.goalEffect = -1; shakeRef.current = 10; S.ballX = .5; S.ballY = .95; S.ballTargetX = .5; S.ballTargetY = .95;
-              SFX.play('goal_rival');
+              SFX.play('goal_rival'); Haptics.double();
               addLog('goalRival', ev.text || `💀 ${ev.minute}' ${narrate('goalAway')}`);
               S.morale = Math.max(0, (S.morale || 50) - 8);
               S.animState = 'idle';
@@ -279,7 +282,7 @@ export default function Rabona() {
           }
 
           case 'card':
-            if (sp() >= 2) { SFX.play('card'); addLog('card', ev.text || `🟨 ${ev.minute}' ¡Tarjeta!`); }
+            if (sp() >= 2) { SFX.play('card'); Haptics.warning(); addLog('card', ev.text || `🟨 ${ev.minute}' ¡Tarjeta!`); }
             break;
 
           case 'steal':
@@ -303,7 +306,7 @@ export default function Rabona() {
             break;
 
           case 'whistle':
-            SFX.play('whistle_double');
+            SFX.play('whistle_double'); Haptics.success();
             addLog('event', ev.text || `🏁 ¡Final! Halcones ${S.ps}-${S.rs} ${S.rivalName}`);
             Crowd.stop();
             await sleep(sp() === 0 ? 600 : 2500);
@@ -520,43 +523,109 @@ export default function Rabona() {
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.fillRect(W / 2 - gpw / 2, m - 1, gpw, gph); ctx.fillRect(W / 2 - gpw / 2, H - m - gph + 1, gpw, gph);
       }
-      // Smooth ball interpolation with target system
-      S.ballX += (S.ballTargetX - S.ballX) * 0.08;
-      S.ballY += (S.ballTargetY - S.ballY) * 0.08;
-      ballDrawX.current += (S.ballX - ballDrawX.current) * 0.08;
-      ballDrawY.current += (S.ballY - ballDrawY.current) * 0.08;
+      // ── Ball physics: bezier interpolation with deceleration ──
+      const ballDist = Math.hypot(S.ballTargetX - S.ballX, S.ballTargetY - S.ballY);
+      // Adaptive speed: fast when far (counter), slow when close (control)
+      const ballEase = ballDist > 0.3 ? 0.06 : ballDist > 0.1 ? 0.045 : 0.08;
+      // Slight curve offset for organic pase feel
+      if (!S._ballCurve || ballDist > 0.25) {
+        S._ballCurve = (Math.random() - 0.5) * 0.04;
+      }
+      const perpX = -(S.ballTargetY - S.ballY) * S._ballCurve;
+      const perpY = (S.ballTargetX - S.ballX) * S._ballCurve;
+      S.ballX += ((S.ballTargetX + perpX) - S.ballX) * ballEase;
+      S.ballY += ((S.ballTargetY + perpY) - S.ballY) * ballEase;
+      // Visual draw position with extra smoothing
+      const drawEase = 0.12;
+      ballDrawX.current += (S.ballX - ballDrawX.current) * drawEase;
+      ballDrawY.current += (S.ballY - ballDrawY.current) * drawEase;
       const dx = S.ballX - ballDrawX.current, dy = S.ballY - ballDrawY.current;
-      ballAngle.current += Math.sqrt(dx * dx + dy * dy) * 80;
+      const ballSpeed = Math.sqrt(dx * dx + dy * dy);
+      ballAngle.current += ballSpeed * 120; // Faster spin when moving fast
       const bpx = m + fw * ballDrawX.current, bpy = m + fh * ballDrawY.current;
       const fmCfg = getCanvasFormation(game.formation?.id || game.formation);
       const homeFormation = fmCfg.home;
       const awayFormation = fmCfg.away;
       const homeSpreadX = fmCfg.homeSpreadX;
       const awaySpreadX = fmCfg.awaySpreadX;
-      if (!hpxRef.current.length) {
+      if (!hpxRef.current.length || hpxRef.current.length < 7) {
         homeFormation.forEach((p, i) => { hpxRef.current[i] = m + fw * (p.bx + homeSpreadX[i]); hpyRef.current[i] = m + fh * p.by; });
         awayFormation.forEach((p, i) => { apxRef.current[i] = m + fw * (p.bx + awaySpreadX[i]); apyRef.current[i] = m + fh * p.by; });
       }
-      homeFormation.forEach((pos, i) => {
-        const baseX = m + fw * (pos.bx + homeSpreadX[i]), baseY = m + fh * pos.by;
-        const pull = S.possession ? pos.pull : pos.pull * 0.4;
-        const pushY = S.possession ? -fh * 0.06 : fh * 0.04;
-        const targetX = baseX + (bpx - baseX) * pull * 2;
-        const targetY = Math.max(m + fh * pos.minY, Math.min(m + fh * pos.maxY, baseY + pushY + (bpy - baseY) * pull));
-        hpxRef.current[i] += (targetX - hpxRef.current[i]) * .045;
-        hpyRef.current[i] += (targetY - hpyRef.current[i]) * .045;
-        hpxRef.current[i] += Math.sin(f * .008 + i * 2.1) * 0.3;
-      });
-      awayFormation.forEach((pos, i) => {
-        const baseX = m + fw * (pos.bx + awaySpreadX[i]), baseY = m + fh * pos.by;
-        const pull = S.possession ? pos.pull * 0.4 : pos.pull;
-        const pushY = S.possession ? fh * 0.04 : -fh * 0.06;
-        const targetX = baseX + (bpx - baseX) * pull * 2;
-        const targetY = Math.max(m + fh * pos.minY, Math.min(m + fh * pos.maxY, baseY + pushY + (bpy - baseY) * pull));
-        apxRef.current[i] += (targetX - apxRef.current[i]) * .04;
-        apyRef.current[i] += (targetY - apyRef.current[i]) * .04;
-        apxRef.current[i] += Math.sin(f * .009 + i * 1.7) * 0.3;
-      });
+      // ── Steering behaviors: seek + arrive + separation + context-aware animations ──
+      const SEPARATION_DIST = fw * 0.08;
+      const isCelebrating = S.celebrateUntil > Date.now();
+      const isChanceActive = S.animState === 'kick' || S.animState === 'run';
+      const steer = (pxArr, pyArr, formation, spreadX, hasBall, count, isHome) => {
+        formation.forEach((pos, i) => {
+          if (i >= count) return;
+          const baseX = m + fw * (pos.bx + spreadX[i]), baseY = m + fh * pos.by;
+
+          // ── Contextual: group celebration ──
+          if (isCelebrating && isHome && S.goalEffect >= 0) {
+            // All home players converge toward upper-center (near rival goal)
+            const celebX = W * 0.5 + Math.sin(i * 1.8) * fw * 0.12;
+            const celebY = m + fh * 0.15;
+            pxArr[i] += (celebX - pxArr[i]) * 0.04;
+            pyArr[i] += (celebY - pyArr[i]) * 0.03;
+            // Joyful bounce
+            pyArr[i] += Math.sin(f * 0.15 + i * 2.0) * 2.5;
+            pxArr[i] += Math.cos(f * 0.12 + i * 1.5) * 1.5;
+            return;
+          }
+
+          let pull = hasBall ? pos.pull : pos.pull * 0.4;
+          let pushY = hasBall ? -fh * 0.06 : fh * 0.04;
+
+          // ── Contextual: pressing (when team has ball, push formation higher) ──
+          if (hasBall && isChanceActive && i > 0) {
+            pushY -= fh * 0.04; // Extra forward push during active play
+            pull *= 1.5; // Stronger attraction to ball
+          }
+
+          // Seek: move toward tactical position influenced by ball
+          let targetX = baseX + (bpx - baseX) * pull * 2;
+          let targetY = baseY + pushY + (bpy - baseY) * pull;
+          targetY = Math.max(m + fh * pos.minY, Math.min(m + fh * pos.maxY, targetY));
+
+          // ── Contextual: attacking runs (forwards make diagonal runs during chances) ──
+          if (isChanceActive && hasBall && i >= count - 2 && i > 0) {
+            const runOffset = Math.sin(f * 0.02 + i * 3.0) * fw * 0.06;
+            targetX += runOffset;
+            targetY -= fh * 0.03; // Push forward
+          }
+
+          // Separation: avoid overlapping with nearby teammates
+          let sepX = 0, sepY = 0;
+          for (let j = 0; j < count; j++) {
+            if (j === i) continue;
+            const sdx = pxArr[i] - pxArr[j], sdy = pyArr[i] - pyArr[j];
+            const sd = Math.sqrt(sdx * sdx + sdy * sdy) || 1;
+            if (sd < SEPARATION_DIST) {
+              const force = (SEPARATION_DIST - sd) / SEPARATION_DIST;
+              sepX += (sdx / sd) * force * 1.5;
+              sepY += (sdy / sd) * force * 1.5;
+            }
+          }
+          targetX += sepX;
+          targetY += sepY;
+
+          // Arrive: variable easing (decelerate near target)
+          const distToTarget = Math.hypot(targetX - pxArr[i], targetY - pyArr[i]);
+          const arriveEase = distToTarget > 40 ? 0.06 : distToTarget > 15 ? 0.04 : 0.025;
+          pxArr[i] += (targetX - pxArr[i]) * arriveEase;
+          pyArr[i] += (targetY - pyArr[i]) * arriveEase;
+
+          // Organic wander: perlin-like noise (dual-frequency sine waves)
+          const seed = i * 3.7 + (hasBall ? 0 : 50);
+          const wanderX = Math.sin(f * 0.005 + seed) * 1.0 + Math.sin(f * 0.013 + seed * 0.6) * 0.5;
+          const wanderY = Math.cos(f * 0.007 + seed * 1.3) * 0.8 + Math.sin(f * 0.011 + seed * 0.9) * 0.4;
+          pxArr[i] += wanderX;
+          pyArr[i] += wanderY;
+        });
+      };
+      steer(hpxRef.current, hpyRef.current, homeFormation, homeSpreadX, S.possession, 7, true);
+      steer(apxRef.current, apyRef.current, awayFormation, awaySpreadX, !S.possession, 7, false);
       if (S.goalEffect !== 0) {
         const gx = W / 2, gy = S.goalEffect > 0 ? m + 20 : H - m - 20;
         const col = S.goalEffect > 0 ? ['#f0c040', '#ffd600', '#fff'] : ['#ff1744', '#ef5350'];
@@ -568,9 +637,11 @@ export default function Rabona() {
       const rivalAnim = S.animState === 'kick' ? 'idle' : (S.animState === 'celebrate' ? 'idle' : 'run');
       const hStarters = game.roster.filter(p => p.role === 'st').sort((a, b) => POS_ORDER[a.pos] - POS_ORDER[b.pos]);
       const rKit = getRivalKit(game.league || 0);
-      // Home team sprites
-      for (let i = 0; i < 5; i++) {
-        const px = hpxRef.current[i] + Math.sin(f * .016 + i * 1.3) * 1.5, py = hpyRef.current[i] + Math.sin(f * .013 + i) * 1.2;
+      const TEAM_SIZE = 7;
+      // Home team sprites (fut7: GK + 6)
+      for (let i = 0; i < TEAM_SIZE; i++) {
+        const px = hpxRef.current[i], py = hpyRef.current[i];
+        if (px === undefined || py === undefined) continue;
         const isGK = i === 0 || (hStarters[i] && hStarters[i].pos === 'GK');
         if (S.involvedPlayer && hStarters[i] && hStarters[i].name === S.involvedPlayer) {
           ctx.fillStyle = 'rgba(88,166,255,0.25)';
@@ -580,19 +651,42 @@ export default function Rabona() {
         }
         ctx.globalAlpha = 1;
         drawSprite(ctx, px, py, '#1565c0', '#0d47a1', f, i + 100, isGK, 'home', 'red', currentAnim);
-        ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(hStarters[i] ? hStarters[i].name.split(' ').pop().substring(0, 8) : '', px, py + 18);
+        ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(hStarters[i] ? hStarters[i].name.split(' ').pop().substring(0, 7) : '', px, py + 18);
         ctx.textAlign = 'left';
       }
-      // Rival team sprites
+      // Rival team sprites (fut7: GK + 6)
       const rivalVariant = getRivalSpriteVariant(rKit[0]);
-      for (let i = 0; i < 5; i++) {
-        const px = apxRef.current[i] + Math.sin(f * .018 + i * 1.5) * 1.5, py = apyRef.current[i] + Math.sin(f * .015 + i * 1.1) * 1.2;
+      for (let i = 0; i < TEAM_SIZE; i++) {
+        const px = apxRef.current[i], py = apyRef.current[i];
+        if (px === undefined || py === undefined) continue;
         ctx.globalAlpha = 1;
         drawSprite(ctx, px, py, rKit[0], rKit[1], f, i + 200, i === 0, 'rival', rivalVariant, rivalAnim);
-        ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(S.rivalPlayers[i] ? S.rivalPlayers[i].name.split(' ').pop().substring(0, 8) : '', px, py + 18);
+        ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(S.rivalPlayers[i] ? S.rivalPlayers[i].name.split(' ').pop().substring(0, 7) : '', px, py + 18);
         ctx.textAlign = 'left';
+      }
+      // ── Pass trail: fading line from nearest player to ball during active play ──
+      if (isChanceActive && S.possession) {
+        let nearIdx = 1, nearDist = Infinity;
+        for (let i = 1; i < TEAM_SIZE; i++) {
+          const d = Math.hypot(hpxRef.current[i] - bpx, hpyRef.current[i] - bpy);
+          if (d < nearDist) { nearDist = d; nearIdx = i; }
+        }
+        if (nearDist < fw * 0.35 && nearDist > 15) {
+          const grad = ctx.createLinearGradient(hpxRef.current[nearIdx], hpyRef.current[nearIdx], bpx, bpy);
+          grad.addColorStop(0, 'rgba(88,166,255,0.0)');
+          grad.addColorStop(0.4, 'rgba(88,166,255,0.15)');
+          grad.addColorStop(1, 'rgba(88,166,255,0.0)');
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.moveTo(hpxRef.current[nearIdx], hpyRef.current[nearIdx]);
+          ctx.lineTo(bpx, bpy);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
       }
       // Ball with smooth rotation
       ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(bpx + 1, bpy + 8, 5, 2, 0, 0, Math.PI * 2); ctx.fill();
@@ -668,7 +762,7 @@ export default function Rabona() {
         {/* Pitch */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-            <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated' }} />
+            <canvas ref={canvasRef} onDoubleClick={() => { sim.current.speed = 0; setDisplay(d => ({ ...d, speed: 0 })); }} style={{ width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated', touchAction: 'manipulation' }} />
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 15, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.7)', padding: '3px 6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderRadius: 4, overflow: 'hidden' }}>
                 <div style={{ padding: '2px 6px', background: '#1565c0', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 11, color: '#fff' }}>HAL</div>
@@ -680,11 +774,11 @@ export default function Rabona() {
                 <div style={{ width: 36, height: 3, background: 'rgba(255,255,255,0.15)', borderRadius: 2 }}><div style={{ width: `${display.morale}%`, height: '100%', background: moraleColor, borderRadius: 2 }} /></div>
                 <span style={{ fontSize: 9, color: moraleColor, fontFamily: "'Oswald'", fontWeight: 700 }}>{display.morale}</span>
               </div>
-              <div style={{ display: 'flex', gap: 2 }}>
+              <div style={{ display: 'flex', gap: 3 }}>
                 {[{ l: '⏩', s: 0 }, { l: '▶', s: 1 }, { l: '▶▶', s: 2 }].map(({ l, s }) => (
-                  <button key={s} onClick={() => { sim.current.speed = s; setDisplay(d => ({ ...d, speed: s })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 8, padding: '2px 5px', border: `1px solid ${display.speed === s ? T.win : 'rgba(255,255,255,0.15)'}`, background: display.speed === s ? `${T.win}25` : 'transparent', color: display.speed === s ? T.win : 'rgba(255,255,255,0.4)', borderRadius: 3, cursor: 'pointer' }}>{l}</button>
+                  <button key={s} onClick={() => { sim.current.speed = s; setDisplay(d => ({ ...d, speed: s })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 10, padding: '6px 10px', minWidth: 36, minHeight: 32, border: `1px solid ${display.speed === s ? T.win : 'rgba(255,255,255,0.15)'}`, background: display.speed === s ? `${T.win}25` : 'transparent', color: display.speed === s ? T.win : 'rgba(255,255,255,0.4)', borderRadius: 4, cursor: 'pointer', touchAction: 'manipulation' }}>{l}</button>
                 ))}
-                <button onClick={() => { SFX._muted = !SFX._muted; if (SFX._muted) Crowd.stop(); else if (sim.current && !sim.current.done) Crowd.start(); setDisplay(d => ({ ...d })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 8, padding: '2px 5px', border: `1px solid ${SFX._muted ? 'rgba(239,83,80,0.4)' : 'rgba(255,255,255,0.15)'}`, background: SFX._muted ? 'rgba(239,83,80,0.1)' : 'transparent', color: SFX._muted ? '#ef5350' : 'rgba(255,255,255,0.4)', borderRadius: 3, cursor: 'pointer', marginLeft: 3 }}>{SFX._muted ? '🔇' : '🔊'}</button>
+                <button onClick={() => { SFX._muted = !SFX._muted; if (SFX._muted) Crowd.stop(); else if (sim.current && !sim.current.done) Crowd.start(); setDisplay(d => ({ ...d })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 10, padding: '6px 10px', minWidth: 36, minHeight: 32, border: `1px solid ${SFX._muted ? 'rgba(239,83,80,0.4)' : 'rgba(255,255,255,0.15)'}`, background: SFX._muted ? 'rgba(239,83,80,0.1)' : 'transparent', color: SFX._muted ? '#ef5350' : 'rgba(255,255,255,0.4)', borderRadius: 4, cursor: 'pointer', marginLeft: 3, touchAction: 'manipulation' }}>{SFX._muted ? '🔇' : '🔊'}</button>
               </div>
             </div>
           </div>
@@ -705,7 +799,7 @@ export default function Rabona() {
               <div style={{ fontSize: 14, color: '#e8eaf6', textAlign: 'center', lineHeight: 1.3, whiteSpace: 'pre-line', margin: '8px 0' }}>{ev.d}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {ev.o.map((opt, i) => (
-                  <div key={i} onClick={() => { SFX.play('click'); handleEventChoice(i); }} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 4, padding: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div key={i} onClick={() => { SFX.play('click'); handleEventChoice(i); }} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, padding: '12px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, minHeight: 48, touchAction: 'manipulation' }}>
                     {opt.i && <div style={{ fontSize: 18, minWidth: 24, textAlign: 'center' }}>{opt.i}</div>}
                     <div style={{ flex: 1 }}>
                       <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: '#fff', textTransform: 'uppercase' }}>{opt.n}</div>
@@ -746,7 +840,7 @@ export default function Rabona() {
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {['left', 'center', 'right'].map(d => (
-                      <button key={d} onClick={() => handlePenaltyShoot(d)} style={{ flex: 1, padding: '12px 6px', background: isSave ? 'rgba(40,10,10,0.95)' : 'rgba(20,30,58,0.95)', border: `1px solid ${isSave ? 'rgba(255,50,50,0.2)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 6, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                      <button key={d} onClick={() => handlePenaltyShoot(d)} style={{ flex: 1, padding: '14px 8px', minHeight: 56, background: isSave ? 'rgba(40,10,10,0.95)' : 'rgba(20,30,58,0.95)', border: `1px solid ${isSave ? 'rgba(255,50,50,0.2)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 6, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, touchAction: 'manipulation' }}>
                         <div style={{ fontSize: 20 }}>{isSave ? (d === 'left' ? '↖' : d === 'center' ? '⬆' : '↗') : (d === 'left' ? '↙' : d === 'center' ? '⬆' : '↘')}</div>
                         <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 10, color: '#fff', textTransform: 'uppercase' }}>{d === 'left' ? 'Izq' : d === 'center' ? 'Centro' : 'Der'}</div>
                       </button>
@@ -800,7 +894,7 @@ export default function Rabona() {
         .fw-bg-pattern{background-image:radial-gradient(circle,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:20px 20px}
         *{box-sizing:border-box}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
       `}</style>
-      <div style={{ ...transStyle, width: '100%', height: '100%', position: 'relative' }}>
+      <div style={{ ...transStyle, width: '100%', height: '100%', position: 'relative', paddingBottom: ['table','roster','training','market','stats'].includes(screen) ? 52 : 0 }}>
         {screen === 'loading' && <LoadingScreen />}
         {screen === 'title' && <TitleScreen />}
         {screen === 'tutorial' && <TutorialScreen />}
@@ -810,6 +904,7 @@ export default function Rabona() {
         {screen === 'roster' && <RosterScreen />}
         {screen === 'training' && <TrainingScreen />}
         {screen === 'boardEvent' && <BoardEventScreen />}
+        {screen === 'map' && <MapScreen />}
         {screen === 'prematch' && <PrematchScreen />}
         {screen === 'match' && <MatchScreen />}
         {screen === 'rewards' && <RewardsScreen />}
@@ -831,6 +926,7 @@ export default function Rabona() {
         <LevelUpModal />
         {detailPlayer && <PlayerDetailModal player={detailPlayer} onClose={() => setDetailPlayer(null)} captainId={game.captain} />}
       </div>
+      <BottomNav />
     </div>
   );
 }

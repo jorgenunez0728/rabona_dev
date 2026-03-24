@@ -62,7 +62,7 @@ export default function TableScreen() {
             } else {
               const evs = getBoardEvents(game);
               if (evs.length > 0) { setBoardEvents(evs); setBoardEventIdx(0); setBoardPhase('choose'); setBoardResultData(null); go('boardEvent'); }
-              else go('prematch');
+              else go('map');
             }
           }} style={{
             fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, padding: '8px 20px', border: 'none',
