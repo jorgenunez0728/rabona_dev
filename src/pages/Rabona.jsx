@@ -374,7 +374,6 @@ export default function Rabona() {
       // End of match processing
       const ps = S.ps, rs = S.rs;
       const won = ps > rs, drew = ps === rs;
-      const archetypeData = game.archetype ? MANAGER_ARCHETYPES.find(a => a.id === game.archetype) : null;
       const drawIsLoss = drew && archetypeData?.engineHooks?.drawCountsAsLoss;
       const lost = ps < rs || drawIsLoss;
       const streakBonus = Math.max(0, game.streak) * 3;
