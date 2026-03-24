@@ -27,6 +27,8 @@ import TrainingScreen from "@/game/screens/TrainingScreen";
 import BoardEventScreen from "@/game/screens/BoardEventScreen";
 import MapScreen from "@/game/screens/MapScreen";
 import PrematchScreen from "@/game/screens/PrematchScreen";
+import { Haptics } from "@/game/haptics";
+import BottomNav from "@/game/components/BottomNav";
 import RewardsScreen from "@/game/screens/RewardsScreen";
 import AscensionScreen from "@/game/screens/AscensionScreen";
 import ChampionScreen from "@/game/screens/ChampionScreen";
@@ -200,14 +202,14 @@ export default function Rabona() {
             if (ev.chanceType) S.chanceIndicator = { type: ev.chanceType, until: frameRef.current + 60 };
             if (ev.team === 'home') {
               S.goalEffect = 1; shakeRef.current = 15; S.ballX = .5; S.ballY = .05; S.ballTargetX = .5; S.ballTargetY = .05;
-              SFX.play('goal');
+              SFX.play('goal'); Haptics.heavy();
               addLog('goal', ev.text || `⚽ ${ev.minute}' ${narrate('goalHome')}`);
               S.morale = Math.min(99, (S.morale || 50) + 10);
               S.animState = 'celebrate'; S.celebrateUntil = Date.now() + 2500;
               await sleep(sp() >= 2 ? 2500 : sp() === 1 ? 800 : 200);
             } else {
               S.goalEffect = -1; shakeRef.current = 10; S.ballX = .5; S.ballY = .95; S.ballTargetX = .5; S.ballTargetY = .95;
-              SFX.play('goal_rival');
+              SFX.play('goal_rival'); Haptics.double();
               addLog('goalRival', ev.text || `💀 ${ev.minute}' ${narrate('goalAway')}`);
               S.morale = Math.max(0, (S.morale || 50) - 8);
               S.animState = 'idle';
@@ -280,7 +282,7 @@ export default function Rabona() {
           }
 
           case 'card':
-            if (sp() >= 2) { SFX.play('card'); addLog('card', ev.text || `🟨 ${ev.minute}' ¡Tarjeta!`); }
+            if (sp() >= 2) { SFX.play('card'); Haptics.warning(); addLog('card', ev.text || `🟨 ${ev.minute}' ¡Tarjeta!`); }
             break;
 
           case 'steal':
@@ -304,7 +306,7 @@ export default function Rabona() {
             break;
 
           case 'whistle':
-            SFX.play('whistle_double');
+            SFX.play('whistle_double'); Haptics.success();
             addLog('event', ev.text || `🏁 ¡Final! Halcones ${S.ps}-${S.rs} ${S.rivalName}`);
             Crowd.stop();
             await sleep(sp() === 0 ? 600 : 2500);
@@ -892,7 +894,7 @@ export default function Rabona() {
         .fw-bg-pattern{background-image:radial-gradient(circle,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:20px 20px}
         *{box-sizing:border-box}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
       `}</style>
-      <div style={{ ...transStyle, width: '100%', height: '100%', position: 'relative' }}>
+      <div style={{ ...transStyle, width: '100%', height: '100%', position: 'relative', paddingBottom: ['table','roster','training','market','stats'].includes(screen) ? 52 : 0 }}>
         {screen === 'loading' && <LoadingScreen />}
         {screen === 'title' && <TitleScreen />}
         {screen === 'tutorial' && <TutorialScreen />}
@@ -924,6 +926,7 @@ export default function Rabona() {
         <LevelUpModal />
         {detailPlayer && <PlayerDetailModal player={detailPlayer} onClose={() => setDetailPlayer(null)} captainId={game.captain} />}
       </div>
+      <BottomNav />
     </div>
   );
 }
