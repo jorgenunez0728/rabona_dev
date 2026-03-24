@@ -251,66 +251,68 @@ export const LEGENDS = [
 ];
 
 // Formation-specific canvas positions — Fut7: GK + 6 outfield
+// Physics params per position: stiffness (spring), wanderAmp (noise amplitude),
+// reactionDelay (frames delay to zone change), maxSpeed (px/frame cap)
 const CANVAS_FORMATIONS = {
   // Muro (1-3-2-1): defensive wall
   muro: [
-    { bx: .50, by: .90, pull: .005, minY: .80, maxY: .96 }, // GK
-    { bx: .18, by: .72, pull: .015, minY: .58, maxY: .82 }, // DEF-L
-    { bx: .50, by: .70, pull: .012, minY: .58, maxY: .80 }, // DEF-C
-    { bx: .82, by: .72, pull: .015, minY: .58, maxY: .82 }, // DEF-R
-    { bx: .32, by: .52, pull: .04,  minY: .38, maxY: .68 }, // MID-L
-    { bx: .68, by: .52, pull: .04,  minY: .38, maxY: .68 }, // MID-R
-    { bx: .50, by: .30, pull: .08,  minY: .14, maxY: .52 }, // FWD
+    { bx: .50, by: .90, pull: .005, minY: .80, maxY: .96, stiffness: .002, wanderAmp: .5, reactionDelay: 8, maxSpeed: 2.0 },  // GK
+    { bx: .18, by: .72, pull: .015, minY: .58, maxY: .82, stiffness: .003, wanderAmp: 1.5, reactionDelay: 4, maxSpeed: 2.8 }, // DEF-L
+    { bx: .50, by: .70, pull: .012, minY: .58, maxY: .80, stiffness: .003, wanderAmp: 1.2, reactionDelay: 5, maxSpeed: 2.6 }, // DEF-C
+    { bx: .82, by: .72, pull: .015, minY: .58, maxY: .82, stiffness: .003, wanderAmp: 1.5, reactionDelay: 4, maxSpeed: 2.8 }, // DEF-R
+    { bx: .32, by: .52, pull: .04,  minY: .38, maxY: .68, stiffness: .004, wanderAmp: 2.2, reactionDelay: 2, maxSpeed: 3.2 }, // MID-L
+    { bx: .68, by: .52, pull: .04,  minY: .38, maxY: .68, stiffness: .004, wanderAmp: 2.2, reactionDelay: 2, maxSpeed: 3.2 }, // MID-R
+    { bx: .50, by: .30, pull: .08,  minY: .14, maxY: .52, stiffness: .005, wanderAmp: 3.0, reactionDelay: 0, maxSpeed: 3.8 }, // FWD
   ],
   // Clasica (1-2-2-2): balanced
   clasica: [
-    { bx: .50, by: .90, pull: .005, minY: .80, maxY: .96 }, // GK
-    { bx: .28, by: .70, pull: .018, minY: .56, maxY: .82 }, // DEF-L
-    { bx: .72, by: .70, pull: .018, minY: .56, maxY: .82 }, // DEF-R
-    { bx: .30, by: .50, pull: .05,  minY: .34, maxY: .66 }, // MID-L
-    { bx: .70, by: .50, pull: .05,  minY: .34, maxY: .66 }, // MID-R
-    { bx: .35, by: .30, pull: .07,  minY: .14, maxY: .52 }, // FWD-L
-    { bx: .65, by: .30, pull: .07,  minY: .14, maxY: .52 }, // FWD-R
+    { bx: .50, by: .90, pull: .005, minY: .80, maxY: .96, stiffness: .002, wanderAmp: .5, reactionDelay: 8, maxSpeed: 2.0 },  // GK
+    { bx: .28, by: .70, pull: .018, minY: .56, maxY: .82, stiffness: .003, wanderAmp: 1.5, reactionDelay: 4, maxSpeed: 2.8 }, // DEF-L
+    { bx: .72, by: .70, pull: .018, minY: .56, maxY: .82, stiffness: .003, wanderAmp: 1.5, reactionDelay: 4, maxSpeed: 2.8 }, // DEF-R
+    { bx: .30, by: .50, pull: .05,  minY: .34, maxY: .66, stiffness: .004, wanderAmp: 2.2, reactionDelay: 2, maxSpeed: 3.2 }, // MID-L
+    { bx: .70, by: .50, pull: .05,  minY: .34, maxY: .66, stiffness: .004, wanderAmp: 2.2, reactionDelay: 2, maxSpeed: 3.2 }, // MID-R
+    { bx: .35, by: .30, pull: .07,  minY: .14, maxY: .52, stiffness: .005, wanderAmp: 2.8, reactionDelay: 0, maxSpeed: 3.6 }, // FWD-L
+    { bx: .65, by: .30, pull: .07,  minY: .14, maxY: .52, stiffness: .005, wanderAmp: 2.8, reactionDelay: 0, maxSpeed: 3.6 }, // FWD-R
   ],
   // Diamante (1-2-3-1): diamond midfield
   diamante: [
-    { bx: .50, by: .90, pull: .005, minY: .80, maxY: .96 }, // GK
-    { bx: .28, by: .70, pull: .018, minY: .56, maxY: .82 }, // DEF-L
-    { bx: .72, by: .70, pull: .018, minY: .56, maxY: .82 }, // DEF-R
-    { bx: .20, by: .50, pull: .04,  minY: .34, maxY: .66 }, // MID-L
-    { bx: .50, by: .45, pull: .06,  minY: .30, maxY: .62 }, // MID-C (playmaker)
-    { bx: .80, by: .50, pull: .04,  minY: .34, maxY: .66 }, // MID-R
-    { bx: .50, by: .26, pull: .08,  minY: .12, maxY: .48 }, // FWD
+    { bx: .50, by: .90, pull: .005, minY: .80, maxY: .96, stiffness: .002, wanderAmp: .5, reactionDelay: 8, maxSpeed: 2.0 },  // GK
+    { bx: .28, by: .70, pull: .018, minY: .56, maxY: .82, stiffness: .003, wanderAmp: 1.5, reactionDelay: 4, maxSpeed: 2.8 }, // DEF-L
+    { bx: .72, by: .70, pull: .018, minY: .56, maxY: .82, stiffness: .003, wanderAmp: 1.5, reactionDelay: 4, maxSpeed: 2.8 }, // DEF-R
+    { bx: .20, by: .50, pull: .04,  minY: .34, maxY: .66, stiffness: .004, wanderAmp: 2.4, reactionDelay: 2, maxSpeed: 3.2 }, // MID-L
+    { bx: .50, by: .45, pull: .06,  minY: .30, maxY: .62, stiffness: .005, wanderAmp: 2.8, reactionDelay: 1, maxSpeed: 3.4 }, // MID-C (playmaker)
+    { bx: .80, by: .50, pull: .04,  minY: .34, maxY: .66, stiffness: .004, wanderAmp: 2.4, reactionDelay: 2, maxSpeed: 3.2 }, // MID-R
+    { bx: .50, by: .26, pull: .08,  minY: .12, maxY: .48, stiffness: .005, wanderAmp: 3.0, reactionDelay: 0, maxSpeed: 3.8 }, // FWD
   ],
   // Blitz (1-2-1-3): offensive blitz
   blitz: [
-    { bx: .50, by: .90, pull: .005, minY: .80, maxY: .96 }, // GK
-    { bx: .30, by: .70, pull: .018, minY: .56, maxY: .82 }, // DEF-L
-    { bx: .70, by: .70, pull: .018, minY: .56, maxY: .82 }, // DEF-R
-    { bx: .50, by: .50, pull: .05,  minY: .34, maxY: .66 }, // MID-C
-    { bx: .20, by: .30, pull: .07,  minY: .14, maxY: .52 }, // FWD-L
-    { bx: .50, by: .26, pull: .08,  minY: .12, maxY: .48 }, // FWD-C
-    { bx: .80, by: .30, pull: .07,  minY: .14, maxY: .52 }, // FWD-R
+    { bx: .50, by: .90, pull: .005, minY: .80, maxY: .96, stiffness: .002, wanderAmp: .5, reactionDelay: 8, maxSpeed: 2.0 },  // GK
+    { bx: .30, by: .70, pull: .018, minY: .56, maxY: .82, stiffness: .003, wanderAmp: 1.5, reactionDelay: 4, maxSpeed: 2.8 }, // DEF-L
+    { bx: .70, by: .70, pull: .018, minY: .56, maxY: .82, stiffness: .003, wanderAmp: 1.5, reactionDelay: 4, maxSpeed: 2.8 }, // DEF-R
+    { bx: .50, by: .50, pull: .05,  minY: .34, maxY: .66, stiffness: .004, wanderAmp: 2.2, reactionDelay: 2, maxSpeed: 3.2 }, // MID-C
+    { bx: .20, by: .30, pull: .07,  minY: .14, maxY: .52, stiffness: .005, wanderAmp: 2.8, reactionDelay: 0, maxSpeed: 3.6 }, // FWD-L
+    { bx: .50, by: .26, pull: .08,  minY: .12, maxY: .48, stiffness: .006, wanderAmp: 3.2, reactionDelay: 0, maxSpeed: 4.0 }, // FWD-C
+    { bx: .80, by: .30, pull: .07,  minY: .14, maxY: .52, stiffness: .005, wanderAmp: 2.8, reactionDelay: 0, maxSpeed: 3.6 }, // FWD-R
   ],
   // Tridente (1-1-2-3): ultra offensive
   tridente: [
-    { bx: .50, by: .90, pull: .005, minY: .80, maxY: .96 }, // GK
-    { bx: .50, by: .70, pull: .015, minY: .56, maxY: .82 }, // DEF-C (sweeper)
-    { bx: .30, by: .52, pull: .04,  minY: .36, maxY: .68 }, // MID-L
-    { bx: .70, by: .52, pull: .04,  minY: .36, maxY: .68 }, // MID-R
-    { bx: .18, by: .30, pull: .07,  minY: .14, maxY: .52 }, // FWD-L
-    { bx: .50, by: .25, pull: .09,  minY: .10, maxY: .46 }, // FWD-C
-    { bx: .82, by: .30, pull: .07,  minY: .14, maxY: .52 }, // FWD-R
+    { bx: .50, by: .90, pull: .005, minY: .80, maxY: .96, stiffness: .002, wanderAmp: .5, reactionDelay: 8, maxSpeed: 2.0 },  // GK
+    { bx: .50, by: .70, pull: .015, minY: .56, maxY: .82, stiffness: .003, wanderAmp: 1.4, reactionDelay: 4, maxSpeed: 2.8 }, // DEF-C (sweeper)
+    { bx: .30, by: .52, pull: .04,  minY: .36, maxY: .68, stiffness: .004, wanderAmp: 2.2, reactionDelay: 2, maxSpeed: 3.2 }, // MID-L
+    { bx: .70, by: .52, pull: .04,  minY: .36, maxY: .68, stiffness: .004, wanderAmp: 2.2, reactionDelay: 2, maxSpeed: 3.2 }, // MID-R
+    { bx: .18, by: .30, pull: .07,  minY: .14, maxY: .52, stiffness: .005, wanderAmp: 2.8, reactionDelay: 0, maxSpeed: 3.6 }, // FWD-L
+    { bx: .50, by: .25, pull: .09,  minY: .10, maxY: .46, stiffness: .006, wanderAmp: 3.2, reactionDelay: 0, maxSpeed: 4.0 }, // FWD-C
+    { bx: .82, by: .30, pull: .07,  minY: .14, maxY: .52, stiffness: .005, wanderAmp: 2.8, reactionDelay: 0, maxSpeed: 3.6 }, // FWD-R
   ],
   // Cadena (1-3-3-0): possession chain, no pure striker
   cadena: [
-    { bx: .50, by: .90, pull: .005, minY: .80, maxY: .96 }, // GK
-    { bx: .22, by: .68, pull: .018, minY: .54, maxY: .80 }, // DEF-L
-    { bx: .50, by: .66, pull: .015, minY: .54, maxY: .78 }, // DEF-C
-    { bx: .78, by: .68, pull: .018, minY: .54, maxY: .80 }, // DEF-R
-    { bx: .22, by: .44, pull: .05,  minY: .28, maxY: .62 }, // MID-L
-    { bx: .50, by: .40, pull: .06,  minY: .24, maxY: .58 }, // MID-C
-    { bx: .78, by: .44, pull: .05,  minY: .28, maxY: .62 }, // MID-R
+    { bx: .50, by: .90, pull: .005, minY: .80, maxY: .96, stiffness: .002, wanderAmp: .5, reactionDelay: 8, maxSpeed: 2.0 },  // GK
+    { bx: .22, by: .68, pull: .018, minY: .54, maxY: .80, stiffness: .003, wanderAmp: 1.5, reactionDelay: 4, maxSpeed: 2.8 }, // DEF-L
+    { bx: .50, by: .66, pull: .015, minY: .54, maxY: .78, stiffness: .003, wanderAmp: 1.4, reactionDelay: 5, maxSpeed: 2.6 }, // DEF-C
+    { bx: .78, by: .68, pull: .018, minY: .54, maxY: .80, stiffness: .003, wanderAmp: 1.5, reactionDelay: 4, maxSpeed: 2.8 }, // DEF-R
+    { bx: .22, by: .44, pull: .05,  minY: .28, maxY: .62, stiffness: .004, wanderAmp: 2.4, reactionDelay: 2, maxSpeed: 3.2 }, // MID-L
+    { bx: .50, by: .40, pull: .06,  minY: .24, maxY: .58, stiffness: .005, wanderAmp: 2.6, reactionDelay: 1, maxSpeed: 3.4 }, // MID-C
+    { bx: .78, by: .44, pull: .05,  minY: .28, maxY: .62, stiffness: .004, wanderAmp: 2.4, reactionDelay: 2, maxSpeed: 3.2 }, // MID-R
   ],
 };
 
@@ -323,6 +325,10 @@ export function getCanvasFormation(formationId) {
     pull: p.pull,
     minY: 1 - p.maxY,
     maxY: 1 - p.minY,
+    stiffness: p.stiffness || .004,
+    wanderAmp: p.wanderAmp || 2.0,
+    reactionDelay: p.reactionDelay || 0,
+    maxSpeed: p.maxSpeed || 3.0,
   }));
   const zeros = [0, 0, 0, 0, 0, 0, 0];
   return { home, away, homeSpreadX: zeros, awaySpreadX: zeros };

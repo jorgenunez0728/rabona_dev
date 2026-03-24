@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { T, PN, POS_COLORS, ACHIEVEMENTS } from "@/game/data";
-import { LEGACY_TREE, LEGACY_BRANCHES, calcLegacyPoints, calcSpentLegacy, canUnlockLegacy, hasLegacy } from "@/game/data/progression.js";
+import { LEGACY_TREE, LEGACY_BRANCHES, calcLegacyPoints, calcSpentLegacy, canUnlockLegacy, hasLegacy, COACHES, COACH_ABILITIES } from "@/game/data/progression.js";
 import { AchIcon } from "@/game/data/chibiAssets";
+import { SFX } from "@/game/audio";
+import { Haptics } from "@/game/haptics";
 import useGameStore from "@/game/store";
 
 export default function StatsScreen() {
@@ -63,26 +65,36 @@ export default function StatsScreen() {
                 return (
                   <div key={branch} style={{ background: T.bg1, borderRadius: 8, padding: 10, border: `1px solid ${T.border}` }}>
                     <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 13, color: T.tx, marginBottom: 6 }}>{branchNames[branch] || branch}</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      {nodes.map(node => {
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                      {nodes.map((node, ni) => {
                         const owned = hasLegacy(gs, node.id);
                         const canBuy = canUnlockLegacy(gs, node.id);
                         return (
-                          <div key={node.id} onClick={() => { if (canBuy) { unlockLegacy(node.id); } }} style={{
-                            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
-                            background: owned ? `${T.win}10` : canBuy ? 'rgba(255,215,0,0.05)' : 'rgba(255,255,255,0.01)',
-                            border: `1px solid ${owned ? T.win + '30' : canBuy ? T.gold + '30' : T.border}`,
-                            borderRadius: 6, cursor: canBuy ? 'pointer' : 'default', opacity: owned || canBuy ? 1 : 0.4,
-                            touchAction: 'manipulation', minHeight: 48,
-                          }}>
-                            <div style={{ fontSize: 20, minWidth: 28, textAlign: 'center' }}>{node.i}</div>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12, color: owned ? T.win : canBuy ? T.gold : T.tx3 }}>{node.n}</div>
-                              <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>{node.d}</div>
-                            </div>
-                            <div style={{ textAlign: 'right', minWidth: 30 }}>
-                              {owned ? <span style={{ color: T.win, fontFamily: T.fontHeading, fontSize: 12 }}>✓</span>
-                                : <span style={{ color: canBuy ? T.gold : T.tx3, fontFamily: T.fontHeading, fontSize: 11 }}>{node.cost}pt</span>}
+                          <div key={node.id}>
+                            {/* Connector line between tiers */}
+                            {ni > 0 && (
+                              <div style={{ display: 'flex', justifyContent: 'center', height: 16 }}>
+                                <div style={{ width: 2, height: '100%', background: hasLegacy(gs, nodes[ni - 1].id) ? T.win : T.border }} />
+                              </div>
+                            )}
+                            <div onClick={() => { if (canBuy) { unlockLegacy(node.id); SFX.play('reward'); Haptics.success(); } }} style={{
+                              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+                              background: owned ? `${T.win}10` : canBuy ? 'rgba(255,215,0,0.05)' : 'rgba(255,255,255,0.01)',
+                              border: `1.5px solid ${owned ? T.win + '40' : canBuy ? T.gold + '40' : T.border}`,
+                              borderRadius: 8, cursor: canBuy ? 'pointer' : 'default', opacity: owned || canBuy ? 1 : 0.35,
+                              touchAction: 'manipulation', minHeight: 48,
+                              boxShadow: owned ? `0 0 8px ${T.win}15` : canBuy ? `0 0 8px ${T.gold}15` : 'none',
+                              transition: 'all 0.2s ease',
+                            }}>
+                              <div style={{ fontSize: 22, minWidth: 32, textAlign: 'center', filter: owned ? 'none' : 'grayscale(0.5)' }}>{node.i}</div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12, color: owned ? T.win : canBuy ? T.gold : T.tx3 }}>{node.n}</div>
+                                <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, lineHeight: 1.3 }}>{node.d}</div>
+                              </div>
+                              <div style={{ textAlign: 'right', minWidth: 34 }}>
+                                {owned ? <span style={{ color: T.win, fontFamily: T.fontHeading, fontSize: 14, fontWeight: 700 }}>✓</span>
+                                  : <div style={{ background: canBuy ? `${T.gold}20` : 'transparent', borderRadius: 4, padding: '2px 6px' }}><span style={{ color: canBuy ? T.gold : T.tx3, fontFamily: T.fontHeading, fontSize: 11, fontWeight: 700 }}>{node.cost}pt</span></div>}
+                              </div>
                             </div>
                           </div>
                         );
@@ -97,23 +109,39 @@ export default function StatsScreen() {
         {tab === 'fame' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {(gs.hallOfFame || []).length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 20, color: T.tx3, fontSize: 13 }}>Completa tu primer run para añadir leyendas.</div>
-            ) : (gs.hallOfFame || []).slice().reverse().map((p, i) => (
-              <div key={i} style={{ background: 'linear-gradient(145deg,#2a2510,#3a3215)', borderRadius: 8, padding: 10, border: `1px solid ${T.gold}20`, display: 'flex', gap: 8, alignItems: 'center' }}>
-                <div style={{ textAlign: 'center', minWidth: 36 }}>
-                  <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 22, color: T.gold }}>{p.ovr}</div>
-                  <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: POS_COLORS[p.pos] || T.tx2, letterSpacing: 0.5 }}>{PN[p.pos] || p.pos}</div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'Barlow Condensed'", fontWeight: 600, fontSize: 14, color: T.tx }}>⭐ {p.name}</div>
-                  {p.trait && <div style={{ fontSize: 11, color: T.purple, marginTop: 1 }}>✦ {p.trait}</div>}
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx2 }}>Run #{p.run}</div>
-                  <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.gold }}>{p.league}</div>
-                </div>
+              <div style={{ textAlign: 'center', padding: 20, color: T.tx3, fontSize: 13, lineHeight: 1.5 }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>🌟</div>
+                Completa tu primer run e inmortaliza a un jugador para añadirlo al Hall of Fame.
+                <div style={{ fontSize: 11, color: T.tx3, marginTop: 8 }}>Los legendarios aparecerán en el mercado de futuras runs.</div>
               </div>
-            ))}
+            ) : (
+              <>
+                <div style={{ textAlign: 'center', marginBottom: 4 }}>
+                  <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: T.gold }}>{(gs.hallOfFame || []).length}/20 Legendarios</div>
+                </div>
+                {(gs.hallOfFame || []).slice().reverse().map((p, i) => (
+                  <div key={i} style={{ background: 'linear-gradient(145deg,#2a2510,#3a3215)', borderRadius: 10, padding: 12, border: `1px solid ${T.gold}25`, display: 'flex', gap: 10, alignItems: 'center', boxShadow: `0 0 12px ${T.gold}08` }}>
+                    <div style={{ textAlign: 'center', minWidth: 40 }}>
+                      <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 24, color: T.gold, textShadow: `0 0 8px ${T.gold}40` }}>{p.ovr}</div>
+                      <div style={{ fontFamily: "'Oswald'", fontSize: 10, color: POS_COLORS[p.pos] || T.tx2, letterSpacing: 0.5, textTransform: 'uppercase' }}>{PN[p.pos] || p.pos}</div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: "'Barlow Condensed'", fontWeight: 600, fontSize: 14, color: T.tx }}>{p.name}</div>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                        <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx3 }}>ATK {p.atk}</span>
+                        <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx3 }}>DEF {p.def}</span>
+                        <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx3 }}>VEL {p.spd}</span>
+                      </div>
+                      {p.trait && <div style={{ fontSize: 10, color: T.purple, marginTop: 2 }}>✦ {p.trait}</div>}
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx2 }}>Run #{p.run}</div>
+                      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.gold }}>{p.league}</div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         )}
         {tab === 'achieve' && (

@@ -10,6 +10,7 @@ import {
 } from "@/game/data";
 import { getStadiumPitch } from "@/assets/stadiums";
 import { simulateMatch, PLAY_STYLES, INTENSITIES, getManOfTheMatch } from "@/game/engine";
+import { perlin2 } from "@/game/engine/perlin";
 import { PlayerDetailModal, ParticleSystem } from "@/game/components";
 import { CareerCreateScreen, CareerCardScreen, CareerMatchScreen, CareerSeasonEnd, CareerEndScreen } from "@/game/CareerScreens";
 import useGameStore from "@/game/store";
@@ -62,6 +63,9 @@ export default function Rabona() {
     const aTrailRef = useRef(Array.from({ length: 7 }, () => []));
     const shakeRef = useRef(0);
     const hpxRef = useRef([]), hpyRef = useRef([]), apxRef = useRef([]), apyRef = useRef([]);
+    const hvxRef = useRef([]), hvyRef = useRef([]), avxRef = useRef([]), avyRef = useRef([]);
+    const ballVxRef = useRef(0), ballVyRef = useRef(0);
+    const ballTrailRef = useRef([]);
     const eventResolveRef = useRef(null);
     const penaltyResolveRef = useRef(null);
     const pitchImgRef = useRef(null);
@@ -77,6 +81,9 @@ export default function Rabona() {
       simRef.current = true;
       sim.current = { ps: 0, rs: 0, minute: 0, speed: 2, ballX: .5, ballY: .5, ballTargetX: .5, ballTargetY: .5, possession: true, log: [], done: false, rivalName: match.rival?.name || 'Rival', rivalPlayers: match.rivalPlayers || [], morale: 50, strategy: 'balanced', shots: 0, possCount: 0, totalTicks: 0, pendingEvent: null, halftimeShown: false, goalEffect: 0, pendingPenalty: null, animState: 'idle', celebrateUntil: 0, chanceIndicator: null, involvedPlayer: null };
       hpxRef.current = []; hpyRef.current = []; apxRef.current = []; apyRef.current = [];
+      hvxRef.current = new Array(7).fill(0); hvyRef.current = new Array(7).fill(0);
+      avxRef.current = new Array(7).fill(0); avyRef.current = new Array(7).fill(0);
+      ballVxRef.current = 0; ballVyRef.current = 0; ballTrailRef.current = [];
       ballDrawX.current = 0.5; ballDrawY.current = 0.5; ballAngle.current = 0;
       Crowd.start();
       const di = setInterval(() => { const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: s.done, morale: s.morale, pendingEvent: s.pendingEvent, strategy: s.strategy, pendingPenalty: s.pendingPenalty }); }, 150);
@@ -523,26 +530,33 @@ export default function Rabona() {
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.fillRect(W / 2 - gpw / 2, m - 1, gpw, gph); ctx.fillRect(W / 2 - gpw / 2, H - m - gph + 1, gpw, gph);
       }
-      // ── Ball physics: bezier interpolation with deceleration ──
-      const ballDist = Math.hypot(S.ballTargetX - S.ballX, S.ballTargetY - S.ballY);
-      // Adaptive speed: fast when far (counter), slow when close (control)
-      const ballEase = ballDist > 0.3 ? 0.06 : ballDist > 0.1 ? 0.045 : 0.08;
-      // Slight curve offset for organic pase feel
-      if (!S._ballCurve || ballDist > 0.25) {
+      // ── Ball physics: velocity-based with spin/Magnus effect ──
+      if (!S._ballCurve || Math.hypot(S.ballTargetX - S.ballX, S.ballTargetY - S.ballY) > 0.25) {
         S._ballCurve = (Math.random() - 0.5) * 0.04;
       }
-      const perpX = -(S.ballTargetY - S.ballY) * S._ballCurve;
-      const perpY = (S.ballTargetX - S.ballX) * S._ballCurve;
-      S.ballX += ((S.ballTargetX + perpX) - S.ballX) * ballEase;
-      S.ballY += ((S.ballTargetY + perpY) - S.ballY) * ballEase;
+      const bStiff = 0.008;
+      const bDamp = 0.92;
+      const spin = S._ballCurve * 0.001;
+      // Spring toward target with damping
+      ballVxRef.current = (ballVxRef.current + (S.ballTargetX - S.ballX) * bStiff) * bDamp;
+      ballVyRef.current = (ballVyRef.current + (S.ballTargetY - S.ballY) * bStiff) * bDamp;
+      // Magnus spin effect for natural curves
+      ballVxRef.current += spin * ballVyRef.current;
+      ballVyRef.current -= spin * ballVxRef.current;
+      S.ballX += ballVxRef.current;
+      S.ballY += ballVyRef.current;
       // Visual draw position with extra smoothing
-      const drawEase = 0.12;
+      const drawEase = 0.14;
       ballDrawX.current += (S.ballX - ballDrawX.current) * drawEase;
       ballDrawY.current += (S.ballY - ballDrawY.current) * drawEase;
       const dx = S.ballX - ballDrawX.current, dy = S.ballY - ballDrawY.current;
       const ballSpeed = Math.sqrt(dx * dx + dy * dy);
-      ballAngle.current += ballSpeed * 120; // Faster spin when moving fast
+      ballAngle.current += ballSpeed * 120;
       const bpx = m + fw * ballDrawX.current, bpy = m + fh * ballDrawY.current;
+      // Ball trail (last 6 positions with fade)
+      const trail = ballTrailRef.current;
+      trail.push({ x: bpx, y: bpy });
+      if (trail.length > 6) trail.shift();
       const fmCfg = getCanvasFormation(game.formation?.id || game.formation);
       const homeFormation = fmCfg.home;
       const awayFormation = fmCfg.away;
@@ -551,24 +565,31 @@ export default function Rabona() {
       if (!hpxRef.current.length || hpxRef.current.length < 7) {
         homeFormation.forEach((p, i) => { hpxRef.current[i] = m + fw * (p.bx + homeSpreadX[i]); hpyRef.current[i] = m + fh * p.by; });
         awayFormation.forEach((p, i) => { apxRef.current[i] = m + fw * (p.bx + awaySpreadX[i]); apyRef.current[i] = m + fh * p.by; });
+        if (!hvxRef.current.length) { hvxRef.current = new Array(7).fill(0); hvyRef.current = new Array(7).fill(0); }
+        if (!avxRef.current.length) { avxRef.current = new Array(7).fill(0); avyRef.current = new Array(7).fill(0); }
       }
-      // ── Steering behaviors: seek + arrive + separation + context-aware animations ──
+      // ── Steering behaviors: spring physics + Perlin wander + velocity-based movement ──
       const SEPARATION_DIST = fw * 0.08;
       const isCelebrating = S.celebrateUntil > Date.now();
       const isChanceActive = S.animState === 'kick' || S.animState === 'run';
-      const steer = (pxArr, pyArr, formation, spreadX, hasBall, count, isHome) => {
+      const steer = (pxArr, pyArr, vxArr, vyArr, formation, spreadX, hasBall, count, isHome) => {
         formation.forEach((pos, i) => {
           if (i >= count) return;
           const baseX = m + fw * (pos.bx + spreadX[i]), baseY = m + fh * pos.by;
+          // Position-specific physics from formation data
+          const stiffness = pos.stiffness || 0.004;
+          const wanderAmp = pos.wanderAmp || 2.0;
+          const maxSpd = (pos.maxSpeed || 3.0) * (fw / 300); // scale to canvas size
+          const damping = 0.86;
 
           // ── Contextual: group celebration ──
           if (isCelebrating && isHome && S.goalEffect >= 0) {
-            // All home players converge toward upper-center (near rival goal)
             const celebX = W * 0.5 + Math.sin(i * 1.8) * fw * 0.12;
             const celebY = m + fh * 0.15;
-            pxArr[i] += (celebX - pxArr[i]) * 0.04;
-            pyArr[i] += (celebY - pyArr[i]) * 0.03;
-            // Joyful bounce
+            vxArr[i] = (vxArr[i] + (celebX - pxArr[i]) * 0.005) * 0.9;
+            vyArr[i] = (vyArr[i] + (celebY - pyArr[i]) * 0.004) * 0.9;
+            pxArr[i] += vxArr[i];
+            pyArr[i] += vyArr[i];
             pyArr[i] += Math.sin(f * 0.15 + i * 2.0) * 2.5;
             pxArr[i] += Math.cos(f * 0.12 + i * 1.5) * 1.5;
             return;
@@ -577,25 +598,25 @@ export default function Rabona() {
           let pull = hasBall ? pos.pull : pos.pull * 0.4;
           let pushY = hasBall ? -fh * 0.06 : fh * 0.04;
 
-          // ── Contextual: pressing (when team has ball, push formation higher) ──
+          // ── Contextual: pressing ──
           if (hasBall && isChanceActive && i > 0) {
-            pushY -= fh * 0.04; // Extra forward push during active play
-            pull *= 1.5; // Stronger attraction to ball
+            pushY -= fh * 0.04;
+            pull *= 1.5;
           }
 
-          // Seek: move toward tactical position influenced by ball
+          // Seek: tactical position influenced by ball
           let targetX = baseX + (bpx - baseX) * pull * 2;
           let targetY = baseY + pushY + (bpy - baseY) * pull;
           targetY = Math.max(m + fh * pos.minY, Math.min(m + fh * pos.maxY, targetY));
 
-          // ── Contextual: attacking runs (forwards make diagonal runs during chances) ──
+          // ── Contextual: attacking runs ──
           if (isChanceActive && hasBall && i >= count - 2 && i > 0) {
             const runOffset = Math.sin(f * 0.02 + i * 3.0) * fw * 0.06;
             targetX += runOffset;
-            targetY -= fh * 0.03; // Push forward
+            targetY -= fh * 0.03;
           }
 
-          // Separation: avoid overlapping with nearby teammates
+          // Separation: repel from nearby teammates
           let sepX = 0, sepY = 0;
           for (let j = 0; j < count; j++) {
             if (j === i) continue;
@@ -610,22 +631,32 @@ export default function Rabona() {
           targetX += sepX;
           targetY += sepY;
 
-          // Arrive: variable easing (decelerate near target)
-          const distToTarget = Math.hypot(targetX - pxArr[i], targetY - pyArr[i]);
-          const arriveEase = distToTarget > 40 ? 0.06 : distToTarget > 15 ? 0.04 : 0.025;
-          pxArr[i] += (targetX - pxArr[i]) * arriveEase;
-          pyArr[i] += (targetY - pyArr[i]) * arriveEase;
+          // ── Spring physics: acceleration toward target with damping ──
+          const ax = (targetX - pxArr[i]) * stiffness;
+          const ay = (targetY - pyArr[i]) * stiffness;
+          vxArr[i] = (vxArr[i] + ax) * damping;
+          vyArr[i] = (vyArr[i] + ay) * damping;
 
-          // Organic wander: perlin-like noise (dual-frequency sine waves)
-          const seed = i * 3.7 + (hasBall ? 0 : 50);
-          const wanderX = Math.sin(f * 0.005 + seed) * 1.0 + Math.sin(f * 0.013 + seed * 0.6) * 0.5;
-          const wanderY = Math.cos(f * 0.007 + seed * 1.3) * 0.8 + Math.sin(f * 0.011 + seed * 0.9) * 0.4;
-          pxArr[i] += wanderX;
-          pyArr[i] += wanderY;
+          // Clamp to maxSpeed for this position
+          const spd = Math.sqrt(vxArr[i] * vxArr[i] + vyArr[i] * vyArr[i]);
+          if (spd > maxSpd) {
+            vxArr[i] = (vxArr[i] / spd) * maxSpd;
+            vyArr[i] = (vyArr[i] / spd) * maxSpd;
+          }
+
+          pxArr[i] += vxArr[i];
+          pyArr[i] += vyArr[i];
+
+          // ── Perlin noise wander: unique per player, organic and unpredictable ──
+          const seed = i * 7.3 + (isHome ? 0 : 100);
+          const noiseX = perlin2(seed + f * 0.0018, seed * 0.7) * wanderAmp;
+          const noiseY = perlin2(seed * 0.7, seed + f * 0.0022) * wanderAmp * 0.8;
+          pxArr[i] += noiseX;
+          pyArr[i] += noiseY;
         });
       };
-      steer(hpxRef.current, hpyRef.current, homeFormation, homeSpreadX, S.possession, 7, true);
-      steer(apxRef.current, apyRef.current, awayFormation, awaySpreadX, !S.possession, 7, false);
+      steer(hpxRef.current, hpyRef.current, hvxRef.current, hvyRef.current, homeFormation, homeSpreadX, S.possession, 7, true);
+      steer(apxRef.current, apyRef.current, avxRef.current, avyRef.current, awayFormation, awaySpreadX, !S.possession, 7, false);
       if (S.goalEffect !== 0) {
         const gx = W / 2, gy = S.goalEffect > 0 ? m + 20 : H - m - 20;
         const col = S.goalEffect > 0 ? ['#f0c040', '#ffd600', '#fff'] : ['#ff1744', '#ef5350'];
@@ -686,6 +717,16 @@ export default function Rabona() {
           ctx.lineTo(bpx, bpy);
           ctx.stroke();
           ctx.setLineDash([]);
+        }
+      }
+      // Ball trail (fading dots behind the ball for motion feel)
+      if (ballSpeed > 0.002) {
+        const bt = ballTrailRef.current;
+        for (let ti = 0; ti < bt.length - 1; ti++) {
+          const alpha = (ti / bt.length) * 0.25;
+          const radius = 1.5 + (ti / bt.length) * 1.5;
+          ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+          ctx.beginPath(); ctx.arc(bt[ti].x, bt[ti].y, radius, 0, Math.PI * 2); ctx.fill();
         }
       }
       // Ball with smooth rotation

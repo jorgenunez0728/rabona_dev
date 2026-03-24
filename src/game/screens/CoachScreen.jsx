@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SFX } from '@/game/audio';
-import { COACHES, ASCENSION_MODS, T, STARTING_RELIC_PAIRS } from '@/game/data';
+import { COACHES, ASCENSION_MODS, T, STARTING_RELIC_PAIRS, COACH_ABILITIES } from '@/game/data';
 import { RelicIcon } from '@/game/data/chibiAssets';
 import { CoachPortrait } from '@/game/components';
 import useGameStore from '@/game/store';
@@ -39,9 +39,15 @@ export default function CoachScreen() {
                   </div>
                   <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: T.tx3 }}>{isOpen ? '▲' : '▼'}</div>
                 </div>
-                {isOpen && unlocked && (
+                {isOpen && unlocked && (() => {
+                  const ab = COACH_ABILITIES[c.id];
+                  return (
                   <div style={{ padding: '0 14px 14px', borderTop: `1px solid ${T.gold}15` }}>
                     <div style={{ fontFamily: "'Barlow'", fontSize: 12, color: T.tx2, fontStyle: 'italic', lineHeight: 1.4, margin: '8px 0' }}>"{c.story}"</div>
+                    {ab && <div style={{ background: `${T.purple}10`, border: `1px solid ${T.purple}20`, borderRadius: 6, padding: '6px 10px', marginBottom: 8 }}>
+                      <div style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.purple, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>Habilidad Especial</div>
+                      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: T.tx, lineHeight: 1.3 }}>{ab.desc}</div>
+                    </div>}
                     {maxAsc > 0 && (
                       <div style={{ marginBottom: 10 }}>
                         <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: T.gold, textTransform: 'uppercase', marginBottom: 4 }}>⬆ Dificultad</div>
@@ -55,7 +61,8 @@ export default function CoachScreen() {
                     )}
                     <button className="fw-btn fw-btn-primary" onClick={() => startRun(c)} style={{ width: '100%', fontSize: 13 }}>⚽ Comenzar{selectedAsc > 0 ? ` · Asc ${selectedAsc}` : ''}</button>
                   </div>
-                )}
+                  );
+                })()}
               </div>
             );
           })}

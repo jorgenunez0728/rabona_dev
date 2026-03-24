@@ -5,7 +5,7 @@ import { create } from 'zustand';
 import { SFX } from '@/game/audio';
 import {
   COACHES, ASCENSION_MODS, ACHIEVEMENTS, LEAGUES, RIVAL_NAMES,
-  FORMATIONS, RELICS, STARTING_RELIC_PAIRS, CURSES,
+  FORMATIONS, RELICS, STARTING_RELIC_PAIRS, CURSES, COACH_ABILITIES,
   LEGACY_TREE, hasLegacy, calcLegacyPoints, calcSpentLegacy, canUnlockLegacy,
   _usedNames, genPlayer, rnd, pick, calcOvr,
 } from '@/game/data';
@@ -220,6 +220,21 @@ const useGameStore = create((set, get) => ({
     set({ game: { ...game, curses: (game.curses || []).filter(c => c.id !== curseId) } });
   },
 
+  // ─── Immortalize Player (Death Screen: choose 1 player for Hall of Fame) ───
+  immortalizePlayer: (player) => {
+    const { globalStats } = get();
+    const gs = { ...globalStats };
+    const lg = LEAGUES[get().game.league || 0];
+    const entry = {
+      name: player.name, pos: player.pos, ovr: calcOvr(player),
+      atk: player.atk, def: player.def, spd: player.spd, sav: player.sav || 1,
+      trait: player.trait?.n, league: lg.n, run: (gs.totalRuns || 0) + 1,
+    };
+    gs.hallOfFame = [...(gs.hallOfFame || []), entry].slice(-20);
+    set({ globalStats: gs });
+    saveGlobalStats(gs);
+  },
+
   // ─── Save/Load ───
   handleDeleteSave: () => {
     deleteSave();
@@ -241,6 +256,7 @@ const useGameStore = create((set, get) => ({
     _usedNames.clear();
     const ascLevel = Math.min(selectedAsc, maxAsc);
     const ascMods = ASCENSION_MODS[Math.min(ascLevel, ASCENSION_MODS.length - 1)].mods;
+    const ability = COACH_ABILITIES[coach.id] || COACH_ABILITIES.miguel;
     const isAlien = coach.fx === 'alien';
     const starterPositions = isAlien ? ['DEF','DEF','DEF','MID','FWD','FWD','FWD'] : ['GK','DEF','DEF','MID','MID','FWD','FWD'];
     const reservePositions = ['DEF','MID','FWD'];
@@ -250,7 +266,7 @@ const useGameStore = create((set, get) => ({
     ];
     const rns = RIVAL_NAMES[0];
     const table = [{ name: 'Halcones', you: true, w: 0, d: 0, l: 0, gf: 0, ga: 0 }, ...rns.map(n => ({ name: n, you: false, w: 0, d: 0, l: 0, gf: 0, ga: 0 }))];
-    let startCoins = 50;
+    let startCoins = 50 + (ability.extraCoins || 0);
     if (coach.fx === 'cheap') startCoins = 80;
     if (isAlien) startCoins = 100;
     if (ascMods.includes('poor_start')) startCoins = Math.max(10, startCoins - 20);
@@ -260,6 +276,35 @@ const useGameStore = create((set, get) => ({
       roster = roster.map(p => p.role === 'st' ? { ...p, atk: p.atk + startRelic.val, def: p.def + startRelic.val, spd: p.spd + startRelic.val } : p);
     }
     if (startRelic?.fx === 'cursed_steal') startCoins += startRelic.val;
+    // ── Apply Coach Abilities ──
+    // Bestia: ATK boost to all starters
+    if (ability.startBonus === 'atk_boost') {
+      roster = roster.map(p => p.role === 'st' ? { ...p, atk: p.atk + 3, def: Math.max(1, p.def - 2) } : p);
+    }
+    // Lupe: 3 starters get Promesa trait
+    if (ability.startBonus === 'cantera_3') {
+      const starters = roster.filter(p => p.role === 'st' && p.pos !== 'GK');
+      const chosen = starters.sort(() => Math.random() - 0.5).slice(0, 3);
+      chosen.forEach(p => { p.trait = { n: 'Promesa', d: '+50% XP', fx: 'xp' }; });
+    }
+    // Chispa: SPD boost to all
+    if (ability.startBonus === 'spd_boost') {
+      roster = roster.map(p => p.role === 'st' ? { ...p, spd: p.spd + 4, def: Math.max(1, p.def - 3) } : p);
+    }
+    // Fantasma: add 1 legendary from Hall of Fame
+    if (ability.legendaryStart) {
+      const hof = globalStats.hallOfFame || [];
+      if (hof.length > 0) {
+        const legend = pick(hof);
+        const lg = LEAGUES[0];
+        const lp = genPlayer(legend.pos || 'MID', lg.lv[0] + 1, lg.lv[1] + 2);
+        lp.name = '⭐ ' + legend.name; lp.atk = legend.atk || lp.atk; lp.def = legend.def || lp.def;
+        lp.spd = legend.spd || lp.spd; lp.legendary = true;
+        lp.story = `Leyenda del run #${legend.run}.`;
+        lp.role = 'rs';
+        roster.push(lp);
+      }
+    }
     // ── Apply Legacy Tree bonuses ──
     const gs = globalStats;
     // Sponsor branch: extra starting coins
@@ -288,14 +333,15 @@ const useGameStore = create((set, get) => ({
       roster.push(extra);
     }
     // Charisma branch
-    let startChem = 0;
+    let startChem = ability.chemMod || 0;
     if (hasLegacy(gs, 'charisma_1')) startChem += 5;
     const newG = {
       ...INITIAL_GAME, roster, captain: roster[0].id, table, league: 0, matchNum: 0,
       coins: startCoins, coach, ascension: ascLevel, formation: 'clasica', relics: startRelics,
       chemistry: startChem, curses: [],
+      coachAbility: ability, // store ability for runtime checks (market discount, map preview, etc.)
       careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {} },
-      rivalMemory: {}, streak: 0, trainedIds: [],
+      rivalMemory: {}, streak: 0, trainedIds: [], curseFreeRemoves: ability.curseFreeRemove || 0,
     };
     set({ game: newG, hasSave: true });
     autoSave(newG);

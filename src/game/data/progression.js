@@ -11,6 +11,19 @@ export const COACHES=[
 
 export const COACH_PORTRAIT_IDX={miguel:0,bestia:1,lupe:2,profeta:3,chispa:4,fantasma:5,moneda:6,zyx7:7};
 
+// ── Coach Abilities: unique run-altering mechanics per coach ──
+// Applied in store.js confirmStart and during gameplay
+export const COACH_ABILITIES = {
+  miguel:  { id:'miguel',  desc:'Equilibrio total. +1 nivel inicial a cada titular.',         startBonus:'lv_up',     extraCoins:0,  chemMod:0,  stealMod:0,   counterMod:0,  marketDiscount:0, legendaryStart:false, mapPreview:false, curseFreeRemove:0 },
+  bestia:  { id:'bestia',  desc:'Presión brutal. +15% robo de balón, -5 química por partido.', startBonus:'atk_boost', extraCoins:0,  chemMod:-5, stealMod:0.15, counterMod:0,  marketDiscount:0, legendaryStart:false, mapPreview:false, curseFreeRemove:0 },
+  lupe:    { id:'lupe',    desc:'Cantera pura. 3 titulares con trait Promesa. Mercado -30%.', startBonus:'cantera_3', extraCoins:0,  chemMod:0,  stealMod:0,   counterMod:0,  marketDiscount:0.30, legendaryStart:false, mapPreview:false, curseFreeRemove:0 },
+  profeta: { id:'profeta', desc:'Ve 1 nodo futuro en el mapa. Cura 1 maldición gratis/run.',  startBonus:null,        extraCoins:0,  chemMod:0,  stealMod:0,   counterMod:0,  marketDiscount:0, legendaryStart:false, mapPreview:true,  curseFreeRemove:1 },
+  chispa:  { id:'chispa',  desc:'Contraataque letal. +25% contras, partidos más rápidos.',    startBonus:'spd_boost', extraCoins:0,  chemMod:0,  stealMod:0,   counterMod:0.25, marketDiscount:0, legendaryStart:false, mapPreview:false, curseFreeRemove:0 },
+  fantasma:{ id:'fantasma',desc:'Empieza con 1 legendario del Hall of Fame. -3 química.',     startBonus:null,        extraCoins:0,  chemMod:-3, stealMod:0,   counterMod:0,  marketDiscount:0, legendaryStart:true,  mapPreview:false, curseFreeRemove:0 },
+  moneda:  { id:'moneda',  desc:'80 monedas inicio. Costos de mercado -30%.',                 startBonus:null,        extraCoins:30, chemMod:0,  stealMod:0,   counterMod:0,  marketDiscount:0.30, legendaryStart:false, mapPreview:false, curseFreeRemove:0 },
+  zyx7:    { id:'zyx7',    desc:'Sin portero. 100 monedas. Jugadores pueden mutar stats.',    startBonus:null,        extraCoins:50, chemMod:0,  stealMod:0,   counterMod:0,  marketDiscount:0, legendaryStart:false, mapPreview:false, curseFreeRemove:0 },
+};
+
 export const ASCENSION_MODS=[
   {lv:0,n:'Normal',d:'Sin modificadores.',mods:[]},
   {lv:1,n:'Ascensión 1',d:'Rivales +1 nivel.',mods:['rival_lv_up']},
