@@ -10,6 +10,7 @@ function spriteUrl(mods, name) {
 }
 
 const _spriteImgCache = {};
+let _allSpritesReady = false;
 function loadSpriteImg(url) {
   if (!url) return null;
   if (!_spriteImgCache[url]) {
@@ -19,6 +20,22 @@ function loadSpriteImg(url) {
   }
   return _spriteImgCache[url];
 }
+
+// Preload all sprite images to avoid flickering between procedural fallback and loaded sprites
+export function preloadAllSprites() {
+  if (_allSpritesReady) return Promise.resolve();
+  const allUrls = [
+    ...Object.values(PLAYER_SPRITE_URLS).flat(),
+    ...Object.values(RIVAL_SPRITE_URLS).flatMap(v => [...(v.idle || []), ...(v.run || [])]),
+  ].filter(Boolean);
+  return Promise.all(allUrls.map(url => {
+    const img = loadSpriteImg(url);
+    if (img.complete) return Promise.resolve();
+    return new Promise(r => { img.onload = r; img.onerror = r; });
+  })).then(() => { _allSpritesReady = true; });
+}
+
+export function allSpritesReady() { return _allSpritesReady; }
 
 // Pre-build sprite URL arrays
 const PLAYER_SPRITE_URLS = {
@@ -353,17 +370,22 @@ export function drawSprite(ctx, x, y, bodyCol, darkCol, frame, seed, isGK = fals
   }
 
   if (urls && urls.length > 0) {
-    const frameIdx = Math.floor(frame / 12 + seed) % urls.length;
+    // Stable frame index: seed offsets phase, frame drives animation. Absolute value avoids negative modulo.
+    const frameIdx = Math.abs(Math.floor(frame / 12) + seed) % urls.length;
     const img = loadSpriteImg(urls[frameIdx]);
     if (img && img.complete && img.naturalWidth > 0) {
+      ctx.save();
       // Shadow
       ctx.fillStyle = 'rgba(0,0,0,0.25)';
       ctx.beginPath();
       ctx.ellipse(x, y + drawSize * 0.45, drawSize * 0.35, 3, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.drawImage(img, x - drawSize / 2, y - drawSize / 2, drawSize, drawSize);
+      ctx.restore();
       return;
     }
+    // If sprites were preloaded but this one isn't ready yet, skip procedural fallback to avoid flicker
+    if (_allSpritesReady) return;
   }
 
   // Fallback: procedural drawing

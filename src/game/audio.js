@@ -239,3 +239,111 @@ export const SFX = {
     }} catch(e) {}
   }
 };
+
+// ── Background Music Engine (FIFA-style soundtrack) ──
+// Uses HTML5 Audio for file playback — simpler and more efficient than Tone.js for pre-recorded tracks
+export const Music = {
+  _player: null,
+  _playlist: [],        // array of { url, title, artist }
+  _shuffled: [],         // shuffled index order
+  _currentIdx: 0,
+  _volume: 0.35,
+  _duckVolume: 0.12,    // volume during matches
+  _enabled: true,
+  _ducking: false,
+  _initialized: false,
+  _onTrackChange: null,  // callback(track) when track changes
+
+  init(tracks) {
+    if (this._initialized && this._playlist.length) return;
+    this._playlist = tracks.filter(t => t && t.url);
+    if (!this._playlist.length) return;
+    this._shuffled = this._shuffle([...Array(this._playlist.length).keys()]);
+    this._currentIdx = 0;
+    this._player = new Audio();
+    this._player.volume = this._enabled ? this._volume : 0;
+    this._player.addEventListener('ended', () => this.next());
+    this._player.addEventListener('error', () => this.next());
+    this._initialized = true;
+  },
+
+  _shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  },
+
+  play() {
+    if (!this._initialized || !this._playlist.length || !this._enabled) return;
+    const track = this._playlist[this._shuffled[this._currentIdx]];
+    if (!track) return;
+    if (this._player.src !== track.url) {
+      this._player.src = track.url;
+    }
+    this._player.volume = this._ducking ? this._duckVolume : this._volume;
+    this._player.play().catch(() => {});
+    if (this._onTrackChange) this._onTrackChange(track);
+  },
+
+  pause() {
+    if (this._player) this._player.pause();
+  },
+
+  next() {
+    if (!this._initialized || !this._playlist.length) return;
+    this._currentIdx = (this._currentIdx + 1) % this._shuffled.length;
+    // Reshuffle when we've gone through all tracks
+    if (this._currentIdx === 0) {
+      this._shuffled = this._shuffle([...Array(this._playlist.length).keys()]);
+    }
+    this.play();
+  },
+
+  prev() {
+    if (!this._initialized || !this._playlist.length) return;
+    this._currentIdx = (this._currentIdx - 1 + this._shuffled.length) % this._shuffled.length;
+    this.play();
+  },
+
+  setVolume(v) {
+    this._volume = Math.max(0, Math.min(1, v));
+    if (this._player && !this._ducking) this._player.volume = this._volume;
+  },
+
+  // Duck volume during matches (crowd/SFX take priority)
+  duck() {
+    this._ducking = true;
+    if (this._player) this._player.volume = this._duckVolume;
+  },
+
+  // Restore full volume after match
+  unduck() {
+    this._ducking = false;
+    if (this._player) this._player.volume = this._volume;
+  },
+
+  toggle() {
+    this._enabled = !this._enabled;
+    if (!this._enabled) {
+      this.pause();
+    } else if (this._initialized) {
+      this.play();
+    }
+    return this._enabled;
+  },
+
+  isPlaying() {
+    return this._player && !this._player.paused;
+  },
+
+  getCurrentTrack() {
+    if (!this._initialized || !this._playlist.length) return null;
+    return this._playlist[this._shuffled[this._currentIdx]] || null;
+  },
+
+  onTrackChange(cb) {
+    this._onTrackChange = cb;
+  },
+};

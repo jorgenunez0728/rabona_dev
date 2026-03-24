@@ -42,7 +42,7 @@ self.addEventListener('fetch', (e) => {
       if (cached) return cached;
       return fetch(request).then((response) => {
         // Cache JS/CSS/images for offline
-        if (response.ok && (request.url.match(/\.(js|css|png|jpg|svg|woff2?)$/))) {
+        if (response.ok && (request.url.match(/\.(js|css|png|jpg|svg|woff2?|mp3|ogg|m4a)$/))) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         }
