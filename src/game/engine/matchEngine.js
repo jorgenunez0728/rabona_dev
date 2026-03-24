@@ -2,7 +2,7 @@ import { rnd, pick, avgStat, effectiveStats, teamGKRating, clamp } from './utils
 import { createPossessionState, resolvePossession, getPossessionPct } from './possession.js';
 import { generateChanceType, shouldGenerateChance, resolveChance, pickScorer, pickAssister, CHANCE_TYPES } from './chances.js';
 import { createMomentum, updateMomentum, getMomentumModifiers } from './momentum.js';
-import { getTacticalModifiers, HALFTIME_OPTIONS } from './tactics.js';
+import { getTacticalModifiers, getFormationMatchup, HALFTIME_OPTIONS } from './tactics.js';
 import { getRivalStrategy, getRivalModifiers } from './rivalAI.js';
 import { createMatchStats, recordShot, recordChance, recordGoal, recordCard, recordCorner, recordFoul, recordInjury, recordMomentum, recordZone, recordPossession, getFinalStats } from './matchStats.js';
 import { narrate } from './narration.js';
@@ -27,6 +27,13 @@ import { applyRelicEffects } from '../data/helpers.js';
     }
     const finalResult = result.value;  // { result, stats }
 */
+
+function pickInvolvedPlayer(players, zone) {
+  const posMap = { defense: ['GK', 'DEF'], midfield: ['MID', 'DEF'], attack: ['FWD', 'MID'] };
+  const preferred = posMap[zone] || ['MID'];
+  const candidates = players.filter(p => preferred.includes(p.pos));
+  return candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : players[0];
+}
 
 export function* simulateMatch(config) {
   const {
@@ -59,6 +66,7 @@ export function* simulateMatch(config) {
   const momentum = createMomentum(initialMorale);
   const stats = createMatchStats();
   const tacticalMods = getTacticalModifiers(formation, playStyle, intensity);
+  const matchupMods = getFormationMatchup(formation.id, 'clasica');
 
   // Relic flags
   const hasGkLastMin = relics.includes('guantes');
@@ -229,8 +237,12 @@ export function* simulateMatch(config) {
       tacticsMod: {
         homePossBonus: tacticalMods.homePossBonus + (stratMod.atkMod || 0),
         awayPossBonus: rivalMods.rivalPossBonus || 0,
-        counterBonus: tacticalMods.counterBonus || 0,
+        counterBonus: (tacticalMods.counterBonus || 0) + (tacticalMods.counterWeakness || 0),
         rivalCounterBonus: tacticalMods.rivalCounterBonus || 0,
+        defenseZoneBonus: tacticalMods.defenseZoneBonus || 0,
+        midfieldZoneBonus: tacticalMods.midfieldZoneBonus || 0,
+        attackZoneBonus: tacticalMods.attackZoneBonus || 0,
+        possessionRetention: tacticalMods.possessionRetention || 0,
       },
     });
 
@@ -262,7 +274,8 @@ export function* simulateMatch(config) {
     }
 
     // ─── CHANCE GENERATION ───
-    if (shouldGenerateChance(possResult, { intensityMod: tacticalMods.intensityMod })) {
+    const chanceIntensityMod = tacticalMods.intensityMod + (possResult.winner === 'home' ? (tacticalMods.offensiveOutput || 0) : (tacticalMods.rivalChanceBonus || 0));
+    if (shouldGenerateChance(possResult, { intensityMod: chanceIntensityMod })) {
       const isHomeAttacking = possResult.winner === 'home';
       const attackTeam = isHomeAttacking ? home : away;
       const defendTeam = isHomeAttacking ? away : home;
@@ -297,15 +310,40 @@ export function* simulateMatch(config) {
           diamanteBonus: hasDiamanteKey ? 0.03 : 0,
         } : {},
         difficultyMod: isHomeAttacking ? diffMod * 0.5 : -diffMod,
+        matchupMod: isHomeAttacking ? matchupMods[0] : matchupMods[1],
       });
 
       recordShot(stats, team, result.isOnTarget);
 
+      // Pick scorer/assister early so they can be referenced in the sequence
+      const scorer = isHomeAttacking ? pickScorer(activePlayers, chanceType, formMods) : pickScorer(away.players, chanceType);
+      const assister = isHomeAttacking ? pickAssister(activePlayers, scorer, chanceType, formMods) : pickAssister(away.players, scorer, chanceType);
+
+      // Phase 1: Approach
+      yield {
+        type: 'chance_approach',
+        minute,
+        team,
+        chanceType: chanceType.id,
+        ballX: 0.3 + Math.random() * 0.4,
+        ballY: isHomeAttacking ? 0.25 : 0.75,
+        involvedPlayer: assister,
+      };
+
+      // Phase 2: Shot
+      yield {
+        type: 'chance_shot',
+        minute,
+        team,
+        chanceType: chanceType.id,
+        ballX: 0.4 + Math.random() * 0.2,
+        ballY: isHomeAttacking ? 0.1 : 0.9,
+        involvedPlayer: scorer,
+      };
+
       if (result.isGoal) {
         if (isHomeAttacking) {
           homeScore++;
-          const scorer = pickScorer(activePlayers, chanceType, formMods);
-          const assister = pickAssister(activePlayers, scorer, chanceType, formMods);
           recordGoal(stats, { minute, team: 'home', scorer, assister, chanceType });
           currentMomentum = updateMomentum(currentMomentum, 'goal');
 
@@ -475,8 +513,10 @@ export function* simulateMatch(config) {
       zone: possResult.zone,
       momentum: currentMomentum.value,
       morale: currentMomentum.morale,
-      ballX: zoneToBallX(possResult.zone, possResult.winner),
+      subZone: possResult.subZone,
+      ballX: zoneToBallX(possResult.zone, possResult.winner, possResult.subZone),
       ballY: zoneToBallY(possResult.zone, possResult.winner),
+      involvedPlayer: possResult.winner === 'home' ? pickInvolvedPlayer(activePlayers, possResult.zone) : null,
     };
   }
 
@@ -529,9 +569,9 @@ export function* simulateMatch(config) {
 }
 
 // Convert zone/possession to ball coordinates for canvas
-function zoneToBallX(zone, team) {
-  // Some randomness in X
-  return 0.3 + Math.random() * 0.4;
+function zoneToBallX(zone, team, subZone) {
+  const base = subZone === 'left' ? 0.25 : subZone === 'right' ? 0.75 : 0.5;
+  return base + (Math.random() - 0.5) * 0.15;
 }
 
 function zoneToBallY(zone, team) {

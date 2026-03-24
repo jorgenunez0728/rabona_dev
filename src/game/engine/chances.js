@@ -65,6 +65,7 @@ export function resolveChance(chanceType, attackTeam, defendTeam, modifiers = {}
     traitMods = {},   // { clutchActive, goleadorActive }
     relicMods = {},   // { blitzBonus, diamanteBonus }
     difficultyMod = 0,
+    matchupMod = 0,
   } = modifiers;
 
   let goalChance = chanceType.baseChance;
@@ -90,6 +91,7 @@ export function resolveChance(chanceType, attackTeam, defendTeam, modifiers = {}
   goalChance += momentumMod;
   goalChance += moraleMod * 0.02;
   goalChance -= difficultyMod;
+  goalChance += matchupMod;
 
   // Trait bonuses
   if (traitMods.clutchActive) goalChance += 0.05;

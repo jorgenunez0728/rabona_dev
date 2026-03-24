@@ -7,6 +7,7 @@ export const ZONES = ['defense', 'midfield', 'attack'];
 export function createPossessionState() {
   return {
     zone: 'midfield',
+    subZone: 'center',
     team: 'home',  // 'home' or 'away'
     ticksInZone: 0,
     totalHome: 0,
@@ -81,6 +82,12 @@ export function resolvePossession(state, home, away, modifiers = {}) {
   homeProb += (tacticsMod.homePossBonus || 0);
   homeProb -= (tacticsMod.awayPossBonus || 0);
 
+  // Formation zone bonus
+  const zoneBonus = zone === 'defense' ? (tacticsMod.defenseZoneBonus || 0)
+    : zone === 'midfield' ? (tacticsMod.midfieldZoneBonus || 0)
+    : (tacticsMod.attackZoneBonus || 0);
+  homeProb += zoneBonus;
+
   // Clamp
   homeProb = Math.max(0.15, Math.min(0.85, homeProb));
 
@@ -101,7 +108,7 @@ export function resolvePossession(state, home, away, modifiers = {}) {
         nextZone = 'midfield';
       }
     } else if (zone === 'midfield') {
-      nextZone = Math.random() < 0.55 ? 'attack' : 'midfield';
+      nextZone = Math.random() < (0.55 + (tacticsMod.possessionRetention || 0)) ? 'attack' : 'midfield';
     } else {
       nextZone = 'attack'; // Stay in attack
     }
@@ -122,10 +129,14 @@ export function resolvePossession(state, home, away, modifiers = {}) {
     }
   }
 
+  // Determine sub-zone (lateral position)
+  const subZone = Math.random() < 0.33 ? 'left' : Math.random() < 0.5 ? 'center' : 'right';
+
   // Update stats
   const newState = {
     ...state,
     zone: nextZone,
+    subZone,
     team: winner,
     ticksInZone: nextZone === zone ? state.ticksInZone + 1 : 0,
     totalHome: state.totalHome + (winner === 'home' ? 1 : 0),
@@ -137,6 +148,7 @@ export function resolvePossession(state, home, away, modifiers = {}) {
     state: newState,
     winner,
     zone: nextZone,
+    subZone,
     previousZone: zone,
     isCounterAttack,
   };
