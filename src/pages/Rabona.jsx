@@ -25,6 +25,7 @@ import RosterScreen from "@/game/screens/RosterScreen";
 import MarketScreen from "@/game/screens/MarketScreen";
 import TrainingScreen from "@/game/screens/TrainingScreen";
 import BoardEventScreen from "@/game/screens/BoardEventScreen";
+import MapScreen from "@/game/screens/MapScreen";
 import PrematchScreen from "@/game/screens/PrematchScreen";
 import RewardsScreen from "@/game/screens/RewardsScreen";
 import AscensionScreen from "@/game/screens/AscensionScreen";
@@ -901,6 +902,7 @@ export default function Rabona() {
         {screen === 'roster' && <RosterScreen />}
         {screen === 'training' && <TrainingScreen />}
         {screen === 'boardEvent' && <BoardEventScreen />}
+        {screen === 'map' && <MapScreen />}
         {screen === 'prematch' && <PrematchScreen />}
         {screen === 'match' && <MatchScreen />}
         {screen === 'rewards' && <RewardsScreen />}

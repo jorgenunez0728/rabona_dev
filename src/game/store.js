@@ -5,7 +5,8 @@ import { create } from 'zustand';
 import { SFX } from '@/game/audio';
 import {
   COACHES, ASCENSION_MODS, ACHIEVEMENTS, LEAGUES, RIVAL_NAMES,
-  FORMATIONS, RELICS, STARTING_RELIC_PAIRS,
+  FORMATIONS, RELICS, STARTING_RELIC_PAIRS, CURSES,
+  LEGACY_TREE, hasLegacy, calcLegacyPoints, calcSpentLegacy, canUnlockLegacy,
   _usedNames, genPlayer, rnd, pick, calcOvr,
 } from '@/game/data';
 import {
@@ -18,7 +19,7 @@ const INITIAL_GAME = {
   coach: null, roster: [], league: 0, matchNum: 0,
   table: [], captain: null, chemistry: 0, matchesTogether: 0, lastLineup: null, coins: 0,
   rivalMemory: {}, streak: 0, currentObjectives: [], trainedIds: [],
-  formation: 'clasica', relics: [], ascension: 0, copa: null,
+  formation: 'clasica', relics: [], ascension: 0, copa: null, curses: [],
   careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {} },
 };
 
@@ -34,6 +35,7 @@ const INITIAL_GLOBAL_STATS = {
   totalRuns: 0, bestLeague: 0, bestLeagueName: '—', totalMatches: 0,
   totalWins: 0, totalGoals: 0, totalConceded: 0, bestStreak: 0, totalCoins: 0,
   hallOfFame: [], ascensionLevel: 0, achievements: [], allTimeScorers: {},
+  legacyUnlocks: [],
 };
 
 // ── Store ──
@@ -185,6 +187,39 @@ const useGameStore = create((set, get) => ({
     return false;
   },
 
+  // ─── Legacy Tree ───
+  unlockLegacy: (nodeId) => {
+    const gs = get().globalStats;
+    if (!canUnlockLegacy(gs, nodeId)) return false;
+    const newGS = { ...gs, legacyUnlocks: [...(gs.legacyUnlocks || []), nodeId] };
+    set({ globalStats: newGS });
+    saveGlobalStats(newGS);
+    return true;
+  },
+
+  // ─── Curses ───
+  addCurse: (curseId) => {
+    const { game } = get();
+    const curses = [...(game.curses || [])];
+    if (curses.some(c => c.id === curseId)) return;
+    const curse = CURSES.find(c => c.id === curseId);
+    if (!curse) return;
+    curses.push({ ...curse, remaining: curse.duration });
+    set({ game: { ...game, curses } });
+  },
+  tickCurses: () => {
+    const { game } = get();
+    if (!game.curses?.length) return;
+    const curses = game.curses
+      .map(c => c.remaining > 0 ? { ...c, remaining: c.remaining - 1 } : c)
+      .filter(c => c.duration === 0 || c.remaining > 0); // duration 0 = permanent until removed
+    set({ game: { ...game, curses } });
+  },
+  removeCurse: (curseId) => {
+    const { game } = get();
+    set({ game: { ...game, curses: (game.curses || []).filter(c => c.id !== curseId) } });
+  },
+
   // ─── Save/Load ───
   handleDeleteSave: () => {
     deleteSave();
@@ -225,9 +260,40 @@ const useGameStore = create((set, get) => ({
       roster = roster.map(p => p.role === 'st' ? { ...p, atk: p.atk + startRelic.val, def: p.def + startRelic.val, spd: p.spd + startRelic.val } : p);
     }
     if (startRelic?.fx === 'cursed_steal') startCoins += startRelic.val;
+    // ── Apply Legacy Tree bonuses ──
+    const gs = globalStats;
+    // Sponsor branch: extra starting coins
+    if (hasLegacy(gs, 'sponsor_3')) startCoins += 30;
+    else if (hasLegacy(gs, 'sponsor_2')) startCoins += 20;
+    else if (hasLegacy(gs, 'sponsor_1')) startCoins += 10;
+    // Cantera branch: stat boost to starters
+    if (hasLegacy(gs, 'cantera_1')) {
+      roster = roster.map(p => {
+        if (p.role !== 'st') return p;
+        const stat = pick(['atk', 'def', 'spd']);
+        return { ...p, [stat]: p[stat] + 1 };
+      });
+    }
+    // Cantera 2: wonderkid chance
+    if (hasLegacy(gs, 'cantera_2') && Math.random() < 0.10) {
+      const wkIdx = rnd(1, roster.filter(p => p.role === 'st').length - 1);
+      const wk = roster.filter(p => p.role === 'st')[wkIdx];
+      if (wk) { wk.atk += 3; wk.def += 2; wk.spd += 3; wk.trait = { n: 'Promesa', d: '+50% XP', fx: 'xp' }; }
+    }
+    // Cantera 3: extra reserve
+    if (hasLegacy(gs, 'cantera_3')) {
+      const extraPos = pick(['DEF', 'MID', 'FWD']);
+      const extra = genPlayer(extraPos, 1, 2);
+      extra.role = 'rs';
+      roster.push(extra);
+    }
+    // Charisma branch
+    let startChem = 0;
+    if (hasLegacy(gs, 'charisma_1')) startChem += 5;
     const newG = {
       ...INITIAL_GAME, roster, captain: roster[0].id, table, league: 0, matchNum: 0,
       coins: startCoins, coach, ascension: ascLevel, formation: 'clasica', relics: startRelics,
+      chemistry: startChem, curses: [],
       careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {} },
       rivalMemory: {}, streak: 0, trainedIds: [],
     };
