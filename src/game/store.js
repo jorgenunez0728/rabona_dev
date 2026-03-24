@@ -8,10 +8,12 @@ import {
   FORMATIONS, RELICS, STARTING_RELIC_PAIRS, CURSES, COACH_ABILITIES,
   LEGACY_TREE, hasLegacy, calcLegacyPoints, calcSpentLegacy, canUnlockLegacy,
   _usedNames, genPlayer, rnd, pick, calcOvr,
+  CAREER_CAST,
 } from '@/game/data';
 import { MANAGER_ARCHETYPES } from '@/game/data/archetypes.js';
 import { TACTICAL_CARDS } from '@/game/data/cards.js';
 import { calcMutatorLegacyBonus } from '@/game/data/mutators.js';
+import { getCareerCards } from '@/game/careerLogic';
 import {
   saveGame, loadGame, saveGlobalStats, loadGlobalStats, deleteSave,
 } from '@/game/save';
@@ -77,6 +79,7 @@ const useGameStore = create((set, get) => ({
   transState: 'in',
   pendingRelicDraft: null,
   pendingLevelUp: null,
+  debugAutoPlay: false,
 
   // ─── Navigation ───
   navigateTo: (newScreen) => {
@@ -375,6 +378,42 @@ const useGameStore = create((set, get) => ({
     const newGs = { ...globalStats, ascensionLevel: 6 };
     set({ globalStats: newGs });
     saveGlobalStats(newGs);
+  },
+  debugToggleAutoPlay: () => {
+    set((state) => ({ debugAutoPlay: !state.debugAutoPlay }));
+  },
+  debugStartCareer: (pos, startAge = 16, startTeam = 0, startBars = null) => {
+    const name = `Debug ${pos}`;
+    const bars = startBars || { rend: 50, fis: 55, rel: 50, fam: 20, men: 55 };
+    const career = {
+      name, pos, age: startAge, season: Math.max(1, startAge - 15),
+      bars: { ...bars },
+      team: Math.min(startTeam, 6), matchNum: 0, matchesThisSeason: 0, totalMatches: 0,
+      goals: 0, ratings: [], cardQueue: [], seasonGoals: 0,
+      cast: JSON.parse(JSON.stringify(CAREER_CAST)),
+      history: [], retired: false, retireReason: '',
+    };
+    career.cardQueue = getCareerCards(career);
+    set({ career, careerScreen: 'cards', screen: 'career' });
+  },
+  debugExportState: () => {
+    const { game, globalStats, career, careerScreen, screen } = get();
+    return JSON.stringify({ game, globalStats, career, careerScreen, screen, _v: 1 });
+  },
+  debugImportState: (json) => {
+    try {
+      const data = JSON.parse(json);
+      const updates = {};
+      if (data.game) updates.game = data.game;
+      if (data.globalStats) { updates.globalStats = data.globalStats; saveGlobalStats(data.globalStats); }
+      if (data.career !== undefined) updates.career = data.career;
+      if (data.careerScreen) updates.careerScreen = data.careerScreen;
+      if (data.screen) updates.screen = data.screen;
+      if (data.game?.coach) updates.hasSave = true;
+      set(updates);
+      if (data.game?.coach) saveGame(data.game, 'table');
+      return true;
+    } catch { return false; }
   },
 
   // ─── Start new run ───

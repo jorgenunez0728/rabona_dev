@@ -1,7 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { SFX } from "@/game/audio";
 import { T, PN, CAREER_TEAMS, RIVAL_NAMES, FN, LN, pick, ACHIEVEMENTS, calcOvr, RELICS, POS_COLORS } from "@/game/data";
 import { CareerBars } from "@/game/components";
+import useGameStore from "@/game/store";
+
+function AutoPlayBanner() {
+  const autoPlay = useGameStore(s => s.debugAutoPlay);
+  const toggle = useGameStore(s => s.debugToggleAutoPlay);
+  if (!autoPlay) return null;
+  return (
+    <div onClick={toggle} style={{
+      position: 'absolute', top: 4, right: 4, zIndex: 999,
+      background: 'rgba(255,68,68,0.9)', color: '#fff', padding: '2px 8px',
+      borderRadius: 4, fontSize: 10, fontFamily: "'Oswald'", cursor: 'pointer',
+      letterSpacing: 1, textTransform: 'uppercase',
+    }}>AUTO-PLAY (tap to stop)</div>
+  );
+}
 
 export function CareerCreateScreen({ setCareer, setCareerScreen, go, initCareer, getCareerCards }) {
   const [name, setName] = useState('');
@@ -40,9 +55,23 @@ export function CareerCardScreen({ career, setCareer, setCareerScreen, applyBarE
   const c = career;
   if (!c) return null;
   const [slideDir, setSlideDir] = useState(null);
+  const autoPlay = useGameStore(s => s.debugAutoPlay);
+  const autoRef = useRef(false);
   const currentCard = c.cardQueue[0];
   if (!currentCard) { setTimeout(() => setCareerScreen('match'), 100); return null; }
   if (c.retired) { setTimeout(() => setCareerScreen('careerEnd'), 100); return null; }
+
+  // Auto-play: pick random option after short delay
+  useEffect(() => {
+    if (!autoPlay || !currentCard || slideDir || autoRef.current) return;
+    autoRef.current = true;
+    const t = setTimeout(() => {
+      const opt = currentCard.b && Math.random() > 0.5 ? 'b' : 'a';
+      chooseOption(opt);
+      autoRef.current = false;
+    }, 150);
+    return () => { clearTimeout(t); autoRef.current = false; };
+  }, [autoPlay, currentCard, slideDir]);
 
   function chooseOption(option) {
     const effects = currentCard[option]?.e || {};
@@ -59,7 +88,8 @@ export function CareerCardScreen({ career, setCareer, setCareerScreen, applyBarE
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, position: 'relative' }}>
+      <AutoPlayBanner />
       <CareerBars bars={c.bars} />
       <div style={{ padding: '4px 12px', display: 'flex', justifyContent: 'space-between', fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#607d8b' }}>
         <span>{c.name} · {c.age} años · {PN[c.pos]}</span>
@@ -89,9 +119,33 @@ export function CareerMatchScreen({ career, setCareer, setCareerScreen, applyBar
   const [matchScore, setMatchScore] = useState({ yours: 0, rival: 0, rating: 5.0, events: [] });
   const [slideDir, setSlideDir] = useState(null);
   const [done, setDone] = useState(false);
+  const autoPlay = useGameStore(s => s.debugAutoPlay);
+  const autoRef = useRef(false);
+  const continueRef = useRef(null);
   const teamName = CAREER_TEAMS[Math.min(c.team, CAREER_TEAMS.length - 1)];
-  const rivalName = pick(RIVAL_NAMES[Math.min(c.team, RIVAL_NAMES.length - 1)] || RIVAL_NAMES[0]);
+  const [rivalName] = useState(() => pick(RIVAL_NAMES[Math.min(c.team, RIVAL_NAMES.length - 1)] || RIVAL_NAMES[0]));
   const currentCard = matchCards[cardIdx];
+
+  // Auto-play: auto-choose match options
+  useEffect(() => {
+    if (!autoPlay || done || !currentCard || slideDir || autoRef.current) return;
+    autoRef.current = true;
+    const t = setTimeout(() => {
+      const opt = currentCard.b && Math.random() > 0.5 ? 'b' : 'a';
+      chooseMatchOption(opt);
+      autoRef.current = false;
+    }, 100);
+    return () => { clearTimeout(t); autoRef.current = false; };
+  }, [autoPlay, cardIdx, done, slideDir]);
+
+  // Auto-play: auto-continue after match ends
+  useEffect(() => {
+    if (!autoPlay || !done) return;
+    const t = setTimeout(() => {
+      if (continueRef.current) continueRef.current();
+    }, 200);
+    return () => clearTimeout(t);
+  }, [autoPlay, done]);
 
   function chooseMatchOption(option) {
     const opt = currentCard[option];
@@ -116,6 +170,20 @@ export function CareerMatchScreen({ career, setCareer, setCareerScreen, applyBar
     const won = matchScore.yours > matchScore.rival;
     const drew = matchScore.yours === matchScore.rival;
     const finalRating = Math.round(matchScore.rating * 10) / 10;
+    const handleContinue = () => {
+      SFX.play('click');
+      setCareer(prev => {
+        const next = { ...prev };
+        next.totalMatches++; next.matchNum++; next.matchesThisSeason++;
+        next.seasonGoals += matchScore.yours; next.ratings.push(finalRating); next.goals += matchScore.yours;
+        if (next.matchesThisSeason >= 8) return next;
+        next.cardQueue = getMatchCards(next.pos);
+        return next;
+      });
+      if (career.matchesThisSeason + 1 >= 8) setCareerScreen('seasonEnd');
+      else setCareerScreen('cards');
+    };
+    continueRef.current = handleContinue;
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10, background: T.bg, padding: 16, textAlign: 'center', overflow: 'auto' }}>
         <CareerBars bars={career.bars} />
@@ -123,25 +191,14 @@ export function CareerMatchScreen({ career, setCareer, setCareerScreen, applyBar
         <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 48, color: '#fff' }}>{matchScore.yours} - {matchScore.rival}</div>
         <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 28, color: finalRating >= 7 ? '#00e676' : finalRating >= 5 ? '#ffd600' : '#ff1744' }}>Rating: {finalRating}</div>
         {matchScore.events.map((e, i) => (<div key={i} style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: '#e8eaf6' }}>{e}</div>))}
-        <button onClick={() => {
-          SFX.play('click');
-          setCareer(prev => {
-            const next = { ...prev };
-            next.totalMatches++; next.matchNum++; next.matchesThisSeason++;
-            next.seasonGoals += matchScore.yours; next.ratings.push(finalRating); next.goals += matchScore.yours;
-            if (next.matchesThisSeason >= 8) return next;
-            next.cardQueue = getMatchCards(next.pos); // re-uses same function
-            return next;
-          });
-          if (career.matchesThisSeason + 1 >= 8) setCareerScreen('seasonEnd');
-          else setCareerScreen('cards');
-        }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '10px 28px', border: 'none', background: 'linear-gradient(135deg,#d4a017,#f0c040)', color: '#1a1a2e', clipPath: 'polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)', cursor: 'pointer', textTransform: 'uppercase', marginTop: 8 }}>Continuar</button>
+        <button onClick={handleContinue} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '10px 28px', border: 'none', background: 'linear-gradient(135deg,#d4a017,#f0c040)', color: '#1a1a2e', clipPath: 'polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)', cursor: 'pointer', textTransform: 'uppercase', marginTop: 8 }}>Continuar</button>
       </div>
     );
   }
   if (!currentCard) return null;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'linear-gradient(180deg,#132010 0%,#0b1120 40%)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'linear-gradient(180deg,#132010 0%,#0b1120 40%)', position: 'relative' }}>
+      <AutoPlayBanner />
       <CareerBars bars={career.bars} />
       <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'space-between', fontFamily: "'Barlow Condensed'", fontSize: 11 }}>
         <span style={{ color: '#42a5f5' }}>{teamName} {matchScore.yours}</span>
@@ -166,10 +223,37 @@ export function CareerMatchScreen({ career, setCareer, setCareerScreen, applyBar
 export function CareerSeasonEnd({ career, setCareer, setCareerScreen, applyAging, checkCareerEnd, getCareerCards }) {
   const c = career;
   if (!c) return null;
+  const autoPlay = useGameStore(s => s.debugAutoPlay);
   const avgRating = c.ratings.length ? Math.round(c.ratings.reduce((a, b) => a + b, 0) / c.ratings.length * 10) / 10 : 5.0;
   const canAscend = avgRating >= 6.5 && c.team < CAREER_TEAMS.length - 1;
   const mustDescend = avgRating < 4.0 && c.team > 0;
   const teamName = CAREER_TEAMS[Math.min(c.team, CAREER_TEAMS.length - 1)];
+
+  const handleNextSeason = () => {
+    SFX.play('reward');
+    setCareer(prev => {
+      const next = { ...prev };
+      next.history.push({ season: next.season, age: next.age, team: teamName, rating: avgRating, goals: next.seasonGoals });
+      next.season++; next.age++; next.matchesThisSeason = 0; next.matchNum = 0; next.seasonGoals = 0; next.ratings = [];
+      if (canAscend) next.team = Math.min(CAREER_TEAMS.length - 1, next.team + 1);
+      if (mustDescend) next.team = Math.max(0, next.team - 1);
+      next.bars = applyAging(next);
+      const end = checkCareerEnd(next);
+      if (end) { next.retired = true; next.retireReason = end; }
+      next.cardQueue = getCareerCards(next);
+      return next;
+    });
+    if (career.retired) setCareerScreen('careerEnd');
+    else setCareerScreen('cards');
+  };
+
+  // Auto-play: advance season automatically
+  useEffect(() => {
+    if (!autoPlay) return;
+    const t = setTimeout(handleNextSeason, 200);
+    return () => clearTimeout(t);
+  }, [autoPlay]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10, background: T.bg, padding: 16, textAlign: 'center', overflow: 'auto' }}>
       <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 28, color: '#f0c040', textTransform: 'uppercase' }}>Fin de Temporada {c.season}</div>
@@ -185,23 +269,7 @@ export function CareerSeasonEnd({ career, setCareer, setCareerScreen, applyAging
       </div>
       {canAscend && <div style={{ background: 'rgba(0,230,118,0.06)', border: '1px solid rgba(0,230,118,0.15)', borderRadius: 6, padding: 10, maxWidth: 320 }}><div style={{ fontFamily: "'Oswald'", fontSize: 13, color: '#00e676' }}>🎉 ¡{CAREER_TEAMS[c.team + 1]} te quiere fichar!</div></div>}
       {mustDescend && <div style={{ background: 'rgba(255,23,68,0.06)', border: '1px solid rgba(255,23,68,0.15)', borderRadius: 6, padding: 10, maxWidth: 320 }}><div style={{ fontFamily: "'Oswald'", fontSize: 13, color: '#ff1744' }}>💀 Rating bajo. Te bajan.</div></div>}
-      <button onClick={() => {
-        SFX.play('reward');
-        setCareer(prev => {
-          const next = { ...prev };
-          next.history.push({ season: next.season, age: next.age, team: teamName, rating: avgRating, goals: next.seasonGoals });
-          next.season++; next.age++; next.matchesThisSeason = 0; next.matchNum = 0; next.seasonGoals = 0; next.ratings = [];
-          if (canAscend) next.team = Math.min(CAREER_TEAMS.length - 1, next.team + 1);
-          if (mustDescend) next.team = Math.max(0, next.team - 1);
-          next.bars = applyAging(next);
-          const end = checkCareerEnd(next);
-          if (end) { next.retired = true; next.retireReason = end; }
-          next.cardQueue = getCareerCards(next);
-          return next;
-        });
-        if (career.retired) setCareerScreen('careerEnd');
-        else setCareerScreen('cards');
-      }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '10px 28px', border: 'none', background: 'linear-gradient(135deg,#d4a017,#f0c040)', color: '#1a1a2e', clipPath: 'polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)', cursor: 'pointer', textTransform: 'uppercase', marginTop: 8 }}>
+      <button onClick={handleNextSeason} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '10px 28px', border: 'none', background: 'linear-gradient(135deg,#d4a017,#f0c040)', color: '#1a1a2e', clipPath: 'polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)', cursor: 'pointer', textTransform: 'uppercase', marginTop: 8 }}>
         {canAscend ? `Fichar por ${CAREER_TEAMS[c.team + 1]}` : 'Siguiente Temporada'}
       </button>
     </div>
