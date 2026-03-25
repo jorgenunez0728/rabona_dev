@@ -1001,10 +1001,15 @@ export default function Rabona() {
       if (Math.abs(dy) > 40) setFeedOpen(dy > 0);
     };
 
+    // Compute projected mini table
+    const miniTable = getProjectedMiniTable(game.table, display.ps, display.rs, match.rival?.name || '');
+    const isWinning = display.ps > display.rs;
+    const isLosing = display.ps < display.rs;
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#000', position: 'relative' }}>
-        {/* Pitch - full width portrait */}
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        {/* Pitch - reduced to ~45vh */}
+        <div style={{ flex: '0 0 auto', maxHeight: '45vh', minHeight: 180, position: 'relative', overflow: 'hidden' }}>
           <canvas ref={canvasRef} onDoubleClick={() => { sim.current.speed = 0; setDisplay(d => ({ ...d, speed: 0 })); }} style={{ width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated', touchAction: 'manipulation' }} />
           {/* Scoreboard overlay — premium glass */}
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 15, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(8,12,20,0.82)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', padding: '6px 10px', minHeight: 46, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -1021,54 +1026,99 @@ export default function Rabona() {
           </div>
           {/* Speed controls - floating bottom-right */}
           <div style={{ position: 'absolute', bottom: 8, right: 8, zIndex: 15, display: 'flex', gap: 4 }}>
-            {[{ l: '⏩', s: 0 }, { l: '▶', s: 1 }, { l: '▶▶', s: 2 }].map(({ l, s }) => (
-              <button key={s} onClick={() => { sim.current.speed = s; setDisplay(d => ({ ...d, speed: s })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, padding: '8px 12px', minWidth: 44, minHeight: 44, border: `1px solid ${display.speed === s ? T.win : 'rgba(255,255,255,0.2)'}`, background: display.speed === s ? `${T.win}30` : 'rgba(0,0,0,0.6)', color: display.speed === s ? T.win : 'rgba(255,255,255,0.5)', borderRadius: 6, cursor: 'pointer', touchAction: 'manipulation', backdropFilter: 'blur(4px)' }}>{l}</button>
+            {[{ l: '\u23E9', s: 0 }, { l: '\u25B6', s: 1 }, { l: '\u25B6\u25B6', s: 2 }].map(({ l, s }) => (
+              <button key={s} onClick={() => { sim.current.speed = s; setDisplay(d => ({ ...d, speed: s })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, padding: '6px 10px', minWidth: 38, minHeight: 38, border: `1px solid ${display.speed === s ? T.win : 'rgba(255,255,255,0.2)'}`, background: display.speed === s ? `${T.win}30` : 'rgba(0,0,0,0.6)', color: display.speed === s ? T.win : 'rgba(255,255,255,0.5)', borderRadius: 6, cursor: 'pointer', touchAction: 'manipulation', backdropFilter: 'blur(4px)' }}>{l}</button>
             ))}
-            <button onClick={() => { SFX._muted = !SFX._muted; if (SFX._muted) { Crowd.stop(); Music.pause(); } else { if (sim.current && !sim.current.done) Crowd.start(); Music.play(); } setDisplay(d => ({ ...d })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '8px 12px', minWidth: 44, minHeight: 44, border: `1px solid ${SFX._muted ? 'rgba(239,83,80,0.4)' : 'rgba(255,255,255,0.2)'}`, background: SFX._muted ? 'rgba(239,83,80,0.15)' : 'rgba(0,0,0,0.6)', color: SFX._muted ? '#ef5350' : 'rgba(255,255,255,0.5)', borderRadius: 6, cursor: 'pointer', touchAction: 'manipulation', backdropFilter: 'blur(4px)' }}>{SFX._muted ? '🔇' : '🔊'}</button>
+            <button onClick={() => { SFX._muted = !SFX._muted; if (SFX._muted) { Crowd.stop(); Music.pause(); } else { if (sim.current && !sim.current.done) Crowd.start(); Music.play(); } setDisplay(d => ({ ...d })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '6px 10px', minWidth: 38, minHeight: 38, border: `1px solid ${SFX._muted ? 'rgba(239,83,80,0.4)' : 'rgba(255,255,255,0.2)'}`, background: SFX._muted ? 'rgba(239,83,80,0.15)' : 'rgba(0,0,0,0.6)', color: SFX._muted ? '#ef5350' : 'rgba(255,255,255,0.5)', borderRadius: 6, cursor: 'pointer', touchAction: 'manipulation', backdropFilter: 'blur(4px)' }}>{SFX._muted ? '\uD83D\uDD07' : '\uD83D\uDD0A'}</button>
           </div>
         </div>
-        {/* Match log — glass panel */}
-        <div style={{ flex: '0 0 auto', maxHeight: 80, overflow: 'auto', background: T.bg, borderTop: `1px solid rgba(255,255,255,0.06)`, padding: '4px 8px' }}>
-          {[...display.log].reverse().slice(0, 4).map((e, i) => (
-            <div key={i} style={{ display: 'flex', padding: '3px 6px', borderLeft: `2px solid ${LC[e.type] || 'transparent'}`, marginBottom: 1, borderRadius: 2 }}>
-              <span style={{ fontFamily: T.fontBody, fontSize: 12, color: LC[e.type] || T.tx2, fontWeight: (e.type === 'goal' || e.type === 'goalRival') ? 700 : 400, lineHeight: 1.3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{e.text}</span>
+        {/* Match log — compact strip */}
+        <div style={{ flex: '0 0 auto', maxHeight: 56, overflow: 'hidden', background: T.bg, borderTop: `1px solid rgba(255,255,255,0.06)`, padding: '2px 8px' }}>
+          {[...display.log].reverse().slice(0, 3).map((e, i) => (
+            <div key={i} style={{ display: 'flex', padding: '2px 6px', borderLeft: `2px solid ${LC[e.type] || 'transparent'}`, marginBottom: 1, borderRadius: 2 }}>
+              <span style={{ fontFamily: T.fontBody, fontSize: 11, color: LC[e.type] || T.tx2, fontWeight: (e.type === 'goal' || e.type === 'goalRival') ? 700 : 400, lineHeight: 1.2, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{e.text}</span>
             </div>
           ))}
         </div>
-        {/* Collapsible social feed + win prob - swipe up to open */}
+        {/* ── Match Info Bar: context + live results + mini table ── */}
+        <div style={{ flex: '0 0 auto', background: T.bg1, borderTop: `1px solid ${T.border}`, padding: '6px 8px', display: 'flex', gap: 8 }}>
+          {/* Left column: match context + live results */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* Match context bar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+              <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>{matchTimeRef.current}</span>
+              <span style={{ fontFamily: T.fontHeading, fontSize: 10, color: T.tx2, textTransform: 'uppercase', letterSpacing: 0.5 }}>Jornada {(game.matchNum || 0) + 1}</span>
+              <div style={{ flex: 1 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ fontFamily: "'Oswald'", fontSize: 9, color: '#4DABF7' }}>HAL {winProb}%</span>
+                <div style={{ display: 'flex', width: 32, height: 3, borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ width: `${winProb}%`, background: 'linear-gradient(90deg,#1565c0,#4DABF7)', transition: 'width 0.5s' }} />
+                  <div style={{ flex: 1, background: 'linear-gradient(90deg,#FF6B6B,#c62828)' }} />
+                </div>
+                <span style={{ fontFamily: "'Oswald'", fontSize: 9, color: '#FF6B6B' }}>{100 - winProb}%</span>
+              </div>
+            </div>
+            {/* Live matchday results */}
+            {liveMatchday && liveMatchday.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {liveMatchday.map((fix, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 6px', background: 'rgba(255,255,255,0.02)', borderRadius: 4, border: `1px solid ${T.border}` }}>
+                    <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx2, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{fix.home.substring(0, 10)}</span>
+                    <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 11, color: T.tx, minWidth: 28, textAlign: 'center' }}>{fix.homeGoals}-{fix.awayGoals}</span>
+                    <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx2, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', textAlign: 'right' }}>{fix.away.substring(0, 10)}</span>
+                    <span style={{ fontFamily: T.fontBody, fontSize: 9, color: fix.finished ? T.tx3 : T.win, minWidth: 32, textAlign: 'right' }}>
+                      {fix.finished ? 'Final' : `${fix.minute}'`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* Right column: mini table */}
+          <div style={{ flex: '0 0 auto', minWidth: 105, background: 'rgba(255,255,255,0.02)', borderRadius: 6, border: `1px solid ${T.border}`, padding: '4px 6px' }}>
+            <div style={{ fontFamily: T.fontHeading, fontSize: 9, color: T.tx3, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3, textAlign: 'center' }}>Tabla</div>
+            {miniTable.rows.map((row, i) => {
+              const posArrow = row.you ? (miniTable.posChange > 0 ? '\u2191' : miniTable.posChange < 0 ? '\u2193' : '\u2500') : '';
+              const posColor = row.you ? (miniTable.posChange > 0 ? T.win : miniTable.posChange < 0 ? T.lose : T.tx3) : T.tx3;
+              const ptsColor = row.you ? (isWinning ? T.win : isLosing ? T.lose : T.draw) : T.tx2;
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '1px 0', borderBottom: i < miniTable.rows.length - 1 ? `1px solid ${T.border}` : 'none', background: row.you ? 'rgba(59,130,246,0.08)' : 'transparent', borderRadius: row.you ? 3 : 0, marginBottom: 1 }}>
+                  <span style={{ fontFamily: T.fontHeading, fontSize: 10, color: posColor, minWidth: 12, textAlign: 'center' }}>{row.pos}</span>
+                  {row.you && <span style={{ fontSize: 8, color: posColor }}>{posArrow}</span>}
+                  <span style={{ fontFamily: T.fontBody, fontSize: 10, color: row.you ? T.tx : T.tx2, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: row.you ? 700 : 400 }}>{row.name.substring(0, 8)}</span>
+                  <span style={{ fontFamily: T.fontHeading, fontSize: 10, color: ptsColor, fontWeight: 700, minWidth: 16, textAlign: 'right' }}>{row.pts}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {/* ── Social Feed — more prominent, default visible ── */}
         <div
           onTouchStart={handleFeedTouchStart} onTouchEnd={handleFeedTouchEnd}
-          style={{ flex: '0 0 auto', maxHeight: feedOpen ? '40vh' : 100, overflow: 'hidden', background: T.bg1, borderTop: `1px solid ${T.border}`, transition: 'max-height 0.3s ease' }}
+          style={{ flex: 1, minHeight: 0, overflow: 'hidden', background: T.bg1, borderTop: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', transition: 'max-height 0.3s ease', maxHeight: feedOpen ? '40vh' : 170 }}
         >
-          {/* Pull handle + win probability */}
-          <div onClick={() => setFeedOpen(o => !o)} style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', minHeight: 36, touchAction: 'manipulation' }}>
+          {/* Pull handle */}
+          <div onClick={() => setFeedOpen(o => !o)} style={{ padding: '4px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', minHeight: 24, touchAction: 'manipulation', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 28, height: 3, background: 'rgba(255,255,255,0.15)', borderRadius: 2 }} />
               <span style={{ fontFamily: T.fontHeading, fontSize: 10, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1 }}>En vivo</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: '#4DABF7' }}>HAL {winProb}%</span>
-              <div style={{ display: 'flex', width: 40, height: 4, borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ width: `${winProb}%`, background: 'linear-gradient(90deg,#1565c0,#4DABF7)', transition: 'width 0.5s' }} />
-                <div style={{ flex: 1, background: 'linear-gradient(90deg,#FF6B6B,#c62828)' }} />
-              </div>
-              <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: '#FF6B6B' }}>{100 - winProb}%</span>
-            </div>
+            <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>{feedOpen ? '\u25BC' : '\u25B2'}</span>
           </div>
-          {/* Social posts */}
-          <div style={{ overflow: 'auto', padding: '0 8px 8px', display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 'calc(40vh - 36px)' }}>
+          {/* Social posts — bigger, more readable */}
+          <div style={{ overflow: 'auto', padding: '0 8px 8px', display: 'flex', flexDirection: 'column', gap: 5, flex: 1, minHeight: 0 }}>
             {livePosts.map((p, i) => (
-              <div key={i} style={{ background: T.bg, borderRadius: 6, padding: '6px 8px', border: `1px solid ${T.border}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
-                  <div style={{ fontSize: 12, flexShrink: 0, width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {p.acc?.avImg ? <img src={p.acc.avImg} width={18} height={18} alt="" style={{ imageRendering: 'pixelated', display: 'block' }} /> : (p.acc?.av || '👤')}
+              <div key={i} style={{ background: T.bg, borderRadius: 8, padding: '8px 10px', border: `1px solid ${T.border}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <div style={{ fontSize: 14, flexShrink: 0, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {p.acc?.avImg ? <img src={p.acc.avImg} width={22} height={22} alt="" style={{ imageRendering: 'pixelated', display: 'block' }} /> : (p.acc?.av || '\uD83D\uDC64')}
                   </div>
-                  <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx2, flex: 1 }}>{p.acc?.n}</span>
+                  <span style={{ fontFamily: "'Oswald'", fontSize: 11, color: T.tx2, flex: 1, fontWeight: 500 }}>{p.acc?.n}</span>
                   <span style={{ fontSize: 10, color: T.tx3 }}>{p.t}</span>
                 </div>
-                <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx, lineHeight: 1.3 }}>{p.text}</div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 3, fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>
-                  <span>❤ {p.likes}</span><span>💬 {p.comments}</span>
+                <div style={{ fontFamily: T.fontBody, fontSize: 13, color: T.tx, lineHeight: 1.4 }}>{p.text}</div>
+                <div style={{ display: 'flex', gap: 10, marginTop: 4, fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>
+                  <span>{'\u2764'} {p.likes}</span><span>{'\uD83D\uDCAC'} {p.comments}</span>
                 </div>
               </div>
             ))}
