@@ -680,7 +680,10 @@ export default function Rabona() {
         const topScorers = prevScorers.slice(0, 12);
         const topAssisters = prevAssisters.slice(0, 8);
         const topCleanSheets = prevCleanSheets.slice(0, 8);
-        const newState = { ...g, table, roster, matchNum: g.matchNum + 1, matchesTogether: mt, chemistry: chem, lastLineup: lineupKey, coins: g.coins + coinGain + objCoins, streak: newStreak, rivalMemory: rivalMem, careerStats: cs, trainedIds: [], betweenMatchVisits: { roster: false, training: false, market: false }, matchResults, topScorers, topAssisters, topCleanSheets };
+        // Run log entry for tracker
+        const runLogEntry = { matchNum: g.matchNum, result: won ? 'W' : drew ? 'D' : 'L', goalsFor: ps, goalsAgainst: rs, league: g.league, rivalName: S.rivalName };
+        const runLog = [...(g.runLog || []), runLogEntry];
+        const newState = { ...g, table, roster, matchNum: g.matchNum + 1, matchesTogether: mt, chemistry: chem, lastLineup: lineupKey, coins: g.coins + coinGain + objCoins, streak: newStreak, rivalMemory: rivalMem, careerStats: cs, trainedIds: [], betweenMatchVisits: { roster: false, training: false, market: false }, matchResults, topScorers, topAssisters, topCleanSheets, runLog };
         setTimeout(() => autoSave(newState), 100);
         return newState;
       });

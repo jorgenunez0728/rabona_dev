@@ -14,6 +14,7 @@ import { MANAGER_ARCHETYPES } from '@/game/data/archetypes.js';
 import { TACTICAL_CARDS } from '@/game/data/cards.js';
 import { calcMutatorLegacyBonus } from '@/game/data/mutators.js';
 import { getCareerCards } from '@/game/careerLogic';
+import { buildRunSnapshot, addRunToHistory } from '@/game/data/runTracker.js';
 import {
   saveGame, loadGame, saveGlobalStats, loadGlobalStats, deleteSave,
 } from '@/game/save';
@@ -38,6 +39,10 @@ const INITIAL_GAME = {
   topScorers: [],             // [{name, team, goals}] league-wide scorers
   topAssisters: [],           // [{name, team, assists}] league-wide assisters
   topCleanSheets: [],         // [{name, team, cleanSheets, pos}] league-wide clean sheets
+  // Run tracker
+  runLog: [],                 // [{matchNum, result, goalsFor, goalsAgainst, league, rivalName}]
+  cursesEncountered: [],      // [curseId, ...]
+  mapChoices: [],             // [{matchNum, nodeType}]
 };
 
 const INITIAL_MATCH = {
@@ -57,6 +62,10 @@ const INITIAL_GLOBAL_STATS = {
   cardCollection: [],         // permanently unlocked card ids
   curseMasteryProgress: {},   // { curseId: totalMatchesPlayed } persists across runs
   mutatorBonusTotal: 0,       // cumulative legacy bonus from mutator runs
+  // Run tracker
+  runsHistory: [],            // array of run snapshots, max 50
+  allTimeAssisters: {},       // {name: totalAssists}
+  allTimeCleanSheets: {},     // {name: totalCleanSheets}
 };
 
 // ── Store ──
@@ -230,7 +239,9 @@ const useGameStore = create((set, get) => ({
     // Carry over global mastery progress
     const globalProgress = (get().globalStats.curseMasteryProgress || {})[curseId] || 0;
     curses.push({ ...curse, remaining: curse.duration, masteryProgress: Math.floor(globalProgress * 0.3) });
-    set({ game: { ...game, curses } });
+    const encountered = [...(game.cursesEncountered || [])];
+    if (!encountered.includes(curseId)) encountered.push(curseId);
+    set({ game: { ...game, curses, cursesEncountered: encountered } });
   },
   tickCurses: () => {
     const { game } = get();
@@ -333,6 +344,56 @@ const useGameStore = create((set, get) => ({
     gs.hallOfFame = [...(gs.hallOfFame || []), entry].slice(-20);
     set({ globalStats: gs });
     saveGlobalStats(gs);
+  },
+
+  // ─── Run Tracker ───
+  saveRunSnapshot: (extras = {}) => {
+    const { game, globalStats } = get();
+    const snapshot = buildRunSnapshot(game, globalStats, extras);
+    const newGS = addRunToHistory(globalStats, snapshot);
+    set({ globalStats: newGS });
+    saveGlobalStats(newGS);
+    return snapshot;
+  },
+
+  abandonRun: () => {
+    const { game, globalStats, setGlobalStats, checkAchievements } = get();
+    const cs = game.careerStats || {};
+    const lg = LEAGUES[game.league] || LEAGUES[0];
+    const sorted = [...(game.table || [])].sort((a, b) => (b.w * 3 + b.d) - (a.w * 3 + a.d));
+    const myPos = sorted.findIndex(t => t.you);
+
+    // Save global stats (same as death but with abandoned endType)
+    const newGS = { ...globalStats };
+    newGS.totalRuns = (newGS.totalRuns || 0) + 1;
+    newGS.totalMatches = (newGS.totalMatches || 0) + (cs.matchesPlayed || 0);
+    newGS.totalWins = (newGS.totalWins || 0) + (cs.wins || 0);
+    newGS.totalGoals = (newGS.totalGoals || 0) + (cs.goalsFor || 0);
+    newGS.totalConceded = (newGS.totalConceded || 0) + (cs.goalsAgainst || 0);
+    newGS.bestStreak = Math.max(newGS.bestStreak || 0, cs.bestStreak || 0);
+    newGS.totalCoins = (newGS.totalCoins || 0) + (game.coins || 0);
+    if (game.league > (newGS.bestLeague || 0)) { newGS.bestLeague = game.league; newGS.bestLeagueName = lg.n; }
+    newGS.allTimeScorers = { ...(newGS.allTimeScorers || {}) };
+    Object.entries(cs.scorers || {}).forEach(([n, g]) => { newGS.allTimeScorers[n] = (newGS.allTimeScorers[n] || 0) + g; });
+    newGS.allTimeAssisters = { ...(newGS.allTimeAssisters || {}) };
+    Object.entries(cs.assisters || {}).forEach(([n, a]) => { newGS.allTimeAssisters[n] = (newGS.allTimeAssisters[n] || 0) + a; });
+    newGS.allTimeCleanSheets = { ...(newGS.allTimeCleanSheets || {}) };
+    Object.entries(cs.cleanSheets || {}).forEach(([n, c]) => { newGS.allTimeCleanSheets[n] = (newGS.allTimeCleanSheets[n] || 0) + c; });
+
+    // Build and save run snapshot
+    const snapshot = buildRunSnapshot(game, newGS, {
+      endType: 'abandoned', leagueName: lg.n, leagueIcon: lg.i,
+      finalPosition: myPos >= 0 ? myPos + 1 : null,
+    });
+    const withHistory = addRunToHistory(newGS, snapshot);
+    const finalGS = checkAchievements(withHistory);
+    setGlobalStats(finalGS);
+    saveGlobalStats(finalGS);
+
+    // Delete save and go to title
+    deleteSave();
+    set({ hasSave: false });
+    get().go('title');
   },
 
   // ─── Save/Load ───

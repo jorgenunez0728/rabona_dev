@@ -121,7 +121,7 @@ export default function TableScreen() {
   const {
     game, go, openMarket, setDetailPlayer,
     setBoardEvents, setBoardEventIdx, setBoardPhase, setBoardResultData,
-    setPendingLeague, setGame,
+    setPendingLeague, setGame, abandonRun,
   } = useGameStore();
 
   const lg = LEAGUES[game.league];
@@ -137,6 +137,7 @@ export default function TableScreen() {
   const [socialOpen, setSocialOpen] = useState(true);
   const [showIncomplete, setShowIncomplete] = useState(false);
   const [showReminder, setShowReminder] = useState(false);
+  const [showAbandon, setShowAbandon] = useState(false);
 
   // Matchday results, top scorers, social feed (memoized per matchNum)
   const matchResults = useMemo(() => generateMatchResults(game.table, game.matchNum), [game.matchNum, game.table?.length]);
@@ -475,8 +476,52 @@ export default function TableScreen() {
             </div>
           </div>
 
+          {/* Abandon button */}
+          <button onClick={() => setShowAbandon(true)} style={{
+            fontFamily: T.fontBody, fontSize: 11, color: T.tx4, padding: '8px 0',
+            background: 'none', border: 'none', cursor: 'pointer', width: '100%',
+            textAlign: 'center', marginTop: 4, touchAction: 'manipulation',
+          }}>Abandonar Carrera</button>
+
         </div>
       </div>
+
+      {/* Abandon confirmation overlay */}
+      {showAbandon && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+        }}>
+          <div style={{
+            maxWidth: 340, width: '90%', padding: '24px 20px',
+            background: 'rgba(20,24,36,0.95)', border: `1px solid rgba(245,158,11,0.3)`,
+            borderRadius: 16, textAlign: 'center',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>🚪</div>
+            <div style={{
+              fontFamily: T.fontHeading, fontWeight: 700, fontSize: 18, color: T.draw,
+              textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8,
+            }}>Abandonar Carrera</div>
+            <div style={{
+              fontFamily: T.fontBody, fontSize: 13, color: T.tx2, lineHeight: 1.5, marginBottom: 16,
+            }}>
+              Tu progreso se guardará en el historial de runs, pero la partida actual se eliminará. Esta acción no se puede deshacer.
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="fw-btn fw-btn-outline" onClick={() => setShowAbandon(false)} style={{
+                flex: 1, fontFamily: T.fontHeading, fontSize: 12, padding: '10px 12px',
+                color: T.tx2, letterSpacing: 0.5,
+              }}>Cancelar</button>
+              <button className="fw-btn fw-btn-danger" onClick={() => { setShowAbandon(false); abandonRun(); }} style={{
+                flex: 1, fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12,
+                padding: '10px 12px', letterSpacing: 0.5,
+              }}>Abandonar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hard block overlay: Incomplete roster */}
       {showIncomplete && (

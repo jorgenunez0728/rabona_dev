@@ -5,7 +5,7 @@ import { saveGlobalStats } from "@/game/save";
 import useGameStore from "@/game/store";
 
 export default function ChampionScreen() {
-  const { game, globalStats, setGlobalStats, checkAchievements, handleDeleteSave, go } = useGameStore();
+  const { game, globalStats, setGlobalStats, checkAchievements, handleDeleteSave, go, saveRunSnapshot } = useGameStore();
 
   const cs = game.careerStats || {};
   const bestPlayer = game.roster.length > 0 ? [...game.roster].sort((a, b) => calcOvr(b) - calcOvr(a))[0] : null;
@@ -30,9 +30,15 @@ export default function ChampionScreen() {
       </div>
       <button className="fw-btn fw-btn-primary" onClick={async () => {
         const newGS = { ...globalStats, totalRuns: (globalStats.totalRuns || 0) + 1, totalWins: (globalStats.totalWins || 0) + (cs.wins || 0), totalGoals: (globalStats.totalGoals || 0) + (cs.goalsFor || 0), bestLeague: 7, bestLeagueName: '🏆 CAMPEÓN GALÁCTICO', ascensionLevel: Math.min(7, (globalStats.ascensionLevel || 0) + 1) };
+        newGS.allTimeAssisters = { ...(newGS.allTimeAssisters || {}) };
+        Object.entries(cs.assisters || {}).forEach(([n, a]) => { newGS.allTimeAssisters[n] = (newGS.allTimeAssisters[n] || 0) + a; });
+        newGS.allTimeCleanSheets = { ...(newGS.allTimeCleanSheets || {}) };
+        Object.entries(cs.cleanSheets || {}).forEach(([n, c]) => { newGS.allTimeCleanSheets[n] = (newGS.allTimeCleanSheets[n] || 0) + c; });
         if (bestPlayer) newGS.hallOfFame = [...(newGS.hallOfFame || []), { name: bestPlayer.name, pos: bestPlayer.pos, ovr: calcOvr(bestPlayer), atk: bestPlayer.atk, def: bestPlayer.def, spd: bestPlayer.spd, sav: bestPlayer.sav || 1, trait: bestPlayer.trait?.n, league: '🏆 CAMPEÓN', run: newGS.totalRuns }].slice(-20);
         const finalGS = checkAchievements(newGS);
         setGlobalStats(finalGS); saveGlobalStats(finalGS);
+        // Save run to history
+        saveRunSnapshot({ endType: 'champion', leagueName: 'Liga Intergaláctica', leagueIcon: '🛸', finalPosition: 1, immortalizedPlayer: bestPlayer ? { name: bestPlayer.name, pos: bestPlayer.pos, ovr: calcOvr(bestPlayer) } : null });
         handleDeleteSave(); go('title');
       }} style={{ fontFamily: T.fontTitle, fontWeight: 600, fontSize: 16, padding: '14px 40px', background: T.gradientPrimary, color: T.bg, borderRadius: 10, cursor: 'pointer', textTransform: 'uppercase', marginTop: 16, boxShadow: T.glowGold, border: 'none', letterSpacing: 1 }}>🏆 Al Salón de la Fama</button>
     </div>
