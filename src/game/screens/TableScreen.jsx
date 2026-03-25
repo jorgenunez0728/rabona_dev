@@ -1,10 +1,121 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import useGameStore from '@/game/store';
 import { FormIcon, RelicIcon } from '@/game/data/chibiAssets';
 import {
   LEAGUES, FORMATIONS, RELICS, POS_ORDER, POS_COLORS, T, PN,
-  getBoardEvents, effectiveOvr, COPA_NAMES,
+  getBoardEvents, effectiveOvr, COPA_NAMES, rnd, pick,
 } from '@/game/data';
+
+// ─── Generate matchday results from table ───
+function generateMatchResults(table, matchNum) {
+  if (!table || table.length < 4) return [];
+  const teams = table.filter(t => !t.you);
+  const results = [];
+  const used = new Set();
+  for (let i = 0; i < teams.length - 1 && results.length < 3; i += 2) {
+    if (used.has(i) || used.has(i + 1)) continue;
+    used.add(i); used.add(i + 1);
+    const h = teams[i], a = teams[i + 1];
+    const hStr = (h.w * 3 + h.d) / Math.max(1, h.w + h.d + h.l);
+    const aStr = (a.w * 3 + a.d) / Math.max(1, a.w + a.d + a.l);
+    results.push({
+      home: h.name, away: a.name,
+      homeGoals: Math.round(Math.random() * 2 + (hStr > aStr ? 0.5 : 0)),
+      awayGoals: Math.round(Math.random() * 2 + (aStr > hStr ? 0.5 : 0)),
+    });
+  }
+  return results;
+}
+
+// ─── Generate top scorers ───
+const SCORER_FIRST = ['Carlos','Raúl','Diego','Andrés','Luis','Javier','Sergio','Miguel','Pablo','Omar','Marcos','Felipe','Bruno','Dante','Erik'];
+const SCORER_LAST = ['Hernández','López','García','Martínez','Rodríguez','González','Torres','Ramírez','Díaz','Morales','Salcedo','Vargas','Reyes','Rivas'];
+function generateTopScorers(table, playerRoster) {
+  const scorers = [];
+  // Add player's top scorer if exists
+  if (playerRoster?.length) {
+    const best = [...playerRoster].sort((a, b) => (b.goals || 0) - (a.goals || 0))[0];
+    if (best && (best.goals || 0) > 0) {
+      scorers.push({ name: best.name, team: 'Halcones', goals: best.goals, you: true });
+    }
+  }
+  // Generate rival scorers
+  const rivals = (table || []).filter(t => !t.you);
+  for (const r of rivals) {
+    const goals = Math.max(0, Math.round(r.gf * 0.4 + Math.random() * 2));
+    if (goals > 0) {
+      scorers.push({ name: `${pick(SCORER_FIRST)} ${pick(SCORER_LAST)}`, team: r.name, goals, you: false });
+    }
+  }
+  return scorers.sort((a, b) => b.goals - a.goals).slice(0, 8);
+}
+
+// ─── Tournament social feed ───
+const SOCIAL_ACCOUNTS = {
+  low: [
+    { n: '@FutbolBarrial', av: '⚽' }, { n: '@MemesDelBarrio', av: '😂' },
+    { n: '@ElChismoso_FC', av: '🗣' }, { n: '@DonPepeNoticias', av: '📢' },
+  ],
+  mid: [
+    { n: '@DeporteLocal', av: '📰' }, { n: '@FutbolZona', av: '🏟' },
+    { n: '@GolYGol', av: '⚡' }, { n: '@TácticaTotal', av: '📋' },
+  ],
+  high: [
+    { n: '@ESPN_Rabona', av: '📺' }, { n: '@MarcaDeportiva', av: '🏆' },
+    { n: '@FOXSportsLiga', av: '🎙' }, { n: '@AnálisisFC', av: '📊' },
+  ],
+};
+
+function generateTournamentFeed(league, table, matchNum, myPos) {
+  const tier = league <= 1 ? 'low' : league <= 4 ? 'mid' : 'high';
+  const accounts = SOCIAL_ACCOUNTS[tier];
+  const sorted = [...(table || [])].sort((a, b) => (b.w * 3 + b.d) - (a.w * 3 + a.d) || (b.gf - b.ga) - (a.gf - a.ga));
+  const leader = sorted[0];
+  const last = sorted[sorted.length - 1];
+  const myTeam = sorted.find(t => t.you);
+  const posts = [];
+
+  const templates = {
+    low: [
+      () => `${leader?.name} sigue invicto y no para de golear, ¿quién los detiene? 🔥`,
+      () => `Mi abuela juega mejor que el portero de ${last?.name} 💀`,
+      () => `Se arma la carnita asada para ver el próximo partido de ${myTeam?.name || 'Halcones'} 🥩⚽`,
+      () => `${last?.name} ya hasta da lástima, llevan ${last?.l || 0} derrotas 😭`,
+      () => myPos < 2 ? `Halcones viene volando alto, ¿serán los que ascienden? 👀` : `Halcones necesita reaccionar o se queda en el barrio 😬`,
+    ],
+    mid: [
+      () => `TABLA | ${leader?.name} lidera con ${leader ? leader.w * 3 + leader.d : 0} puntos tras ${matchNum} jornadas`,
+      () => `Análisis: La defensa de ${sorted[1]?.name || 'segundo'} ha sido clave en su campaña`,
+      () => myPos < 2 ? `Halcones se consolida en zona de ascenso, gran trabajo táctico` : `¿Alcanzará Halcones para meterse al top 2? Quedan ${(LEAGUES[league]?.m || 10) - matchNum} jornadas`,
+      () => `Sorpresa: ${sorted[Math.min(3, sorted.length - 1)]?.name} ha dado la campanada esta jornada`,
+      () => `Golazo de la jornada cortesía de un jugador de ${pick(sorted)?.name || 'un equipo local'}`,
+    ],
+    high: [
+      () => `BREAKING: ${leader?.name} encabeza la clasificación con ${leader ? leader.w * 3 + leader.d : 0} pts. Análisis completo →`,
+      () => myPos < 2 ? `Halcones se posiciona como serio candidato al ascenso. Cifras impresionantes.` : `Halcones debe mejorar números si quiere pelear el ascenso. Análisis táctico en vivo.`,
+      () => `Estadística: ${sorted[0]?.name} promedia ${sorted[0] ? (sorted[0].gf / Math.max(1, matchNum)).toFixed(1) : '?'} goles por partido`,
+      () => `Debate: ¿Es esta la liga más competitiva en años? Solo ${(sorted[0]?.w * 3 + sorted[0]?.d) - (sorted[sorted.length - 1]?.w * 3 + sorted[sorted.length - 1]?.d)} pts separan al primero del último`,
+      () => `Panel de expertos coincide: la jornada ${matchNum} fue de las más emocionantes del torneo`,
+    ],
+  };
+
+  const tpls = templates[tier];
+  const usedIdx = new Set();
+  const count = Math.min(4, tpls.length);
+  while (posts.length < count) {
+    const idx = Math.floor(Math.random() * tpls.length);
+    if (usedIdx.has(idx)) continue;
+    usedIdx.add(idx);
+    const acc = accounts[posts.length % accounts.length];
+    posts.push({
+      acc, text: tpls[idx](),
+      time: `hace ${rnd(1, 12)}h`,
+      likes: rnd(5, 200 + league * 100),
+      comments: rnd(1, 30 + league * 10),
+    });
+  }
+  return posts;
+}
 
 export default function TableScreen() {
   const {
@@ -21,8 +132,15 @@ export default function TableScreen() {
   const currentFormation = FORMATIONS.find(f => f.id === game.formation) || FORMATIONS[1];
 
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [scorersOpen, setScorersOpen] = useState(false);
+  const [socialOpen, setSocialOpen] = useState(true);
   const [showIncomplete, setShowIncomplete] = useState(false);
   const [showReminder, setShowReminder] = useState(false);
+
+  // Matchday results, top scorers, social feed (memoized per matchNum)
+  const matchResults = useMemo(() => generateMatchResults(game.table, game.matchNum), [game.matchNum, game.table?.length]);
+  const topScorers = useMemo(() => generateTopScorers(game.table, game.roster), [game.matchNum, game.table?.length]);
+  const socialFeed = useMemo(() => generateTournamentFeed(game.league, game.table, game.matchNum, myPos), [game.matchNum, game.league]);
 
   const visits = game.betweenMatchVisits || { roster: false, training: false, market: false };
 
@@ -215,7 +333,7 @@ export default function TableScreen() {
 
           {/* Copa section */}
           {game.copa?.active && !game.copa?.eliminated && (
-            <div className="glass" style={{ borderRadius: 10, padding: 12, border: `1px solid ${T.gold}20` }}>
+            <div className="glass" style={{ borderRadius: 10, padding: 12, border: `1px solid ${T.gold}20`, marginBottom: 8 }}>
               <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12, color: T.gold, textTransform: 'uppercase', marginBottom: 3, letterSpacing: 1 }}>{COPA_NAMES[Math.min(game.league, 6)]}</div>
               <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.lose, marginBottom: 8 }}>Perder en Copa = Fin de la Carrera</div>
               <div style={{ display: 'flex', gap: 4 }}>
@@ -228,6 +346,78 @@ export default function TableScreen() {
               </div>
             </div>
           )}
+
+          {/* ─── Resultados de la Jornada ─── */}
+          {matchResults.length > 0 && game.matchNum > 0 && (
+            <div className="glass" style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.glassBorder}`, marginBottom: 8 }}>
+              <div style={{ padding: '7px 12px', borderBottom: `1px solid ${T.border}`, background: T.gradientDark }}>
+                <span style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 11, color: T.tx2, textTransform: 'uppercase', letterSpacing: 1 }}>Resultados Jornada {game.matchNum}</span>
+              </div>
+              {matchResults.map((r, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '5px 12px', borderBottom: i < matchResults.length - 1 ? `1px solid ${T.border}` : 'none' }}>
+                  <span style={{ flex: 1, fontFamily: T.fontBody, fontSize: 11, color: T.tx2, textAlign: 'right', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{r.home}</span>
+                  <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 13, color: T.tx, minWidth: 40, textAlign: 'center', padding: '0 6px' }}>{r.homeGoals} - {r.awayGoals}</span>
+                  <span style={{ flex: 1, fontFamily: T.fontBody, fontSize: 11, color: T.tx2, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{r.away}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ─── Goleadores (accordion) ─── */}
+          {topScorers.length > 0 && (
+            <div className="glass" style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.glassBorder}`, marginBottom: 8 }}>
+              <div
+                onClick={() => setScorersOpen(o => !o)}
+                style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', touchAction: 'manipulation' }}
+              >
+                <span style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 11, color: T.tx2, textTransform: 'uppercase', letterSpacing: 1 }}>⚽ Goleadores</span>
+                <span style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx3, transform: scorersOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.25s ease', display: 'inline-block' }}>▾</span>
+              </div>
+              <div style={{ maxHeight: scorersOpen ? 300 : 0, overflow: 'hidden', transition: 'max-height 0.3s ease' }}>
+                {topScorers.map((s, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px',
+                    borderTop: `1px solid ${T.border}`,
+                    background: s.you ? 'rgba(240,192,64,0.04)' : 'transparent',
+                  }}>
+                    <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: i < 3 ? T.gold : T.tx3, minWidth: 18, textAlign: 'center' }}>{i + 1}.</span>
+                    <span style={{ flex: 1, fontFamily: T.fontBody, fontSize: 11, color: s.you ? T.gold : T.tx, fontWeight: s.you ? 700 : 400 }}>{s.name}</span>
+                    <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>{s.team}</span>
+                    <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: T.tx, minWidth: 24, textAlign: 'right' }}>{s.goals}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ─── Social Feed del Torneo ─── */}
+          <div className="glass" style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.glassBorder}`, marginBottom: 8 }}>
+            <div
+              onClick={() => setSocialOpen(o => !o)}
+              style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', touchAction: 'manipulation' }}
+            >
+              <span style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 11, color: T.tx2, textTransform: 'uppercase', letterSpacing: 1 }}>📱 Social</span>
+              <span style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx3, transform: socialOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.25s ease', display: 'inline-block' }}>▾</span>
+            </div>
+            <div style={{ maxHeight: socialOpen ? 400 : 0, overflow: 'hidden', transition: 'max-height 0.3s ease' }}>
+              <div style={{ padding: '0 8px 8px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {socialFeed.map((p, i) => (
+                  <div key={i} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 8, padding: '8px 10px', border: `1px solid ${T.border}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <span style={{ fontSize: 14, flexShrink: 0 }}>{p.acc.av}</span>
+                      <span style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.tx2, flex: 1, fontWeight: 500 }}>{p.acc.n}</span>
+                      <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>{p.time}</span>
+                    </div>
+                    <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx, lineHeight: 1.4 }}>{p.text}</div>
+                    <div style={{ display: 'flex', gap: 10, marginTop: 4, fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>
+                      <span>❤ {p.likes}</span><span>💬 {p.comments}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
