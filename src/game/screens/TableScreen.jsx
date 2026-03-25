@@ -132,7 +132,8 @@ export default function TableScreen() {
   const currentFormation = FORMATIONS.find(f => f.id === game.formation) || FORMATIONS[1];
 
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [scorersOpen, setScorersOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
+  const [statsTab, setStatsTab] = useState('goals'); // 'goals' | 'assists' | 'cleanSheets'
   const [socialOpen, setSocialOpen] = useState(true);
   const [showIncomplete, setShowIncomplete] = useState(false);
   const [showReminder, setShowReminder] = useState(false);
@@ -141,6 +142,11 @@ export default function TableScreen() {
   const matchResults = useMemo(() => generateMatchResults(game.table, game.matchNum), [game.matchNum, game.table?.length]);
   const topScorers = useMemo(() => generateTopScorers(game.table, game.roster), [game.matchNum, game.table?.length]);
   const socialFeed = useMemo(() => generateTournamentFeed(game.league, game.table, game.matchNum, myPos), [game.matchNum, game.league]);
+
+  // Use tracked stats from store (accumulated across matches)
+  const liveScorers = (game.topScorers || []).length > 0 ? game.topScorers : topScorers;
+  const liveAssisters = game.topAssisters || [];
+  const liveCleanSheets = game.topCleanSheets || [];
 
   const visits = game.betweenMatchVisits || { roster: false, training: false, market: false };
 
@@ -363,32 +369,83 @@ export default function TableScreen() {
             </div>
           )}
 
-          {/* ─── Goleadores (accordion) ─── */}
-          {topScorers.length > 0 && (
-            <div className="glass" style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.glassBorder}`, marginBottom: 8 }}>
-              <div
-                onClick={() => setScorersOpen(o => !o)}
-                style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', touchAction: 'manipulation' }}
-              >
-                <span style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 11, color: T.tx2, textTransform: 'uppercase', letterSpacing: 1 }}>⚽ Goleadores</span>
-                <span style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx3, transform: scorersOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.25s ease', display: 'inline-block' }}>▾</span>
-              </div>
-              <div style={{ maxHeight: scorersOpen ? 300 : 0, overflow: 'hidden', transition: 'max-height 0.3s ease' }}>
-                {topScorers.map((s, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px',
-                    borderTop: `1px solid ${T.border}`,
-                    background: s.you ? 'rgba(240,192,64,0.04)' : 'transparent',
-                  }}>
-                    <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: i < 3 ? T.gold : T.tx3, minWidth: 18, textAlign: 'center' }}>{i + 1}.</span>
-                    <span style={{ flex: 1, fontFamily: T.fontBody, fontSize: 11, color: s.you ? T.gold : T.tx, fontWeight: s.you ? 700 : 400 }}>{s.name}</span>
-                    <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>{s.team}</span>
-                    <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: T.tx, minWidth: 24, textAlign: 'right' }}>{s.goals}</span>
-                  </div>
+          {/* ─── Estadísticas de Liga (tabbed accordion) ─── */}
+          <div className="glass" style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.glassBorder}`, marginBottom: 8 }}>
+            <div
+              onClick={() => setStatsOpen(o => !o)}
+              style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', touchAction: 'manipulation' }}
+            >
+              <span style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 11, color: T.tx2, textTransform: 'uppercase', letterSpacing: 1 }}>📊 Estadísticas</span>
+              <span style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx3, transform: statsOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.25s ease', display: 'inline-block' }}>▾</span>
+            </div>
+            <div style={{ maxHeight: statsOpen ? 400 : 0, overflow: 'hidden', transition: 'max-height 0.3s ease' }}>
+              {/* Tab selector */}
+              <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${T.border}` }}>
+                {[
+                  { id: 'goals', label: '⚽ Goles' },
+                  { id: 'assists', label: '👟 Asist.' },
+                  { id: 'cleanSheets', label: '🧤 P. Limpia' },
+                ].map(tab => (
+                  <button key={tab.id} onClick={(e) => { e.stopPropagation(); setStatsTab(tab.id); }} style={{
+                    flex: 1, padding: '6px 4px', border: 'none', cursor: 'pointer',
+                    fontFamily: T.fontHeading, fontSize: 10, fontWeight: 600, letterSpacing: 0.5,
+                    color: statsTab === tab.id ? T.gold : T.tx3,
+                    background: statsTab === tab.id ? 'rgba(240,192,64,0.06)' : 'transparent',
+                    borderBottom: statsTab === tab.id ? `2px solid ${T.gold}` : '2px solid transparent',
+                    transition: 'all 0.2s ease', touchAction: 'manipulation',
+                  }}>{tab.label}</button>
                 ))}
               </div>
+              {/* Goals tab */}
+              {statsTab === 'goals' && liveScorers.map((s, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px',
+                  borderTop: i > 0 ? `1px solid ${T.border}` : 'none',
+                  background: s.you || s.team === 'Halcones' ? 'rgba(240,192,64,0.04)' : 'transparent',
+                }}>
+                  <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: i < 3 ? T.gold : T.tx3, minWidth: 18, textAlign: 'center' }}>{i + 1}.</span>
+                  <span style={{ flex: 1, fontFamily: T.fontBody, fontSize: 11, color: s.you || s.team === 'Halcones' ? T.gold : T.tx, fontWeight: s.you || s.team === 'Halcones' ? 700 : 400 }}>{s.name}</span>
+                  <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>{s.team}</span>
+                  <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: T.tx, minWidth: 24, textAlign: 'right' }}>{s.goals}</span>
+                </div>
+              ))}
+              {statsTab === 'goals' && liveScorers.length === 0 && (
+                <div style={{ padding: '12px', textAlign: 'center', fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>Sin goles aún</div>
+              )}
+              {/* Assists tab */}
+              {statsTab === 'assists' && liveAssisters.map((s, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px',
+                  borderTop: i > 0 ? `1px solid ${T.border}` : 'none',
+                  background: s.team === 'Halcones' ? 'rgba(240,192,64,0.04)' : 'transparent',
+                }}>
+                  <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: i < 3 ? T.info : T.tx3, minWidth: 18, textAlign: 'center' }}>{i + 1}.</span>
+                  <span style={{ flex: 1, fontFamily: T.fontBody, fontSize: 11, color: s.team === 'Halcones' ? T.gold : T.tx, fontWeight: s.team === 'Halcones' ? 700 : 400 }}>{s.name}</span>
+                  <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>{s.team}</span>
+                  <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: T.info, minWidth: 24, textAlign: 'right' }}>{s.assists}</span>
+                </div>
+              ))}
+              {statsTab === 'assists' && liveAssisters.length === 0 && (
+                <div style={{ padding: '12px', textAlign: 'center', fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>Sin asistencias registradas</div>
+              )}
+              {/* Clean sheets tab */}
+              {statsTab === 'cleanSheets' && liveCleanSheets.map((s, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px',
+                  borderTop: i > 0 ? `1px solid ${T.border}` : 'none',
+                  background: s.team === 'Halcones' ? 'rgba(240,192,64,0.04)' : 'transparent',
+                }}>
+                  <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: i < 3 ? T.win : T.tx3, minWidth: 18, textAlign: 'center' }}>{i + 1}.</span>
+                  <span style={{ flex: 1, fontFamily: T.fontBody, fontSize: 11, color: s.team === 'Halcones' ? T.gold : T.tx, fontWeight: s.team === 'Halcones' ? 700 : 400 }}>{s.name}</span>
+                  <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>{s.team} · {s.pos}</span>
+                  <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: T.win, minWidth: 24, textAlign: 'right' }}>{s.cleanSheets}</span>
+                </div>
+              ))}
+              {statsTab === 'cleanSheets' && liveCleanSheets.length === 0 && (
+                <div style={{ padding: '12px', textAlign: 'center', fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>Sin porterías limpias aún</div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* ─── Social Feed del Torneo ─── */}
           <div className="glass" style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.glassBorder}`, marginBottom: 8 }}>

@@ -50,6 +50,12 @@ const MIGRATIONS = {
   '3.2': (data) => {
     const g = data.game;
     g.betweenMatchVisits = g.betweenMatchVisits || { roster: false, training: false, market: false };
+    g.topAssisters = g.topAssisters || [];
+    g.topCleanSheets = g.topCleanSheets || [];
+    if (g.careerStats) {
+      g.careerStats.assisters = g.careerStats.assisters || {};
+      g.careerStats.cleanSheets = g.careerStats.cleanSheets || {};
+    }
     data.version = '3.3';
     return data;
   },

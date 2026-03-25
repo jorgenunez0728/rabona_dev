@@ -569,50 +569,118 @@ export default function Rabona() {
         if (won) cs.wins++; else if (drew) cs.draws++; else cs.losses++;
         cs.bestStreak = Math.max(cs.bestStreak, newStreak);
         const scorers = { ...cs.scorers || {} };
-        // Use engine stats for goal attribution (weighted by position/stats, not random)
+        const assisters = { ...cs.assisters || {} };
+        const cleanSheets = { ...cs.cleanSheets || {} };
+        // Use engine stats for goal/assist attribution
         const engineGoals = engineResult?.stats?.goals || [];
         const homeGoals = engineGoals.filter(g => g.team === 'home');
         if (homeGoals.length > 0) {
-          homeGoals.forEach(g => { if (g.scorer) scorers[g.scorer] = (scorers[g.scorer] || 0) + 1; });
+          homeGoals.forEach(g => {
+            if (g.scorer) scorers[g.scorer] = (scorers[g.scorer] || 0) + 1;
+            if (g.assister) assisters[g.assister] = (assisters[g.assister] || 0) + 1;
+          });
         } else {
           // Fallback: attribute goals randomly to FWD/MID
           const fwdMid = roster.filter(p => p.role === 'st' && (p.pos === 'FWD' || p.pos === 'MID'));
           for (let i = 0; i < ps; i++) { const scorer = fwdMid.length ? fwdMid[Math.floor(Math.random() * fwdMid.length)] : roster[0]; if (scorer) scorers[scorer.name] = (scorers[scorer.name] || 0) + 1; }
         }
+        // Track clean sheets for GK and DEF
+        if (rs === 0) {
+          roster.filter(p => p.role === 'st' && (p.pos === 'GK' || p.pos === 'DEF')).forEach(p => {
+            cleanSheets[p.name] = (cleanSheets[p.name] || 0) + 1;
+          });
+        }
         cs.scorers = scorers;
-        // Update league-wide top scorers
+        cs.assisters = assisters;
+        cs.cleanSheets = cleanSheets;
+        // Update league-wide top scorers + assisters + clean sheets
         const prevScorers = [...(g.topScorers || [])];
+        const prevAssisters = [...(g.topAssisters || [])];
+        const prevCleanSheets = [...(g.topCleanSheets || [])];
         // Add player's goals from this match
         for (const [sName, sGoals] of Object.entries(scorers)) {
           const prev = (g.careerStats?.scorers || {})[sName] || 0;
-          const added = sGoals - prev; // new goals this match
+          const added = sGoals - prev;
           if (added > 0) {
             const existing = prevScorers.find(s => s.name === sName && s.team === me.name);
             if (existing) existing.goals += added;
             else prevScorers.push({ name: sName, team: me.name, goals: added });
           }
         }
-        // Add rival goals from matchResults (random names for flavor)
+        // Add player's assists from this match
+        for (const [aName, aCount] of Object.entries(assisters)) {
+          const prev = (g.careerStats?.assisters || {})[aName] || 0;
+          const added = aCount - prev;
+          if (added > 0) {
+            const existing = prevAssisters.find(s => s.name === aName && s.team === me.name);
+            if (existing) existing.assists += added;
+            else prevAssisters.push({ name: aName, team: me.name, assists: added });
+          }
+        }
+        // Add player's clean sheets from this match
+        if (rs === 0) {
+          roster.filter(p => p.role === 'st' && (p.pos === 'GK' || p.pos === 'DEF')).forEach(p => {
+            const prev = (g.careerStats?.cleanSheets || {})[p.name] || 0;
+            const added = (cleanSheets[p.name] || 0) - prev;
+            if (added > 0) {
+              const existing = prevCleanSheets.find(s => s.name === p.name && s.team === me.name);
+              if (existing) existing.cleanSheets += added;
+              else prevCleanSheets.push({ name: p.name, team: me.name, cleanSheets: added, pos: p.pos });
+            }
+          });
+        }
+        // Add rival goals/assists/cleanSheets from matchResults (random names for flavor)
         const _FN = ['Memo','Chuy','Beto','Nacho','Paco','Rafa','Toño','Pipe','Lalo','Hugo','Diego','Leo'];
         const _LN = ['García','López','Hernández','Martínez','Torres','Cruz','Reyes','Morales','Ortiz','Vargas'];
+        const _rndName = () => `${_FN[rnd(0,_FN.length-1)]} ${_LN[rnd(0,_LN.length-1)]}`;
         for (const mr of matchResults) {
-          if (mr.isPlayer) continue; // player goals already handled above
+          if (mr.isPlayer) continue;
           for (let gi = 0; gi < mr.homeGoals; gi++) {
-            const sn = `${_FN[rnd(0,_FN.length-1)]} ${_LN[rnd(0,_LN.length-1)]}`;
+            const sn = _rndName();
             const ex = prevScorers.find(s => s.team === mr.home);
             if (ex && Math.random() < 0.5) ex.goals++;
             else prevScorers.push({ name: sn, team: mr.home, goals: 1 });
+            // ~60% of goals have an assist
+            if (Math.random() < 0.6) {
+              const an = _rndName();
+              const ea = prevAssisters.find(s => s.team === mr.home);
+              if (ea && Math.random() < 0.4) ea.assists++;
+              else prevAssisters.push({ name: an, team: mr.home, assists: 1 });
+            }
           }
           for (let gi = 0; gi < mr.awayGoals; gi++) {
-            const sn = `${_FN[rnd(0,_FN.length-1)]} ${_LN[rnd(0,_LN.length-1)]}`;
+            const sn = _rndName();
             const ex = prevScorers.find(s => s.team === mr.away);
             if (ex && Math.random() < 0.5) ex.goals++;
             else prevScorers.push({ name: sn, team: mr.away, goals: 1 });
+            if (Math.random() < 0.6) {
+              const an = _rndName();
+              const ea = prevAssisters.find(s => s.team === mr.away);
+              if (ea && Math.random() < 0.4) ea.assists++;
+              else prevAssisters.push({ name: an, team: mr.away, assists: 1 });
+            }
+          }
+          // Clean sheets for 0-goal teams
+          if (mr.awayGoals === 0) {
+            const gkn = _rndName();
+            const ec = prevCleanSheets.find(s => s.team === mr.home);
+            if (ec) ec.cleanSheets++;
+            else prevCleanSheets.push({ name: gkn, team: mr.home, cleanSheets: 1, pos: 'GK' });
+          }
+          if (mr.homeGoals === 0) {
+            const gkn = _rndName();
+            const ec = prevCleanSheets.find(s => s.team === mr.away);
+            if (ec) ec.cleanSheets++;
+            else prevCleanSheets.push({ name: gkn, team: mr.away, cleanSheets: 1, pos: 'GK' });
           }
         }
         prevScorers.sort((a, b) => b.goals - a.goals);
+        prevAssisters.sort((a, b) => b.assists - a.assists);
+        prevCleanSheets.sort((a, b) => b.cleanSheets - a.cleanSheets);
         const topScorers = prevScorers.slice(0, 12);
-        const newState = { ...g, table, roster, matchNum: g.matchNum + 1, matchesTogether: mt, chemistry: chem, lastLineup: lineupKey, coins: g.coins + coinGain + objCoins, streak: newStreak, rivalMemory: rivalMem, careerStats: cs, trainedIds: [], betweenMatchVisits: { roster: false, training: false, market: false }, matchResults, topScorers };
+        const topAssisters = prevAssisters.slice(0, 8);
+        const topCleanSheets = prevCleanSheets.slice(0, 8);
+        const newState = { ...g, table, roster, matchNum: g.matchNum + 1, matchesTogether: mt, chemistry: chem, lastLineup: lineupKey, coins: g.coins + coinGain + objCoins, streak: newStreak, rivalMemory: rivalMem, careerStats: cs, trainedIds: [], betweenMatchVisits: { roster: false, training: false, market: false }, matchResults, topScorers, topAssisters, topCleanSheets };
         setTimeout(() => autoSave(newState), 100);
         return newState;
       });

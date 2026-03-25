@@ -25,7 +25,7 @@ const INITIAL_GAME = {
   table: [], captain: null, chemistry: 0, matchesTogether: 0, lastLineup: null, coins: 0,
   rivalMemory: {}, streak: 0, currentObjectives: [], trainedIds: [],
   formation: 'clasica', relics: [], ascension: 0, copa: null, curses: [],
-  careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {} },
+  careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {}, assisters: {}, cleanSheets: {} },
   // Metaprogression v2
   archetype: null,          // manager archetype id
   cardLoadout: [],          // array of tactical card ids for this run
@@ -36,6 +36,8 @@ const INITIAL_GAME = {
   betweenMatchVisits: { roster: false, training: false, market: false },
   matchResults: [],           // [{home, away, homeGoals, awayGoals, isPlayer}] for current matchday
   topScorers: [],             // [{name, team, goals}] league-wide scorers
+  topAssisters: [],           // [{name, team, assists}] league-wide assisters
+  topCleanSheets: [],         // [{name, team, cleanSheets, pos}] league-wide clean sheets
 };
 
 const INITIAL_MATCH = {
@@ -370,7 +372,7 @@ const useGameStore = create((set, get) => ({
       ...INITIAL_GAME, roster, captain: roster[0].id, table, league: leagueIdx, matchNum: 0,
       coins: 500, coach, ascension: 0, formation: 'clasica', relics: [],
       chemistry: 10, curses: [], coachAbility: COACH_ABILITIES[coach.id] || COACH_ABILITIES.miguel,
-      careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {} },
+      careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {}, assisters: {}, cleanSheets: {} },
       rivalMemory: {}, streak: 0, trainedIds: [],
       archetype: null, cardLoadout: [], cardCooldowns: {}, activeMutators: [], blessings: [], matchBet: 0,
     };
@@ -552,7 +554,7 @@ const useGameStore = create((set, get) => ({
       coins: startCoins, coach, ascension: ascLevel, formation: 'clasica', relics: startRelics,
       chemistry: startChem, curses: startCurses,
       coachAbility: ability,
-      careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {} },
+      careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {}, assisters: {}, cleanSheets: {} },
       rivalMemory: {}, streak: 0, trainedIds: [], curseFreeRemoves: ability.curseFreeRemove || 0,
       // Metaprogression v2
       archetype: archetypeId || null,
