@@ -8,7 +8,7 @@ import { calcMutatorLegacyBonus } from "@/game/data/mutators.js";
 import useGameStore from "@/game/store";
 
 export default function DeathScreen() {
-  const { game, globalStats, setGlobalStats, checkAchievements, handleDeleteSave, go, immortalizePlayer, addCardToCollection, saveCurseMasteryProgress, saveMutatorBonus } = useGameStore();
+  const { game, globalStats, setGlobalStats, checkAchievements, handleDeleteSave, go, immortalizePlayer, addCardToCollection, saveCurseMasteryProgress, saveMutatorBonus, saveRunSnapshot } = useGameStore();
   const [immortalized, setImmortalized] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [cardReward, setCardReward] = useState(null);
@@ -33,8 +33,16 @@ export default function DeathScreen() {
     if (game.league > (newGS.bestLeague || 0)) { newGS.bestLeague = game.league; newGS.bestLeagueName = lg.n; }
     newGS.allTimeScorers = { ...(newGS.allTimeScorers || {}) };
     Object.entries(cs.scorers || {}).forEach(([name, goals]) => { newGS.allTimeScorers[name] = (newGS.allTimeScorers[name] || 0) + goals; });
+    newGS.allTimeAssisters = { ...(newGS.allTimeAssisters || {}) };
+    Object.entries(cs.assisters || {}).forEach(([name, assists]) => { newGS.allTimeAssisters[name] = (newGS.allTimeAssisters[name] || 0) + assists; });
+    newGS.allTimeCleanSheets = { ...(newGS.allTimeCleanSheets || {}) };
+    Object.entries(cs.cleanSheets || {}).forEach(([name, sheets]) => { newGS.allTimeCleanSheets[name] = (newGS.allTimeCleanSheets[name] || 0) + sheets; });
     const finalGS = checkAchievements(newGS);
     setGlobalStats(finalGS); saveGlobalStats(finalGS);
+    // Save run to history
+    const sorted = [...(game.table || [])].sort((a, b) => (b.w * 3 + b.d) - (a.w * 3 + a.d));
+    const myPos = sorted.findIndex(t => t.you);
+    saveRunSnapshot({ endType: 'death', leagueName: lg.n, leagueIcon: lg.i, finalPosition: myPos >= 0 ? myPos + 1 : null });
     // Save curse mastery progress and mutator bonus
     saveCurseMasteryProgress();
     saveMutatorBonus();

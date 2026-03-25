@@ -87,15 +87,19 @@ export default function TutorialScreen() {
   const [step, setStep] = useState(0);
   const TOTAL = 7;
 
+  const [slideDir, setSlideDir] = useState(1);
+
   function next() {
     SFX.play('click');
     Haptics.light();
+    setSlideDir(1);
     if (step < TOTAL - 1) setStep(step + 1);
     else go('coach');
   }
 
   function prev() {
     SFX.play('click');
+    setSlideDir(-1);
     if (step > 0) setStep(step - 1);
   }
 
@@ -109,8 +113,18 @@ export default function TutorialScreen() {
       display: 'flex', flexDirection: 'column', height: '100%',
       background: bg, position: 'relative', overflow: 'hidden',
     }}>
-      {/* Skip button */}
-      <div style={{ position: 'absolute', top: 12, right: 16, zIndex: 10 }}>
+      {/* Top section: Navigation + CTA in the first third */}
+      <div style={{ flexShrink: 0, padding: '12px 20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
+        {step > 0 ? (
+          <button onClick={prev} className="fw-btn-glass" style={{
+            fontFamily: T.fontBody, fontSize: 11, color: T.tx3,
+            background: T.glass, backdropFilter: 'blur(12px)',
+            border: `1px solid ${T.glassBorder}`, borderRadius: 16, padding: '5px 14px',
+            cursor: 'pointer', transition: 'all 0.2s ease',
+          }}>
+            ← Atrás
+          </button>
+        ) : <div />}
         <button onClick={skip} className="fw-btn-glass" style={{
           fontFamily: T.fontBody, fontSize: 11, color: T.tx3,
           background: T.glass, backdropFilter: 'blur(12px)',
@@ -120,28 +134,36 @@ export default function TutorialScreen() {
           Saltar →
         </button>
       </div>
-      {/* Content */}
-      <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 20px', gap: 14, textAlign: 'center' }}>
+
+      {/* Dots + CTA at top */}
+      <div style={{ flexShrink: 0, padding: '8px 20px 6px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <Dots total={TOTAL} current={step} />
+        <button onClick={next} className="fw-btn fw-btn-primary" style={{
+          width: '100%', fontSize: 15, padding: '13px', borderRadius: 10,
+          fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
+          touchAction: 'manipulation',
+        }}>
+          {step < TOTAL - 1 ? 'Siguiente →' : 'Comenzar'}
+        </button>
+      </div>
+
+      {/* Content - scrollable, with slide transition */}
+      <div style={{
+        flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'flex-start', padding: '10px 20px 16px',
+        gap: 10, textAlign: 'center',
+        animation: 'tutorialSlideIn 0.3s ease both',
+      }}
+        key={step}
+      >
         {children}
       </div>
-      {/* Navigation */}
-      <div style={{ padding: '8px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <Dots total={TOTAL} current={step} />
-        <div style={{ display: 'flex', gap: 8 }}>
-          {step > 0 && (
-            <button onClick={prev} className="fw-btn fw-btn-outline" style={{
-              flex: 1, fontSize: 13, padding: '12px', borderRadius: 8,
-            }}>
-              ← Atrás
-            </button>
-          )}
-          <button onClick={next} className="fw-btn fw-btn-primary" style={{
-            flex: 2, fontSize: 14, padding: '13px', borderRadius: 8,
-          }}>
-            {step < TOTAL - 1 ? 'Siguiente →' : 'Comenzar'}
-          </button>
-        </div>
-      </div>
+      <style>{`
+        @keyframes tutorialSlideIn {
+          from { opacity: 0; transform: translateX(${slideDir >= 0 ? '30' : '-30'}px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
     </div>
   );
 

@@ -4,7 +4,7 @@
 
 const SAVE_KEY = 'rabona-save';
 const STATS_KEY = 'rabona-stats';
-export const CURRENT_VERSION = '3.2';
+export const CURRENT_VERSION = '3.4';
 
 // ── Simple checksum for integrity ──
 // Not cryptographic — just detects corruption/tampering
@@ -45,6 +45,26 @@ const MIGRATIONS = {
       g.curses = g.curses.map(c => ({ ...c, masteryProgress: c.masteryProgress || 0 }));
     }
     data.version = '3.2';
+    return data;
+  },
+  '3.2': (data) => {
+    const g = data.game;
+    g.betweenMatchVisits = g.betweenMatchVisits || { roster: false, training: false, market: false };
+    g.topAssisters = g.topAssisters || [];
+    g.topCleanSheets = g.topCleanSheets || [];
+    if (g.careerStats) {
+      g.careerStats.assisters = g.careerStats.assisters || {};
+      g.careerStats.cleanSheets = g.careerStats.cleanSheets || {};
+    }
+    data.version = '3.3';
+    return data;
+  },
+  '3.3': (data) => {
+    const g = data.game;
+    g.runLog = g.runLog || [];
+    g.cursesEncountered = g.cursesEncountered || [];
+    g.mapChoices = g.mapChoices || [];
+    data.version = '3.4';
     return data;
   },
 };
@@ -88,7 +108,14 @@ export function saveGlobalStats(gs) {
 export function loadGlobalStats() {
   try {
     const raw = localStorage.getItem(STATS_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const gs = JSON.parse(raw);
+      // Ensure new fields have defaults
+      gs.runsHistory = gs.runsHistory || [];
+      gs.allTimeAssisters = gs.allTimeAssisters || {};
+      gs.allTimeCleanSheets = gs.allTimeCleanSheets || {};
+      return gs;
+    }
   } catch(e) {}
   return null;
 }

@@ -77,8 +77,121 @@ export default function Rabona() {
     const penaltyResolveRef = useRef(null);
     const pitchImgRef = useRef(null);
     const ballDrawX = useRef(0.5), ballDrawY = useRef(0.5), ballAngle = useRef(0);
+    const liveMatchdayRef = useRef(null);
+    const matchTimeRef = useRef('');
     const sim = useRef({ ps: 0, rs: 0, minute: 0, speed: 2, ballX: .5, ballY: .5, ballTargetX: .5, ballTargetY: .5, possession: true, log: [], done: false, rivalName: '', rivalPlayers: [], morale: 50, strategy: 'balanced', shots: 0, possCount: 0, totalTicks: 0, pendingEvent: null, halftimeShown: false, goalEffect: 0, pendingPenalty: null });
     const [display, setDisplay] = useState({ ps: 0, rs: 0, minute: 0, speed: 2, log: [], done: false, morale: 50, pendingEvent: null, strategy: 'balanced', pendingPenalty: null });
+    const [liveMatchday, setLiveMatchday] = useState(null);
+
+    // ── Generate live matchday: other matches happening simultaneously ──
+    function generateLiveMatchday(table, playerTeamIdx, matchNum) {
+      const others = table.filter((_, i) => i !== playerTeamIdx);
+      // Pair up other teams into fixtures
+      const fixtures = [];
+      const shuffled = [...others].sort(() => Math.random() - 0.5);
+      for (let i = 0; i < shuffled.length - 1; i += 2) {
+        fixtures.push({ home: shuffled[i].name, away: shuffled[i + 1].name, homeGoals: 0, awayGoals: 0, minute: 0, finished: false });
+      }
+      // Pick 2-3 fixtures, some might be "already done" (earlier kickoffs)
+      const count = Math.min(fixtures.length, rnd(2, 3));
+      const selected = fixtures.slice(0, count);
+      selected.forEach((fix, idx) => {
+        if (idx === 0 && Math.random() < 0.4) {
+          // Already finished
+          fix.homeGoals = rnd(0, 3);
+          fix.awayGoals = rnd(0, 2);
+          fix.minute = 70;
+          fix.finished = true;
+        } else {
+          fix.minute = rnd(0, 10);
+        }
+      });
+      return selected;
+    }
+
+    // ── Update other matches: roll for goals periodically ──
+    function tickLiveMatchday(fixtures, gameMinute) {
+      if (!fixtures) return fixtures;
+      return fixtures.map(fix => {
+        if (fix.finished) return fix;
+        const newFix = { ...fix, minute: gameMinute };
+        if (gameMinute >= 70 && Math.random() < 0.3) {
+          newFix.finished = true;
+        }
+        // Roll for goals every call (~10-15 game minutes)
+        if (Math.random() < 0.12) newFix.homeGoals++;
+        if (Math.random() < 0.10) newFix.awayGoals++;
+        return newFix;
+      });
+    }
+
+    // ── Compute projected mini table ──
+    function getProjectedMiniTable(table, playerScore, rivalScore, rivalName) {
+      // Clone table and apply current match scores
+      const projected = table.map(t => {
+        const row = { ...t, pts: t.w * 3 + t.d };
+        return row;
+      });
+      // Apply player's current match result
+      const me = projected.find(t => t.you);
+      const rival = projected.find(t => t.name === rivalName);
+      if (me) {
+        const tempGf = me.gf + playerScore;
+        const tempGa = me.ga + rivalScore;
+        const tempW = me.w + (playerScore > rivalScore ? 1 : 0);
+        const tempD = me.d + (playerScore === rivalScore ? 1 : 0);
+        const tempL = me.l + (playerScore < rivalScore ? 1 : 0);
+        me.pts = tempW * 3 + tempD;
+        me._gd = tempGf - tempGa;
+      }
+      if (rival) {
+        const tempW = rival.w + (rivalScore > playerScore ? 1 : 0);
+        const tempD = rival.d + (playerScore === rivalScore ? 1 : 0);
+        rival.pts = tempW * 3 + tempD;
+      }
+      // Apply live matchday results
+      if (liveMatchdayRef.current) {
+        for (const fix of liveMatchdayRef.current) {
+          const homeRow = projected.find(t => t.name === fix.home);
+          const awayRow = projected.find(t => t.name === fix.away);
+          if (homeRow) {
+            const w = fix.homeGoals > fix.awayGoals ? 1 : 0;
+            const d = fix.homeGoals === fix.awayGoals ? 1 : 0;
+            homeRow.pts = (homeRow.w + w) * 3 + (homeRow.d + d);
+          }
+          if (awayRow) {
+            const w = fix.awayGoals > fix.homeGoals ? 1 : 0;
+            const d = fix.homeGoals === fix.awayGoals ? 1 : 0;
+            awayRow.pts = (awayRow.w + w) * 3 + (awayRow.d + d);
+          }
+        }
+      }
+      // Sort by pts desc
+      projected.sort((a, b) => b.pts - a.pts || (b._gd || (b.gf - b.ga)) - (a._gd || (a.gf - a.ga)));
+      // Get position info
+      const origPts = (me ? me.w * 3 + me.d : 0); // before this match
+      const myIdx = projected.findIndex(t => t.you);
+      const origTable = [...table].sort((a, b) => (b.w * 3 + b.d) - (a.w * 3 + a.d) || (b.gf - b.ga) - (a.gf - a.ga));
+      const origIdx = origTable.findIndex(t => t.you);
+      const posChange = origIdx - myIdx; // positive = climbed
+      // Extract 3-4 rows around player
+      const start = Math.max(0, myIdx - 1);
+      const end = Math.min(projected.length, start + 4);
+      const slice = projected.slice(start, end).map((t, i) => ({
+        pos: start + i + 1,
+        name: t.name,
+        pts: t.pts,
+        you: t.you,
+      }));
+      return { rows: slice, posChange, myPos: myIdx + 1 };
+    }
+
+    // Generate a random match time on first render
+    if (!matchTimeRef.current) {
+      const hours = pick([1, 2, 4, 5, 7, 8]);
+      const pm = hours <= 5 ? 'PM' : 'PM';
+      matchTimeRef.current = `${hours}:${pick(['00', '30'])} PM`;
+    }
 
     const formation = FORMATIONS.find(f => f.id === game.formation) || FORMATIONS[1];
     const formMods = formation.mods;
@@ -98,14 +211,22 @@ export default function Rabona() {
         .sort((a, b) => POS_ORDER[a.pos] - POS_ORDER[b.pos] || (a.id || a.name).localeCompare(b.id || b.name));
       // Preload all sprites before starting animation to prevent procedural↔image flicker
       preloadAllSprites();
+      // Initialize live matchday (other concurrent matches)
+      const playerIdx = game.table.findIndex(t => t.you);
+      const initFixtures = generateLiveMatchday(game.table, playerIdx, game.matchNum);
+      liveMatchdayRef.current = initFixtures;
+      setLiveMatchday(initFixtures);
       Crowd.start();
       Music.duck(); // Lower music volume during match
       const displayInterval = (navigator.deviceMemory && navigator.deviceMemory <= 4) ? 250 : 150;
       const di = setInterval(() => { const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: s.done, morale: s.morale, pendingEvent: s.pendingEvent, strategy: s.strategy, pendingPenalty: s.pendingPenalty }); }, displayInterval);
       const ci = setInterval(() => { const s = sim.current; Crowd.setIntensity(s.morale / 100); }, 1000);
+      // Live matchday ticker: update other matches every ~3s
+      let lastLiveTick = 0;
+      const li = setInterval(() => { const s = sim.current; if (s.minute > lastLiveTick + 8) { lastLiveTick = s.minute; liveMatchdayRef.current = tickLiveMatchday(liveMatchdayRef.current, s.minute); setLiveMatchday(liveMatchdayRef.current ? [...liveMatchdayRef.current] : null); } }, 3000);
       let animId; function dl() { frameRef.current++; drawPitch(); animId = requestAnimationFrame(dl); } dl();
-      runEngineLoop().then(() => { clearInterval(di); clearInterval(ci); cancelAnimationFrame(animId); const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: true, morale: s.morale, pendingEvent: null, strategy: s.strategy }); });
-      return () => { clearInterval(di); clearInterval(ci); cancelAnimationFrame(animId); Crowd.stop(); Music.unduck(); };
+      runEngineLoop().then(() => { clearInterval(di); clearInterval(ci); clearInterval(li); cancelAnimationFrame(animId); const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: true, morale: s.morale, pendingEvent: null, strategy: s.strategy }); });
+      return () => { clearInterval(di); clearInterval(ci); clearInterval(li); cancelAnimationFrame(animId); Crowd.stop(); Music.unduck(); };
     }, [match.running]);
 
     useEffect(() => {
@@ -395,7 +516,28 @@ export default function Rabona() {
       setGame(g => {
         const table = [...g.table]; const me = table.find(t => t.you); me.gf += ps; me.ga += rs;
         if (won) me.w++; else if (drew && !drawIsLoss) me.d++; else me.l++;
-        table.filter(t => !t.you).forEach(t => { if (Math.random() < .7) { const gf = rnd(0, 3), ga = rnd(0, 2); t.gf += gf; t.ga += ga; if (gf > ga) t.w++; else if (gf === ga) t.d++; else t.l++; } });
+        // Simulate rival matches and capture results
+        const matchResults = [{ home: me.name, away: S.rivalName, homeGoals: ps, awayGoals: rs, isPlayer: true }];
+        const rivals = table.filter(t => !t.you);
+        // Pair up rivals for matches; odd one out plays a "ghost" match
+        const shuffled = [...rivals].sort(() => Math.random() - 0.5);
+        for (let ri = 0; ri < shuffled.length; ri += 2) {
+          const tA = shuffled[ri];
+          if (ri + 1 < shuffled.length) {
+            const tB = shuffled[ri + 1];
+            if (Math.random() < .7) {
+              const posA = table.indexOf(tA), posB = table.indexOf(tB);
+              const strA = Math.max(1, rivals.length - posA), strB = Math.max(1, rivals.length - posB);
+              const gfA = rnd(0, Math.min(3, 1 + Math.floor(strA / 2))), gfB = rnd(0, Math.min(3, 1 + Math.floor(strB / 2)));
+              tA.gf += gfA; tA.ga += gfB; tB.gf += gfB; tB.ga += gfA;
+              if (gfA > gfB) { tA.w++; tB.l++; } else if (gfA === gfB) { tA.d++; tB.d++; } else { tA.l++; tB.w++; }
+              matchResults.push({ home: tA.name, away: tB.name, homeGoals: gfA, awayGoals: gfB, isPlayer: false });
+            }
+          } else {
+            // Odd rival out — solo simulated match vs unnamed opponent
+            if (Math.random() < .7) { const gf = rnd(0, 3), ga = rnd(0, 2); tA.gf += gf; tA.ga += ga; if (gf > ga) tA.w++; else if (gf === ga) tA.d++; else tA.l++; }
+          }
+        }
         const roster = g.roster.map(p => ({ ...p, trait: { ...p.trait }, personality: p.personality || pick(PERSONALITIES) }));
         roster.filter(p => p.role === 'st').forEach(p => {
           let xp = xpGain; if (p.trait.fx === 'xp') xp = Math.floor(xp * 1.5);
@@ -427,18 +569,121 @@ export default function Rabona() {
         if (won) cs.wins++; else if (drew) cs.draws++; else cs.losses++;
         cs.bestStreak = Math.max(cs.bestStreak, newStreak);
         const scorers = { ...cs.scorers || {} };
-        // Use engine stats for goal attribution (weighted by position/stats, not random)
+        const assisters = { ...cs.assisters || {} };
+        const cleanSheets = { ...cs.cleanSheets || {} };
+        // Use engine stats for goal/assist attribution
         const engineGoals = engineResult?.stats?.goals || [];
         const homeGoals = engineGoals.filter(g => g.team === 'home');
         if (homeGoals.length > 0) {
-          homeGoals.forEach(g => { if (g.scorer) scorers[g.scorer] = (scorers[g.scorer] || 0) + 1; });
+          homeGoals.forEach(g => {
+            if (g.scorer) scorers[g.scorer] = (scorers[g.scorer] || 0) + 1;
+            if (g.assister) assisters[g.assister] = (assisters[g.assister] || 0) + 1;
+          });
         } else {
           // Fallback: attribute goals randomly to FWD/MID
           const fwdMid = roster.filter(p => p.role === 'st' && (p.pos === 'FWD' || p.pos === 'MID'));
           for (let i = 0; i < ps; i++) { const scorer = fwdMid.length ? fwdMid[Math.floor(Math.random() * fwdMid.length)] : roster[0]; if (scorer) scorers[scorer.name] = (scorers[scorer.name] || 0) + 1; }
         }
+        // Track clean sheets for GK and DEF
+        if (rs === 0) {
+          roster.filter(p => p.role === 'st' && (p.pos === 'GK' || p.pos === 'DEF')).forEach(p => {
+            cleanSheets[p.name] = (cleanSheets[p.name] || 0) + 1;
+          });
+        }
         cs.scorers = scorers;
-        const newState = { ...g, table, roster, matchNum: g.matchNum + 1, matchesTogether: mt, chemistry: chem, lastLineup: lineupKey, coins: g.coins + coinGain + objCoins, streak: newStreak, rivalMemory: rivalMem, careerStats: cs, trainedIds: [] };
+        cs.assisters = assisters;
+        cs.cleanSheets = cleanSheets;
+        // Update league-wide top scorers + assisters + clean sheets
+        const prevScorers = [...(g.topScorers || [])];
+        const prevAssisters = [...(g.topAssisters || [])];
+        const prevCleanSheets = [...(g.topCleanSheets || [])];
+        // Add player's goals from this match
+        for (const [sName, sGoals] of Object.entries(scorers)) {
+          const prev = (g.careerStats?.scorers || {})[sName] || 0;
+          const added = sGoals - prev;
+          if (added > 0) {
+            const existing = prevScorers.find(s => s.name === sName && s.team === me.name);
+            if (existing) existing.goals += added;
+            else prevScorers.push({ name: sName, team: me.name, goals: added });
+          }
+        }
+        // Add player's assists from this match
+        for (const [aName, aCount] of Object.entries(assisters)) {
+          const prev = (g.careerStats?.assisters || {})[aName] || 0;
+          const added = aCount - prev;
+          if (added > 0) {
+            const existing = prevAssisters.find(s => s.name === aName && s.team === me.name);
+            if (existing) existing.assists += added;
+            else prevAssisters.push({ name: aName, team: me.name, assists: added });
+          }
+        }
+        // Add player's clean sheets from this match
+        if (rs === 0) {
+          roster.filter(p => p.role === 'st' && (p.pos === 'GK' || p.pos === 'DEF')).forEach(p => {
+            const prev = (g.careerStats?.cleanSheets || {})[p.name] || 0;
+            const added = (cleanSheets[p.name] || 0) - prev;
+            if (added > 0) {
+              const existing = prevCleanSheets.find(s => s.name === p.name && s.team === me.name);
+              if (existing) existing.cleanSheets += added;
+              else prevCleanSheets.push({ name: p.name, team: me.name, cleanSheets: added, pos: p.pos });
+            }
+          });
+        }
+        // Add rival goals/assists/cleanSheets from matchResults (random names for flavor)
+        const _FN = ['Memo','Chuy','Beto','Nacho','Paco','Rafa','Toño','Pipe','Lalo','Hugo','Diego','Leo'];
+        const _LN = ['García','López','Hernández','Martínez','Torres','Cruz','Reyes','Morales','Ortiz','Vargas'];
+        const _rndName = () => `${_FN[rnd(0,_FN.length-1)]} ${_LN[rnd(0,_LN.length-1)]}`;
+        for (const mr of matchResults) {
+          if (mr.isPlayer) continue;
+          for (let gi = 0; gi < mr.homeGoals; gi++) {
+            const sn = _rndName();
+            const ex = prevScorers.find(s => s.team === mr.home);
+            if (ex && Math.random() < 0.5) ex.goals++;
+            else prevScorers.push({ name: sn, team: mr.home, goals: 1 });
+            // ~60% of goals have an assist
+            if (Math.random() < 0.6) {
+              const an = _rndName();
+              const ea = prevAssisters.find(s => s.team === mr.home);
+              if (ea && Math.random() < 0.4) ea.assists++;
+              else prevAssisters.push({ name: an, team: mr.home, assists: 1 });
+            }
+          }
+          for (let gi = 0; gi < mr.awayGoals; gi++) {
+            const sn = _rndName();
+            const ex = prevScorers.find(s => s.team === mr.away);
+            if (ex && Math.random() < 0.5) ex.goals++;
+            else prevScorers.push({ name: sn, team: mr.away, goals: 1 });
+            if (Math.random() < 0.6) {
+              const an = _rndName();
+              const ea = prevAssisters.find(s => s.team === mr.away);
+              if (ea && Math.random() < 0.4) ea.assists++;
+              else prevAssisters.push({ name: an, team: mr.away, assists: 1 });
+            }
+          }
+          // Clean sheets for 0-goal teams
+          if (mr.awayGoals === 0) {
+            const gkn = _rndName();
+            const ec = prevCleanSheets.find(s => s.team === mr.home);
+            if (ec) ec.cleanSheets++;
+            else prevCleanSheets.push({ name: gkn, team: mr.home, cleanSheets: 1, pos: 'GK' });
+          }
+          if (mr.homeGoals === 0) {
+            const gkn = _rndName();
+            const ec = prevCleanSheets.find(s => s.team === mr.away);
+            if (ec) ec.cleanSheets++;
+            else prevCleanSheets.push({ name: gkn, team: mr.away, cleanSheets: 1, pos: 'GK' });
+          }
+        }
+        prevScorers.sort((a, b) => b.goals - a.goals);
+        prevAssisters.sort((a, b) => b.assists - a.assists);
+        prevCleanSheets.sort((a, b) => b.cleanSheets - a.cleanSheets);
+        const topScorers = prevScorers.slice(0, 12);
+        const topAssisters = prevAssisters.slice(0, 8);
+        const topCleanSheets = prevCleanSheets.slice(0, 8);
+        // Run log entry for tracker
+        const runLogEntry = { matchNum: g.matchNum, result: won ? 'W' : drew ? 'D' : 'L', goalsFor: ps, goalsAgainst: rs, league: g.league, rivalName: S.rivalName };
+        const runLog = [...(g.runLog || []), runLogEntry];
+        const newState = { ...g, table, roster, matchNum: g.matchNum + 1, matchesTogether: mt, chemistry: chem, lastLineup: lineupKey, coins: g.coins + coinGain + objCoins, streak: newStreak, rivalMemory: rivalMem, careerStats: cs, trainedIds: [], betweenMatchVisits: { roster: false, training: false, market: false }, matchResults, topScorers, topAssisters, topCleanSheets, runLog };
         setTimeout(() => autoSave(newState), 100);
         return newState;
       });
@@ -827,10 +1072,15 @@ export default function Rabona() {
       if (Math.abs(dy) > 40) setFeedOpen(dy > 0);
     };
 
+    // Compute projected mini table
+    const miniTable = getProjectedMiniTable(game.table, display.ps, display.rs, match.rival?.name || '');
+    const isWinning = display.ps > display.rs;
+    const isLosing = display.ps < display.rs;
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#000', position: 'relative' }}>
-        {/* Pitch - full width portrait */}
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        {/* Pitch - reduced to ~45vh */}
+        <div style={{ flex: '0 0 auto', maxHeight: '45vh', minHeight: 180, position: 'relative', overflow: 'hidden' }}>
           <canvas ref={canvasRef} onDoubleClick={() => { sim.current.speed = 0; setDisplay(d => ({ ...d, speed: 0 })); }} style={{ width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated', touchAction: 'manipulation' }} />
           {/* Scoreboard overlay — premium glass */}
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 15, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(8,12,20,0.82)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', padding: '6px 10px', minHeight: 46, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -847,54 +1097,99 @@ export default function Rabona() {
           </div>
           {/* Speed controls - floating bottom-right */}
           <div style={{ position: 'absolute', bottom: 8, right: 8, zIndex: 15, display: 'flex', gap: 4 }}>
-            {[{ l: '⏩', s: 0 }, { l: '▶', s: 1 }, { l: '▶▶', s: 2 }].map(({ l, s }) => (
-              <button key={s} onClick={() => { sim.current.speed = s; setDisplay(d => ({ ...d, speed: s })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, padding: '8px 12px', minWidth: 44, minHeight: 44, border: `1px solid ${display.speed === s ? T.win : 'rgba(255,255,255,0.2)'}`, background: display.speed === s ? `${T.win}30` : 'rgba(0,0,0,0.6)', color: display.speed === s ? T.win : 'rgba(255,255,255,0.5)', borderRadius: 6, cursor: 'pointer', touchAction: 'manipulation', backdropFilter: 'blur(4px)' }}>{l}</button>
+            {[{ l: '\u23E9', s: 0 }, { l: '\u25B6', s: 1 }, { l: '\u25B6\u25B6', s: 2 }].map(({ l, s }) => (
+              <button key={s} onClick={() => { sim.current.speed = s; setDisplay(d => ({ ...d, speed: s })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, padding: '6px 10px', minWidth: 38, minHeight: 38, border: `1px solid ${display.speed === s ? T.win : 'rgba(255,255,255,0.2)'}`, background: display.speed === s ? `${T.win}30` : 'rgba(0,0,0,0.6)', color: display.speed === s ? T.win : 'rgba(255,255,255,0.5)', borderRadius: 6, cursor: 'pointer', touchAction: 'manipulation', backdropFilter: 'blur(4px)' }}>{l}</button>
             ))}
-            <button onClick={() => { SFX._muted = !SFX._muted; if (SFX._muted) { Crowd.stop(); Music.pause(); } else { if (sim.current && !sim.current.done) Crowd.start(); Music.play(); } setDisplay(d => ({ ...d })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '8px 12px', minWidth: 44, minHeight: 44, border: `1px solid ${SFX._muted ? 'rgba(239,83,80,0.4)' : 'rgba(255,255,255,0.2)'}`, background: SFX._muted ? 'rgba(239,83,80,0.15)' : 'rgba(0,0,0,0.6)', color: SFX._muted ? '#ef5350' : 'rgba(255,255,255,0.5)', borderRadius: 6, cursor: 'pointer', touchAction: 'manipulation', backdropFilter: 'blur(4px)' }}>{SFX._muted ? '🔇' : '🔊'}</button>
+            <button onClick={() => { SFX._muted = !SFX._muted; if (SFX._muted) { Crowd.stop(); Music.pause(); } else { if (sim.current && !sim.current.done) Crowd.start(); Music.play(); } setDisplay(d => ({ ...d })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '6px 10px', minWidth: 38, minHeight: 38, border: `1px solid ${SFX._muted ? 'rgba(239,83,80,0.4)' : 'rgba(255,255,255,0.2)'}`, background: SFX._muted ? 'rgba(239,83,80,0.15)' : 'rgba(0,0,0,0.6)', color: SFX._muted ? '#ef5350' : 'rgba(255,255,255,0.5)', borderRadius: 6, cursor: 'pointer', touchAction: 'manipulation', backdropFilter: 'blur(4px)' }}>{SFX._muted ? '\uD83D\uDD07' : '\uD83D\uDD0A'}</button>
           </div>
         </div>
-        {/* Match log — glass panel */}
-        <div style={{ flex: '0 0 auto', maxHeight: 80, overflow: 'auto', background: T.bg, borderTop: `1px solid rgba(255,255,255,0.06)`, padding: '4px 8px' }}>
-          {[...display.log].reverse().slice(0, 4).map((e, i) => (
-            <div key={i} style={{ display: 'flex', padding: '3px 6px', borderLeft: `2px solid ${LC[e.type] || 'transparent'}`, marginBottom: 1, borderRadius: 2 }}>
-              <span style={{ fontFamily: T.fontBody, fontSize: 12, color: LC[e.type] || T.tx2, fontWeight: (e.type === 'goal' || e.type === 'goalRival') ? 700 : 400, lineHeight: 1.3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{e.text}</span>
+        {/* Match log — compact strip */}
+        <div style={{ flex: '0 0 auto', maxHeight: 56, overflow: 'hidden', background: T.bg, borderTop: `1px solid rgba(255,255,255,0.06)`, padding: '2px 8px' }}>
+          {[...display.log].reverse().slice(0, 3).map((e, i) => (
+            <div key={i} style={{ display: 'flex', padding: '2px 6px', borderLeft: `2px solid ${LC[e.type] || 'transparent'}`, marginBottom: 1, borderRadius: 2 }}>
+              <span style={{ fontFamily: T.fontBody, fontSize: 11, color: LC[e.type] || T.tx2, fontWeight: (e.type === 'goal' || e.type === 'goalRival') ? 700 : 400, lineHeight: 1.2, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{e.text}</span>
             </div>
           ))}
         </div>
-        {/* Collapsible social feed + win prob - swipe up to open */}
+        {/* ── Match Info Bar: context + live results + mini table ── */}
+        <div style={{ flex: '0 0 auto', background: T.bg1, borderTop: `1px solid ${T.border}`, padding: '6px 8px', display: 'flex', gap: 8 }}>
+          {/* Left column: match context + live results */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* Match context bar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+              <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>{matchTimeRef.current}</span>
+              <span style={{ fontFamily: T.fontHeading, fontSize: 10, color: T.tx2, textTransform: 'uppercase', letterSpacing: 0.5 }}>Jornada {(game.matchNum || 0) + 1}</span>
+              <div style={{ flex: 1 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ fontFamily: "'Oswald'", fontSize: 9, color: '#4DABF7' }}>HAL {winProb}%</span>
+                <div style={{ display: 'flex', width: 32, height: 3, borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ width: `${winProb}%`, background: 'linear-gradient(90deg,#1565c0,#4DABF7)', transition: 'width 0.5s' }} />
+                  <div style={{ flex: 1, background: 'linear-gradient(90deg,#FF6B6B,#c62828)' }} />
+                </div>
+                <span style={{ fontFamily: "'Oswald'", fontSize: 9, color: '#FF6B6B' }}>{100 - winProb}%</span>
+              </div>
+            </div>
+            {/* Live matchday results */}
+            {liveMatchday && liveMatchday.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {liveMatchday.map((fix, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 6px', background: 'rgba(255,255,255,0.02)', borderRadius: 4, border: `1px solid ${T.border}` }}>
+                    <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx2, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{fix.home.substring(0, 10)}</span>
+                    <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 11, color: T.tx, minWidth: 28, textAlign: 'center' }}>{fix.homeGoals}-{fix.awayGoals}</span>
+                    <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx2, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', textAlign: 'right' }}>{fix.away.substring(0, 10)}</span>
+                    <span style={{ fontFamily: T.fontBody, fontSize: 9, color: fix.finished ? T.tx3 : T.win, minWidth: 32, textAlign: 'right' }}>
+                      {fix.finished ? 'Final' : `${fix.minute}'`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* Right column: mini table */}
+          <div style={{ flex: '0 0 auto', minWidth: 105, background: 'rgba(255,255,255,0.02)', borderRadius: 6, border: `1px solid ${T.border}`, padding: '4px 6px' }}>
+            <div style={{ fontFamily: T.fontHeading, fontSize: 9, color: T.tx3, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3, textAlign: 'center' }}>Tabla</div>
+            {miniTable.rows.map((row, i) => {
+              const posArrow = row.you ? (miniTable.posChange > 0 ? '\u2191' : miniTable.posChange < 0 ? '\u2193' : '\u2500') : '';
+              const posColor = row.you ? (miniTable.posChange > 0 ? T.win : miniTable.posChange < 0 ? T.lose : T.tx3) : T.tx3;
+              const ptsColor = row.you ? (isWinning ? T.win : isLosing ? T.lose : T.draw) : T.tx2;
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '1px 0', borderBottom: i < miniTable.rows.length - 1 ? `1px solid ${T.border}` : 'none', background: row.you ? 'rgba(59,130,246,0.08)' : 'transparent', borderRadius: row.you ? 3 : 0, marginBottom: 1 }}>
+                  <span style={{ fontFamily: T.fontHeading, fontSize: 10, color: posColor, minWidth: 12, textAlign: 'center' }}>{row.pos}</span>
+                  {row.you && <span style={{ fontSize: 8, color: posColor }}>{posArrow}</span>}
+                  <span style={{ fontFamily: T.fontBody, fontSize: 10, color: row.you ? T.tx : T.tx2, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: row.you ? 700 : 400 }}>{row.name.substring(0, 8)}</span>
+                  <span style={{ fontFamily: T.fontHeading, fontSize: 10, color: ptsColor, fontWeight: 700, minWidth: 16, textAlign: 'right' }}>{row.pts}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {/* ── Social Feed — more prominent, default visible ── */}
         <div
           onTouchStart={handleFeedTouchStart} onTouchEnd={handleFeedTouchEnd}
-          style={{ flex: '0 0 auto', maxHeight: feedOpen ? '40vh' : 100, overflow: 'hidden', background: T.bg1, borderTop: `1px solid ${T.border}`, transition: 'max-height 0.3s ease' }}
+          style={{ flex: 1, minHeight: 0, overflow: 'hidden', background: T.bg1, borderTop: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', transition: 'max-height 0.3s ease', maxHeight: feedOpen ? '40vh' : 170 }}
         >
-          {/* Pull handle + win probability */}
-          <div onClick={() => setFeedOpen(o => !o)} style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', minHeight: 36, touchAction: 'manipulation' }}>
+          {/* Pull handle */}
+          <div onClick={() => setFeedOpen(o => !o)} style={{ padding: '4px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', minHeight: 24, touchAction: 'manipulation', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 28, height: 3, background: 'rgba(255,255,255,0.15)', borderRadius: 2 }} />
               <span style={{ fontFamily: T.fontHeading, fontSize: 10, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1 }}>En vivo</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: '#4DABF7' }}>HAL {winProb}%</span>
-              <div style={{ display: 'flex', width: 40, height: 4, borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ width: `${winProb}%`, background: 'linear-gradient(90deg,#1565c0,#4DABF7)', transition: 'width 0.5s' }} />
-                <div style={{ flex: 1, background: 'linear-gradient(90deg,#FF6B6B,#c62828)' }} />
-              </div>
-              <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: '#FF6B6B' }}>{100 - winProb}%</span>
-            </div>
+            <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>{feedOpen ? '\u25BC' : '\u25B2'}</span>
           </div>
-          {/* Social posts */}
-          <div style={{ overflow: 'auto', padding: '0 8px 8px', display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 'calc(40vh - 36px)' }}>
+          {/* Social posts — bigger, more readable */}
+          <div style={{ overflow: 'auto', padding: '0 8px 8px', display: 'flex', flexDirection: 'column', gap: 5, flex: 1, minHeight: 0 }}>
             {livePosts.map((p, i) => (
-              <div key={i} style={{ background: T.bg, borderRadius: 6, padding: '6px 8px', border: `1px solid ${T.border}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
-                  <div style={{ fontSize: 12, flexShrink: 0, width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {p.acc?.avImg ? <img src={p.acc.avImg} width={18} height={18} alt="" style={{ imageRendering: 'pixelated', display: 'block' }} /> : (p.acc?.av || '👤')}
+              <div key={i} style={{ background: T.bg, borderRadius: 8, padding: '8px 10px', border: `1px solid ${T.border}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <div style={{ fontSize: 14, flexShrink: 0, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {p.acc?.avImg ? <img src={p.acc.avImg} width={22} height={22} alt="" style={{ imageRendering: 'pixelated', display: 'block' }} /> : (p.acc?.av || '\uD83D\uDC64')}
                   </div>
-                  <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx2, flex: 1 }}>{p.acc?.n}</span>
+                  <span style={{ fontFamily: "'Oswald'", fontSize: 11, color: T.tx2, flex: 1, fontWeight: 500 }}>{p.acc?.n}</span>
                   <span style={{ fontSize: 10, color: T.tx3 }}>{p.t}</span>
                 </div>
-                <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx, lineHeight: 1.3 }}>{p.text}</div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 3, fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>
-                  <span>❤ {p.likes}</span><span>💬 {p.comments}</span>
+                <div style={{ fontFamily: T.fontBody, fontSize: 13, color: T.tx, lineHeight: 1.4 }}>{p.text}</div>
+                <div style={{ display: 'flex', gap: 10, marginTop: 4, fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>
+                  <span>{'\u2764'} {p.likes}</span><span>{'\uD83D\uDCAC'} {p.comments}</span>
                 </div>
               </div>
             ))}

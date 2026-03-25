@@ -241,3 +241,60 @@
   border-radius: 1px;
   transition: width 0.2s ease;
 }
+
+/* ── Metallic Shine Background ── */
+.bg-metallic-shine {
+  background: linear-gradient(145deg, #080C14 0%, #0F1923 30%, #162030 60%, #0D1520 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.bg-metallic-shine::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(240, 192, 64, 0.03) 45%,
+    rgba(255, 255, 255, 0.06) 50%,
+    rgba(240, 192, 64, 0.03) 55%,
+    transparent 60%,
+    transparent 100%
+  );
+  animation: metallicShine 3.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes metallicShine {
+  0% { transform: translateX(-30%) translateY(-30%) rotate(0deg); }
+  100% { transform: translateX(30%) translateY(30%) rotate(0deg); }
+}
+
+/* ── Stadium Ambient Breathing ── */
+.bg-stadium-ambient {
+  position: relative;
+}
+
+.bg-stadium-ambient::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse at 50% 30%, rgba(59, 130, 246, 0.06) 0%, transparent 60%);
+  animation: stadiumBreathe 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes stadiumBreathe {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}

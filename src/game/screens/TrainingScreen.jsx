@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SFX } from "@/game/audio";
 import { T, POS_COLORS, PN, TRAINING_OPTIONS, calcOvr, rnd } from "@/game/data";
 import useGameStore from "@/game/store";
 
 export default function TrainingScreen() {
-  const { game, setGame, go } = useGameStore();
+  const { game, setGame, go, markVisited } = useGameStore();
+
+  useEffect(() => { markVisited('training'); }, []);
 
   const trained = game.trainedIds || [];
   const slotsLeft = 2 - trained.length;
