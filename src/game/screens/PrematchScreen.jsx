@@ -95,6 +95,31 @@ export default function PrematchScreen() {
               border: '1px solid rgba(239,68,68,0.3)', display: 'inline-block'
             }}>Perder = Fin de la Carrera</div>
           )}
+
+          {/* Primary CTA - Jugar button right after VS */}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 14 }}>
+            <button className="fw-btn fw-btn-outline" onClick={() => go('roster')} style={{
+              fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12,
+              padding: '9px 18px', color: T.tx2, textTransform: 'uppercase',
+              letterSpacing: 0.8, borderRadius: 8
+            }}>Roster</button>
+            <button className={`fw-btn ${injuredStarters.length > 0 ? 'fw-btn-danger' : ''}`} onClick={() => {
+              const objs = objRef.current || [];
+              setGame(g => ({ ...g, currentObjectives: objs }));
+              setMatch({ ps: 0, rs: 0, minute: 0, speed: 2, running: true, rival: { name: rivalName }, rivalPlayers: rpRef.current, rivalCoach: rcRef.current, ballX: .5, ballY: .5, possession: true, log: [], eventPopup: null });
+              rpRef.current = null; rcRef.current = null; objRef.current = null;
+              SFX.play('whistle'); setScreen('match');
+            }} style={{
+              fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15,
+              padding: '11px 40px', textTransform: 'uppercase',
+              letterSpacing: 1.5, borderRadius: 8,
+              background: injuredStarters.length > 0 ? undefined : 'linear-gradient(135deg, #22C55E, #16A34A)',
+              color: injuredStarters.length > 0 ? undefined : '#fff',
+              border: injuredStarters.length > 0 ? undefined : '1px solid rgba(34,197,94,0.6)',
+              boxShadow: '0 4px 20px rgba(34,197,94,0.3)',
+              touchAction: 'manipulation',
+            }}>Jugar</button>
+          </div>
         </div>
       </div>
 
@@ -195,25 +220,8 @@ export default function PrematchScreen() {
         </div>
       </div>
 
-      {/* Action buttons */}
-      <div style={{ display: 'flex', gap: 8, padding: '4px 16px 12px', justifyContent: 'center', background: T.bg }}>
-        <button className="fw-btn fw-btn-outline" onClick={() => go('roster')} style={{
-          fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12,
-          padding: '9px 18px', color: T.tx2, textTransform: 'uppercase',
-          letterSpacing: 0.8, borderRadius: 8
-        }}>Roster</button>
-        <button className={`fw-btn ${injuredStarters.length > 0 ? 'fw-btn-danger' : 'fw-btn-green'}`} onClick={() => {
-          const objs = objRef.current || [];
-          setGame(g => ({ ...g, currentObjectives: objs }));
-          setMatch({ ps: 0, rs: 0, minute: 0, speed: 2, running: true, rival: { name: rivalName }, rivalPlayers: rpRef.current, rivalCoach: rcRef.current, ballX: .5, ballY: .5, possession: true, log: [], eventPopup: null });
-          rpRef.current = null; rcRef.current = null; objRef.current = null;
-          SFX.play('whistle'); setScreen('match');
-        }} style={{
-          fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14,
-          padding: '10px 32px', textTransform: 'uppercase',
-          letterSpacing: 1, borderRadius: 8
-        }}>Jugar</button>
-      </div>
+      {/* Bottom spacer */}
+      <div style={{ height: 12 }} />
     </div>
   );
 }

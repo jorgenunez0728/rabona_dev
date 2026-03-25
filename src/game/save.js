@@ -4,7 +4,7 @@
 
 const SAVE_KEY = 'rabona-save';
 const STATS_KEY = 'rabona-stats';
-export const CURRENT_VERSION = '3.2';
+export const CURRENT_VERSION = '3.3';
 
 // ── Simple checksum for integrity ──
 // Not cryptographic — just detects corruption/tampering
@@ -45,6 +45,12 @@ const MIGRATIONS = {
       g.curses = g.curses.map(c => ({ ...c, masteryProgress: c.masteryProgress || 0 }));
     }
     data.version = '3.2';
+    return data;
+  },
+  '3.2': (data) => {
+    const g = data.game;
+    g.betweenMatchVisits = g.betweenMatchVisits || { roster: false, training: false, market: false };
+    data.version = '3.3';
     return data;
   },
 };

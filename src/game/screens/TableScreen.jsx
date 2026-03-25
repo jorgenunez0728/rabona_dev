@@ -21,9 +21,12 @@ export default function TableScreen() {
   const currentFormation = FORMATIONS.find(f => f.id === game.formation) || FORMATIONS[1];
 
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [showIncomplete, setShowIncomplete] = useState(false);
+  const [showReminder, setShowReminder] = useState(false);
 
-  const handleNext = () => {
-    if (starters.length < 6 && !done) return;
+  const visits = game.betweenMatchVisits || { roster: false, training: false, market: false };
+
+  const proceedToNext = () => {
     if (done) {
       if (myPos < 2) { const nL = game.league + 1; if (nL >= LEAGUES.length) { go('champion'); return; } setPendingLeague(nL); go('ascension'); }
       else go('death');
@@ -34,9 +37,33 @@ export default function TableScreen() {
     }
   };
 
-  const ctaDisabled = starters.length < 6 && !done;
-  const ctaLabel = ctaDisabled ? `${starters.length}/6` : done ? (myPos < 2 ? 'Ascender' : 'Resumen') : 'Siguiente';
+  const handleNext = () => {
+    // Hard block: fewer than 7 starters
+    if (starters.length < 7 && !done) {
+      setShowIncomplete(true);
+      return;
+    }
+    // Soft reminder: unvisited screens (only for non-done matches)
+    if (!done && (!visits.roster || !visits.training || !visits.market)) {
+      setShowReminder(true);
+      return;
+    }
+    proceedToNext();
+  };
+
+  const ctaDisabled = starters.length < 7 && !done;
+  const ctaLabel = ctaDisabled ? `${starters.length}/7` : done ? (myPos < 2 ? 'Ascender' : 'Resumen') : 'Siguiente';
   const ctaClass = ctaDisabled ? '' : done ? (myPos < 2 ? 'fw-btn-primary' : 'fw-btn-danger') : '';
+
+  // Visit indicator dot
+  const VisitDot = ({ visited }) => (
+    <span style={{
+      display: 'inline-block', width: 7, height: 7, borderRadius: '50%',
+      background: visited ? T.win : 'rgba(245,158,11,0.8)',
+      boxShadow: visited ? `0 0 4px ${T.win}60` : '0 0 4px rgba(245,158,11,0.4)',
+      marginLeft: 6, verticalAlign: 'middle', flexShrink: 0,
+    }} />
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg }}>
@@ -48,7 +75,7 @@ export default function TableScreen() {
         <div style={{ maxWidth: 420, margin: '0 auto', padding: '8px 10px 16px' }}>
 
           {/* League header card */}
-          <div className="glass" style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.glassBorder}`, marginBottom: 8 }}>
+          <div className="glass bg-metallic-shine" style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.glassBorder}`, marginBottom: 8 }}>
             <div style={{ background: T.gradientDark, padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${T.border}` }}>
               <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 13, color: T.tx, textTransform: 'uppercase', letterSpacing: 1 }}>{lg.i} {lg.n}</div>
               <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx2 }}>{game.coins} monedas · J{game.matchNum}/{lg.m}</div>
@@ -79,11 +106,17 @@ export default function TableScreen() {
             {ctaLabel}
           </button>
 
-          {/* Hub navigation row */}
+          {/* Hub navigation row with visit indicators */}
           <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 10 }}>
-            <button className="fw-btn fw-btn-glass" onClick={() => go('roster')} style={{ flex: 1, fontSize: 11, padding: '8px 10px', color: starters.length < 6 ? T.lose : T.tx, borderColor: starters.length < 6 ? T.lose : undefined }}>Roster</button>
-            <button className="fw-btn fw-btn-glass" onClick={() => go('training')} style={{ flex: 1, fontSize: 11, padding: '8px 10px', color: T.win }}>Entrenar</button>
-            <button className="fw-btn fw-btn-glass" onClick={openMarket} style={{ flex: 1, fontSize: 11, padding: '8px 10px', color: T.gold }}>Mercado</button>
+            <button className="fw-btn fw-btn-glass" onClick={() => go('roster')} style={{ flex: 1, fontSize: 11, padding: '8px 10px', color: starters.length < 7 ? T.lose : T.tx, borderColor: starters.length < 7 ? T.lose : undefined, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              Roster<VisitDot visited={visits.roster} />
+            </button>
+            <button className="fw-btn fw-btn-glass" onClick={() => go('training')} style={{ flex: 1, fontSize: 11, padding: '8px 10px', color: T.win, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              Entrenar<VisitDot visited={visits.training} />
+            </button>
+            <button className="fw-btn fw-btn-glass" onClick={openMarket} style={{ flex: 1, fontSize: 11, padding: '8px 10px', color: T.gold, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              Mercado<VisitDot visited={visits.market} />
+            </button>
           </div>
 
           {/* League table */}
@@ -197,6 +230,109 @@ export default function TableScreen() {
           )}
         </div>
       </div>
+
+      {/* Hard block overlay: Incomplete roster */}
+      {showIncomplete && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+        }}>
+          <div style={{
+            maxWidth: 340, width: '90%', padding: '24px 20px',
+            background: 'rgba(20,24,36,0.95)', border: `1px solid rgba(239,68,68,0.3)`,
+            borderRadius: 16, textAlign: 'center',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>&#9888;&#65039;</div>
+            <div style={{
+              fontFamily: T.fontHeading, fontWeight: 700, fontSize: 18, color: T.lose,
+              textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8,
+            }}>Plantilla Incompleta</div>
+            <div style={{
+              fontFamily: T.fontBody, fontSize: 14, color: T.tx2, lineHeight: 1.5, marginBottom: 16,
+            }}>
+              Necesitas al menos 7 titulares para jugar. Tienes <span style={{ fontWeight: 700, color: T.lose }}>{starters.length}/7</span>.
+            </div>
+            <button className="fw-btn fw-btn-danger" onClick={() => { setShowIncomplete(false); go('roster'); }} style={{
+              fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14,
+              padding: '12px 28px', textTransform: 'uppercase', letterSpacing: 1,
+              borderRadius: 8, width: '100%',
+            }}>Ir al Roster</button>
+            <button className="fw-btn fw-btn-outline" onClick={() => setShowIncomplete(false)} style={{
+              fontFamily: T.fontHeading, fontSize: 12, padding: '8px 20px',
+              marginTop: 8, color: T.tx3, width: '100%',
+            }}>Cerrar</button>
+          </div>
+        </div>
+      )}
+
+      {/* Soft reminder overlay: Unvisited screens */}
+      {showReminder && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+        }}>
+          <div style={{
+            maxWidth: 360, width: '90%', padding: '24px 20px',
+            background: 'rgba(20,24,36,0.92)', border: `1px solid ${T.glassBorder}`,
+            borderRadius: 16, textAlign: 'center',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+          }}>
+            <div style={{ fontSize: 28, marginBottom: 6 }}>&#128203;</div>
+            <div style={{
+              fontFamily: T.fontHeading, fontWeight: 700, fontSize: 16, color: T.gold,
+              textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12,
+            }}>Recordatorio</div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16, textAlign: 'left' }}>
+              {[
+                { key: 'roster', label: 'Roster', visited: visits.roster },
+                { key: 'training', label: 'Entrenamiento', visited: visits.training },
+                { key: 'market', label: 'Mercado', visited: visits.market },
+              ].map(item => (
+                <div key={item.key} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 12px', borderRadius: 8,
+                  background: item.visited ? 'rgba(34,197,94,0.06)' : 'rgba(245,158,11,0.06)',
+                  border: `1px solid ${item.visited ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)'}`,
+                }}>
+                  <span style={{ fontSize: 16, flexShrink: 0 }}>{item.visited ? '\u2705' : '\u274C'}</span>
+                  <span style={{
+                    fontFamily: T.fontBody, fontSize: 13,
+                    color: item.visited ? T.win : 'rgba(245,158,11,0.9)',
+                    fontWeight: 500,
+                  }}>
+                    {item.label} {item.visited ? '(visitado)' : '(no visitado)'}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              fontFamily: T.fontBody, fontSize: 12, color: T.tx3, marginBottom: 16, lineHeight: 1.4,
+            }}>
+              Deseas continuar al partido de todos modos?
+            </div>
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="fw-btn fw-btn-outline" onClick={() => setShowReminder(false)} style={{
+                flex: 1, fontFamily: T.fontHeading, fontSize: 12, padding: '10px 12px',
+                color: T.tx2, letterSpacing: 0.5,
+              }}>Revisar primero</button>
+              <button className="fw-btn" onClick={() => { setShowReminder(false); proceedToNext(); }} style={{
+                flex: 1, fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12,
+                padding: '10px 12px', letterSpacing: 0.5,
+                background: 'linear-gradient(135deg, #F0C040, #D4A017)',
+                color: '#1a1a2e', border: '1px solid rgba(240,192,64,0.6)',
+                borderRadius: 8,
+              }}>Continuar &rarr;</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

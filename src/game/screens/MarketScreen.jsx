@@ -1,9 +1,12 @@
+import { useEffect } from 'react';
 import useGameStore from '@/game/store';
 import { POS_COLORS, T, PN, calcOvr } from '@/game/data';
 import { SFX } from '@/game/audio';
 
 export default function MarketScreen() {
-  const { game, setGame, market, setMarket, go } = useGameStore();
+  const { game, setGame, market, setMarket, go, markVisited } = useGameStore();
+
+  useEffect(() => { markVisited('market'); }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', overflow: 'auto', background: T.bg }}>

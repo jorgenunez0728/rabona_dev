@@ -1,9 +1,12 @@
+import { useEffect } from 'react';
 import useGameStore from '@/game/store';
 import { POS_ORDER, POS_COLORS, T, FORMATIONS, calcOvr } from '@/game/data';
 import { PlayerCard } from '@/game/components';
 
 export default function RosterScreen() {
-  const { game, setGame, go, setDetailPlayer } = useGameStore();
+  const { game, setGame, go, setDetailPlayer, markVisited } = useGameStore();
+
+  useEffect(() => { markVisited('roster'); }, []);
 
   const starters = game.roster.filter(p => p.role === 'st').sort((a, b) => POS_ORDER[a.pos] - POS_ORDER[b.pos]);
   const reserves = game.roster.filter(p => p.role === 'rs').sort((a, b) => POS_ORDER[a.pos] - POS_ORDER[b.pos]);

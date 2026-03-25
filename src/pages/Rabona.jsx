@@ -77,8 +77,121 @@ export default function Rabona() {
     const penaltyResolveRef = useRef(null);
     const pitchImgRef = useRef(null);
     const ballDrawX = useRef(0.5), ballDrawY = useRef(0.5), ballAngle = useRef(0);
+    const liveMatchdayRef = useRef(null);
+    const matchTimeRef = useRef('');
     const sim = useRef({ ps: 0, rs: 0, minute: 0, speed: 2, ballX: .5, ballY: .5, ballTargetX: .5, ballTargetY: .5, possession: true, log: [], done: false, rivalName: '', rivalPlayers: [], morale: 50, strategy: 'balanced', shots: 0, possCount: 0, totalTicks: 0, pendingEvent: null, halftimeShown: false, goalEffect: 0, pendingPenalty: null });
     const [display, setDisplay] = useState({ ps: 0, rs: 0, minute: 0, speed: 2, log: [], done: false, morale: 50, pendingEvent: null, strategy: 'balanced', pendingPenalty: null });
+    const [liveMatchday, setLiveMatchday] = useState(null);
+
+    // ── Generate live matchday: other matches happening simultaneously ──
+    function generateLiveMatchday(table, playerTeamIdx, matchNum) {
+      const others = table.filter((_, i) => i !== playerTeamIdx);
+      // Pair up other teams into fixtures
+      const fixtures = [];
+      const shuffled = [...others].sort(() => Math.random() - 0.5);
+      for (let i = 0; i < shuffled.length - 1; i += 2) {
+        fixtures.push({ home: shuffled[i].name, away: shuffled[i + 1].name, homeGoals: 0, awayGoals: 0, minute: 0, finished: false });
+      }
+      // Pick 2-3 fixtures, some might be "already done" (earlier kickoffs)
+      const count = Math.min(fixtures.length, rnd(2, 3));
+      const selected = fixtures.slice(0, count);
+      selected.forEach((fix, idx) => {
+        if (idx === 0 && Math.random() < 0.4) {
+          // Already finished
+          fix.homeGoals = rnd(0, 3);
+          fix.awayGoals = rnd(0, 2);
+          fix.minute = 70;
+          fix.finished = true;
+        } else {
+          fix.minute = rnd(0, 10);
+        }
+      });
+      return selected;
+    }
+
+    // ── Update other matches: roll for goals periodically ──
+    function tickLiveMatchday(fixtures, gameMinute) {
+      if (!fixtures) return fixtures;
+      return fixtures.map(fix => {
+        if (fix.finished) return fix;
+        const newFix = { ...fix, minute: gameMinute };
+        if (gameMinute >= 70 && Math.random() < 0.3) {
+          newFix.finished = true;
+        }
+        // Roll for goals every call (~10-15 game minutes)
+        if (Math.random() < 0.12) newFix.homeGoals++;
+        if (Math.random() < 0.10) newFix.awayGoals++;
+        return newFix;
+      });
+    }
+
+    // ── Compute projected mini table ──
+    function getProjectedMiniTable(table, playerScore, rivalScore, rivalName) {
+      // Clone table and apply current match scores
+      const projected = table.map(t => {
+        const row = { ...t, pts: t.w * 3 + t.d };
+        return row;
+      });
+      // Apply player's current match result
+      const me = projected.find(t => t.you);
+      const rival = projected.find(t => t.name === rivalName);
+      if (me) {
+        const tempGf = me.gf + playerScore;
+        const tempGa = me.ga + rivalScore;
+        const tempW = me.w + (playerScore > rivalScore ? 1 : 0);
+        const tempD = me.d + (playerScore === rivalScore ? 1 : 0);
+        const tempL = me.l + (playerScore < rivalScore ? 1 : 0);
+        me.pts = tempW * 3 + tempD;
+        me._gd = tempGf - tempGa;
+      }
+      if (rival) {
+        const tempW = rival.w + (rivalScore > playerScore ? 1 : 0);
+        const tempD = rival.d + (playerScore === rivalScore ? 1 : 0);
+        rival.pts = tempW * 3 + tempD;
+      }
+      // Apply live matchday results
+      if (liveMatchdayRef.current) {
+        for (const fix of liveMatchdayRef.current) {
+          const homeRow = projected.find(t => t.name === fix.home);
+          const awayRow = projected.find(t => t.name === fix.away);
+          if (homeRow) {
+            const w = fix.homeGoals > fix.awayGoals ? 1 : 0;
+            const d = fix.homeGoals === fix.awayGoals ? 1 : 0;
+            homeRow.pts = (homeRow.w + w) * 3 + (homeRow.d + d);
+          }
+          if (awayRow) {
+            const w = fix.awayGoals > fix.homeGoals ? 1 : 0;
+            const d = fix.homeGoals === fix.awayGoals ? 1 : 0;
+            awayRow.pts = (awayRow.w + w) * 3 + (awayRow.d + d);
+          }
+        }
+      }
+      // Sort by pts desc
+      projected.sort((a, b) => b.pts - a.pts || (b._gd || (b.gf - b.ga)) - (a._gd || (a.gf - a.ga)));
+      // Get position info
+      const origPts = (me ? me.w * 3 + me.d : 0); // before this match
+      const myIdx = projected.findIndex(t => t.you);
+      const origTable = [...table].sort((a, b) => (b.w * 3 + b.d) - (a.w * 3 + a.d) || (b.gf - b.ga) - (a.gf - a.ga));
+      const origIdx = origTable.findIndex(t => t.you);
+      const posChange = origIdx - myIdx; // positive = climbed
+      // Extract 3-4 rows around player
+      const start = Math.max(0, myIdx - 1);
+      const end = Math.min(projected.length, start + 4);
+      const slice = projected.slice(start, end).map((t, i) => ({
+        pos: start + i + 1,
+        name: t.name,
+        pts: t.pts,
+        you: t.you,
+      }));
+      return { rows: slice, posChange, myPos: myIdx + 1 };
+    }
+
+    // Generate a random match time on first render
+    if (!matchTimeRef.current) {
+      const hours = pick([1, 2, 4, 5, 7, 8]);
+      const pm = hours <= 5 ? 'PM' : 'PM';
+      matchTimeRef.current = `${hours}:${pick(['00', '30'])} PM`;
+    }
 
     const formation = FORMATIONS.find(f => f.id === game.formation) || FORMATIONS[1];
     const formMods = formation.mods;
@@ -98,14 +211,22 @@ export default function Rabona() {
         .sort((a, b) => POS_ORDER[a.pos] - POS_ORDER[b.pos] || (a.id || a.name).localeCompare(b.id || b.name));
       // Preload all sprites before starting animation to prevent procedural↔image flicker
       preloadAllSprites();
+      // Initialize live matchday (other concurrent matches)
+      const playerIdx = game.table.findIndex(t => t.you);
+      const initFixtures = generateLiveMatchday(game.table, playerIdx, game.matchNum);
+      liveMatchdayRef.current = initFixtures;
+      setLiveMatchday(initFixtures);
       Crowd.start();
       Music.duck(); // Lower music volume during match
       const displayInterval = (navigator.deviceMemory && navigator.deviceMemory <= 4) ? 250 : 150;
       const di = setInterval(() => { const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: s.done, morale: s.morale, pendingEvent: s.pendingEvent, strategy: s.strategy, pendingPenalty: s.pendingPenalty }); }, displayInterval);
       const ci = setInterval(() => { const s = sim.current; Crowd.setIntensity(s.morale / 100); }, 1000);
+      // Live matchday ticker: update other matches every ~3s
+      let lastLiveTick = 0;
+      const li = setInterval(() => { const s = sim.current; if (s.minute > lastLiveTick + 8) { lastLiveTick = s.minute; liveMatchdayRef.current = tickLiveMatchday(liveMatchdayRef.current, s.minute); setLiveMatchday(liveMatchdayRef.current ? [...liveMatchdayRef.current] : null); } }, 3000);
       let animId; function dl() { frameRef.current++; drawPitch(); animId = requestAnimationFrame(dl); } dl();
-      runEngineLoop().then(() => { clearInterval(di); clearInterval(ci); cancelAnimationFrame(animId); const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: true, morale: s.morale, pendingEvent: null, strategy: s.strategy }); });
-      return () => { clearInterval(di); clearInterval(ci); cancelAnimationFrame(animId); Crowd.stop(); Music.unduck(); };
+      runEngineLoop().then(() => { clearInterval(di); clearInterval(ci); clearInterval(li); cancelAnimationFrame(animId); const s = sim.current; setDisplay({ ps: s.ps, rs: s.rs, minute: s.minute, speed: s.speed, log: [...s.log.slice(-4)], done: true, morale: s.morale, pendingEvent: null, strategy: s.strategy }); });
+      return () => { clearInterval(di); clearInterval(ci); clearInterval(li); cancelAnimationFrame(animId); Crowd.stop(); Music.unduck(); };
     }, [match.running]);
 
     useEffect(() => {
@@ -395,7 +516,28 @@ export default function Rabona() {
       setGame(g => {
         const table = [...g.table]; const me = table.find(t => t.you); me.gf += ps; me.ga += rs;
         if (won) me.w++; else if (drew && !drawIsLoss) me.d++; else me.l++;
-        table.filter(t => !t.you).forEach(t => { if (Math.random() < .7) { const gf = rnd(0, 3), ga = rnd(0, 2); t.gf += gf; t.ga += ga; if (gf > ga) t.w++; else if (gf === ga) t.d++; else t.l++; } });
+        // Simulate rival matches and capture results
+        const matchResults = [{ home: me.name, away: S.rivalName, homeGoals: ps, awayGoals: rs, isPlayer: true }];
+        const rivals = table.filter(t => !t.you);
+        // Pair up rivals for matches; odd one out plays a "ghost" match
+        const shuffled = [...rivals].sort(() => Math.random() - 0.5);
+        for (let ri = 0; ri < shuffled.length; ri += 2) {
+          const tA = shuffled[ri];
+          if (ri + 1 < shuffled.length) {
+            const tB = shuffled[ri + 1];
+            if (Math.random() < .7) {
+              const posA = table.indexOf(tA), posB = table.indexOf(tB);
+              const strA = Math.max(1, rivals.length - posA), strB = Math.max(1, rivals.length - posB);
+              const gfA = rnd(0, Math.min(3, 1 + Math.floor(strA / 2))), gfB = rnd(0, Math.min(3, 1 + Math.floor(strB / 2)));
+              tA.gf += gfA; tA.ga += gfB; tB.gf += gfB; tB.ga += gfA;
+              if (gfA > gfB) { tA.w++; tB.l++; } else if (gfA === gfB) { tA.d++; tB.d++; } else { tA.l++; tB.w++; }
+              matchResults.push({ home: tA.name, away: tB.name, homeGoals: gfA, awayGoals: gfB, isPlayer: false });
+            }
+          } else {
+            // Odd rival out — solo simulated match vs unnamed opponent
+            if (Math.random() < .7) { const gf = rnd(0, 3), ga = rnd(0, 2); tA.gf += gf; tA.ga += ga; if (gf > ga) tA.w++; else if (gf === ga) tA.d++; else tA.l++; }
+          }
+        }
         const roster = g.roster.map(p => ({ ...p, trait: { ...p.trait }, personality: p.personality || pick(PERSONALITIES) }));
         roster.filter(p => p.role === 'st').forEach(p => {
           let xp = xpGain; if (p.trait.fx === 'xp') xp = Math.floor(xp * 1.5);
@@ -438,7 +580,39 @@ export default function Rabona() {
           for (let i = 0; i < ps; i++) { const scorer = fwdMid.length ? fwdMid[Math.floor(Math.random() * fwdMid.length)] : roster[0]; if (scorer) scorers[scorer.name] = (scorers[scorer.name] || 0) + 1; }
         }
         cs.scorers = scorers;
-        const newState = { ...g, table, roster, matchNum: g.matchNum + 1, matchesTogether: mt, chemistry: chem, lastLineup: lineupKey, coins: g.coins + coinGain + objCoins, streak: newStreak, rivalMemory: rivalMem, careerStats: cs, trainedIds: [] };
+        // Update league-wide top scorers
+        const prevScorers = [...(g.topScorers || [])];
+        // Add player's goals from this match
+        for (const [sName, sGoals] of Object.entries(scorers)) {
+          const prev = (g.careerStats?.scorers || {})[sName] || 0;
+          const added = sGoals - prev; // new goals this match
+          if (added > 0) {
+            const existing = prevScorers.find(s => s.name === sName && s.team === me.name);
+            if (existing) existing.goals += added;
+            else prevScorers.push({ name: sName, team: me.name, goals: added });
+          }
+        }
+        // Add rival goals from matchResults (random names for flavor)
+        const _FN = ['Memo','Chuy','Beto','Nacho','Paco','Rafa','Toño','Pipe','Lalo','Hugo','Diego','Leo'];
+        const _LN = ['García','López','Hernández','Martínez','Torres','Cruz','Reyes','Morales','Ortiz','Vargas'];
+        for (const mr of matchResults) {
+          if (mr.isPlayer) continue; // player goals already handled above
+          for (let gi = 0; gi < mr.homeGoals; gi++) {
+            const sn = `${_FN[rnd(0,_FN.length-1)]} ${_LN[rnd(0,_LN.length-1)]}`;
+            const ex = prevScorers.find(s => s.team === mr.home);
+            if (ex && Math.random() < 0.5) ex.goals++;
+            else prevScorers.push({ name: sn, team: mr.home, goals: 1 });
+          }
+          for (let gi = 0; gi < mr.awayGoals; gi++) {
+            const sn = `${_FN[rnd(0,_FN.length-1)]} ${_LN[rnd(0,_LN.length-1)]}`;
+            const ex = prevScorers.find(s => s.team === mr.away);
+            if (ex && Math.random() < 0.5) ex.goals++;
+            else prevScorers.push({ name: sn, team: mr.away, goals: 1 });
+          }
+        }
+        prevScorers.sort((a, b) => b.goals - a.goals);
+        const topScorers = prevScorers.slice(0, 12);
+        const newState = { ...g, table, roster, matchNum: g.matchNum + 1, matchesTogether: mt, chemistry: chem, lastLineup: lineupKey, coins: g.coins + coinGain + objCoins, streak: newStreak, rivalMemory: rivalMem, careerStats: cs, trainedIds: [], betweenMatchVisits: { roster: false, training: false, market: false }, matchResults, topScorers };
         setTimeout(() => autoSave(newState), 100);
         return newState;
       });
