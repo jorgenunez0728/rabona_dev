@@ -68,23 +68,39 @@ export function getRivalSpriteVariant(kitColor) {
 export const PN={GK:'POR',DEF:'DEF',MID:'MED',FWD:'DEL'};
 export const PC={GK:'gk',DEF:'df',MID:'md',FWD:'fw'};
 export const POS_ORDER={GK:0,DEF:1,MID:2,FWD:3};
-export const POS_COLORS={GK:'#ffc107',DEF:'#448aff',MID:'#00e676',FWD:'#ff1744'};
+export const POS_COLORS={GK:'#FBBF24',DEF:'#3B82F6',MID:'#22C55E',FWD:'#EF4444'};
 export const POS_ICON_IDX={GK:0,DEF:1,MID:2,FWD:3};
 
-// Design system
+// Design system — Premium FIFA-like aesthetic
 export const T={
-  bg:'#0D1117', bg1:'#161B22', bg2:'#21262D', bg3:'#30363D',
-  tx:'#E6EDF3', tx2:'#8B949E', tx3:'#6E7681', tx4:'#9198A1',
-  win:'#3FB950', lose:'#F85149', draw:'#D29922', info:'#58A6FF', gold:'#FFD700',
-  accent:'#00C853', purple:'#A855F7', border:'rgba(255,255,255,0.12)',
-  shadow:'0 1px 3px rgba(0,0,0,0.4)', glow:'0 0 12px rgba(88,166,255,0.15)',
-  fontPixel:"'Silkscreen', cursive", fontHeading:"'Oswald', sans-serif", fontBody:"'Barlow Condensed', sans-serif",
+  // Backgrounds — deeper, richer dark tones
+  bg:'#080C14', bg1:'#0F1923', bg2:'#162030', bg3:'#1E2A3A',
+  // Text — slightly warmer whites
+  tx:'#F0F4F8', tx2:'#94A3B8', tx3:'#64748B', tx4:'#475569',
+  // Semantic colors
+  win:'#22C55E', lose:'#EF4444', draw:'#F59E0B', info:'#3B82F6',
+  gold:'#F0C040', goldLight:'#FBBF24',
+  accent:'#10B981', purple:'#8B5CF6', cyan:'#06B6D4',
+  // Surfaces
+  border:'rgba(255,255,255,0.08)', borderHover:'rgba(255,255,255,0.16)',
+  glass:'rgba(15,25,35,0.75)', glassBorder:'rgba(255,255,255,0.10)',
+  // Shadows & Effects
+  shadow:'0 2px 8px rgba(0,0,0,0.5)', shadowLg:'0 8px 32px rgba(0,0,0,0.6)', shadowXl:'0 16px 48px rgba(0,0,0,0.7)',
+  glow:'0 0 20px rgba(59,130,246,0.15)', glowGold:'0 0 24px rgba(240,192,64,0.2)', glowGreen:'0 0 20px rgba(34,197,94,0.15)',
+  // Typography
+  fontPixel:"'Oswald', sans-serif", fontTitle:"'Oswald', sans-serif",
+  fontHeading:"'Oswald', sans-serif", fontBody:"'Inter', 'Barlow Condensed', sans-serif",
+  // Reusable gradients
+  gradientPrimary:'linear-gradient(135deg,#F0C040,#D4A017)', gradientGreen:'linear-gradient(135deg,#22C55E,#16A34A)',
+  gradientBlue:'linear-gradient(135deg,#3B82F6,#2563EB)', gradientPurple:'linear-gradient(135deg,#8B5CF6,#7C3AED)',
+  gradientDanger:'linear-gradient(135deg,#EF4444,#DC2626)', gradientDark:'linear-gradient(145deg,#0F1923,#162030)',
+  gradientStadium:'radial-gradient(ellipse at 50% 0%,rgba(59,130,246,0.08) 0%,transparent 60%)',
 };
 
 export const CARD_TIERS = {
-  normal: { bg: 'linear-gradient(135deg,rgba(20,30,58,0.95),rgba(26,39,68,0.95))', border: 'rgba(255,255,255,0.08)', glow: 'none' },
-  rare: { bg: 'linear-gradient(135deg,#1a1030,#2d1a4a)', border: 'rgba(168,85,247,0.3)', glow: '0 0 20px rgba(168,85,247,0.15)' },
-  legendary: { bg: 'linear-gradient(135deg,#2a2510,#3a3215)', border: 'rgba(255,215,0,0.4)', glow: '0 0 30px rgba(255,215,0,0.2)' },
+  normal: { bg: 'linear-gradient(145deg,#0F1923,#162030)', border: 'rgba(255,255,255,0.06)', glow: 'none' },
+  rare: { bg: 'linear-gradient(145deg,#1A1040,#2D1A5A)', border: 'rgba(139,92,246,0.35)', glow: '0 0 24px rgba(139,92,246,0.2)' },
+  legendary: { bg: 'linear-gradient(145deg,#2A2008,#3A2D10)', border: 'rgba(240,192,64,0.4)', glow: '0 0 32px rgba(240,192,64,0.25)' },
 };
 
 // Social emoji image URLs

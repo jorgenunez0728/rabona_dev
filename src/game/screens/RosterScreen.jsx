@@ -38,22 +38,61 @@ export default function RosterScreen() {
     });
   }
 
+  const emptySlots = Math.max(0, 6 - starters.length);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg }}>
-      <div style={{ flexShrink: 0, padding: '8px 10px', background: T.bg, borderBottom: `1px solid ${T.border}` }}>
-        <div style={{ display: 'flex', gap: 4, maxWidth: 420, margin: '4px auto 0', flexWrap: 'wrap' }}>
-          <button className="fw-btn fw-btn-outline" onClick={optimizeRoster} style={{ flex: 1, fontSize: 11, padding: '5px 8px', color: T.purple }}>⚡ Optimizar</button>
-          <button className="fw-btn fw-btn-outline" onClick={() => go('table')} style={{ fontSize: 11, padding: '5px 12px', color: T.tx2 }}>Tabla</button>
-          <button className={`fw-btn ${starters.length === 6 ? 'fw-btn-green' : 'fw-btn-outline'}`} onClick={() => starters.length === 6 && go('prematch')} disabled={starters.length < 6} style={{ fontSize: 11, padding: '5px 12px' }}>Previa</button>
+      {/* Top bar */}
+      <div style={{ flexShrink: 0, padding: '10px 12px', background: T.bg1, borderBottom: `1px solid ${T.border}` }}>
+        <div style={{ display: 'flex', gap: 6, maxWidth: 420, margin: '4px auto 0', flexWrap: 'wrap' }}>
+          <button className="fw-btn fw-btn-glass" onClick={optimizeRoster} style={{ flex: 1, fontFamily: T.fontHeading, fontSize: 11, padding: '6px 10px', color: T.purple, letterSpacing: 0.5, textTransform: 'uppercase' }}>Optimizar</button>
+          <button className="fw-btn fw-btn-outline" onClick={() => go('table')} style={{ fontFamily: T.fontHeading, fontSize: 11, padding: '6px 14px', color: T.tx2, letterSpacing: 0.5, textTransform: 'uppercase' }}>Tabla</button>
+          <button className={`fw-btn ${starters.length === 6 ? 'fw-btn-green' : 'fw-btn-outline'}`} onClick={() => starters.length === 6 && go('prematch')} disabled={starters.length < 6} style={{ fontFamily: T.fontHeading, fontSize: 11, padding: '6px 14px', letterSpacing: 0.5, textTransform: 'uppercase' }}>Previa</button>
         </div>
-        {starters.length < 6 && <div style={{ fontSize: 11, color: T.lose, textAlign: 'center', marginTop: 3 }}>⚠ Necesitas 6 titulares ({starters.length}/6)</div>}
+        {starters.length < 6 && <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.lose, textAlign: 'center', marginTop: 6 }}>Necesitas 6 titulares ({starters.length}/6)</div>}
       </div>
-      <div style={{ flex: 1, overflow: 'auto', padding: '6px 10px 16px' }}>
+
+      {/* Main content */}
+      <div style={{ flex: 1, overflow: 'auto', padding: '10px 12px 20px' }}>
         <div style={{ maxWidth: 420, margin: '0 auto' }}>
-          <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: T.win, textTransform: 'uppercase', padding: '4px 8px', borderLeft: `3px solid ${T.win}`, display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}><span>Titulares</span><span style={{ color: T.tx3 }}>{starters.length}/6</span></div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>{starters.map(p => (<PlayerCard key={p.id} player={p} isCaptain={p.id === game.captain} onAction={handleAction} onDetail={setDetailPlayer} compact />))}</div>
-          <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: T.tx3, textTransform: 'uppercase', padding: '6px 8px 4px', borderLeft: '3px solid #455a64', display: 'flex', justifyContent: 'space-between', marginTop: 8 }}><span>Reserva</span><span>{reserves.length}</span></div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>{reserves.map(p => (<PlayerCard key={p.id} player={p} isCaptain={p.id === game.captain} onAction={handleAction} onDetail={setDetailPlayer} compact />))}</div>
+
+          {/* Starters section */}
+          <div className="glass-light" style={{ borderRadius: 10, padding: '10px 10px 12px', marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, borderBottom: `1px solid ${T.glassBorder}`, marginBottom: 8 }}>
+              <span style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12, color: T.win, textTransform: 'uppercase', letterSpacing: 1 }}>Titulares</span>
+              <span style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>{starters.length}/6</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {starters.map(p => (
+                <PlayerCard key={p.id} player={p} isCaptain={p.id === game.captain} onAction={handleAction} onDetail={setDetailPlayer} compact />
+              ))}
+              {/* Empty slot placeholders */}
+              {Array.from({ length: emptySlots }).map((_, i) => (
+                <div key={`empty-${i}`} style={{ height: 40, borderRadius: 8, border: `1.5px dashed ${T.tx4}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx4 }}>Slot vacio</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Reserves section */}
+          <div className="glass-light" style={{ borderRadius: 10, padding: '10px 10px 12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, borderBottom: `1px solid ${T.glassBorder}`, marginBottom: 8 }}>
+              <span style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1 }}>Reserva</span>
+              <span style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx4 }}>{reserves.length}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {reserves.map(p => (
+                <PlayerCard key={p.id} player={p} isCaptain={p.id === game.captain} onAction={handleAction} onDetail={setDetailPlayer} compact />
+              ))}
+              {reserves.length === 0 && (
+                <div style={{ padding: '12px 0', textAlign: 'center' }}>
+                  <span style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx4 }}>Sin reservas</span>
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
