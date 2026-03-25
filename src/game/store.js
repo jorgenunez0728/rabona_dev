@@ -33,6 +33,9 @@ const INITIAL_GAME = {
   activeMutators: [],       // array of mutator ids
   blessings: [],            // transformed curses (blessing objects)
   matchBet: 0,              // coins wagered on current match (apostador)
+  betweenMatchVisits: { roster: false, training: false, market: false },
+  matchResults: [],           // [{home, away, homeGoals, awayGoals, isPlayer}] for current matchday
+  topScorers: [],             // [{name, team, goals}] league-wide scorers
 };
 
 const INITIAL_MATCH = {
@@ -65,6 +68,7 @@ const useGameStore = create((set, get) => ({
   rewardsTab: 'summary',
   market: { players: [], open: false },
   hasSave: false,
+  storageReady: false,
   globalStats: { ...INITIAL_GLOBAL_STATS },
   boardEvents: [],
   boardEventIdx: 0,
@@ -267,6 +271,20 @@ const useGameStore = create((set, get) => ({
     if (changed) set({ game: { ...game, cardCooldowns: cd } });
   },
 
+  // ─── Between-match visit tracking ───
+  markVisited: (screen) => {
+    const { game } = get();
+    const visits = { ...(game.betweenMatchVisits || { roster: false, training: false, market: false }) };
+    if (screen in visits) {
+      visits[screen] = true;
+      set({ game: { ...game, betweenMatchVisits: visits } });
+    }
+  },
+  resetVisits: () => {
+    const { game } = get();
+    set({ game: { ...game, betweenMatchVisits: { roster: false, training: false, market: false } } });
+  },
+
   // ─── Mutator bonus tracking ───
   saveMutatorBonus: () => {
     const { game, globalStats } = get();
@@ -326,7 +344,7 @@ const useGameStore = create((set, get) => ({
     const gs = loadGlobalStats();
     if (gs) set({ globalStats: gs });
     if (data) set({ game: data.game, hasSave: true });
-    set({ screen: 'title' });
+    set({ storageReady: true });
   },
 
   // ─── Start new run ───

@@ -346,27 +346,17 @@ export default function MapScreen() {
         })}
       </div>
 
-      {/* Result */}
+      {/* Continue button - appears right after header when result is ready */}
       {result && (
-        <div style={{ width: '100%', maxWidth: 400, padding: '12px 16px', marginTop: 16, position: 'relative', zIndex: 1 }}>
-          <div className="glass-heavy" style={{
-            borderRadius: 12,
-            padding: '20px 18px',
-            textAlign: 'center',
-            borderColor: T.glassBorder,
-          }}>
-            <div style={{ fontSize: 36, marginBottom: 8 }}>{result.icon}</div>
-            <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx, lineHeight: 1.5 }}>
-              {result.text}
-            </div>
-          </div>
+        <div style={{ width: '100%', maxWidth: 400, padding: '0 16px 4px', position: 'relative', zIndex: 1 }}>
           <button
             onClick={handleContinue}
             className="fw-btn fw-btn-green"
             style={{
-              width: '100%', marginTop: 14, fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14,
-              padding: '14px 24px', textTransform: 'uppercase', letterSpacing: 1,
-              touchAction: 'manipulation',
+              width: '100%', fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15,
+              padding: '14px 24px', textTransform: 'uppercase', letterSpacing: 1.5,
+              touchAction: 'manipulation', borderRadius: 10,
+              boxShadow: '0 4px 20px rgba(34,197,94,0.25)',
             }}
           >
             Continuar al Partido →
@@ -374,19 +364,38 @@ export default function MapScreen() {
         </div>
       )}
 
-      {/* Skip option */}
+      {/* Skip option - visible without scrolling */}
       {!chosen && (
-        <button
-          onClick={() => { SFX.play('click'); go('prematch'); }}
-          className="fw-btn fw-btn-outline"
-          style={{
-            marginTop: 20, fontFamily: T.fontHeading, fontWeight: 600, fontSize: 11,
-            padding: '10px 20px', textTransform: 'uppercase', letterSpacing: 1,
-            touchAction: 'manipulation', position: 'relative', zIndex: 1,
-          }}
-        >
-          Saltar directo al partido
-        </button>
+        <div style={{ width: '100%', maxWidth: 400, padding: '0 16px 4px', position: 'relative', zIndex: 1 }}>
+          <button
+            onClick={() => { SFX.play('click'); go('prematch'); }}
+            className="fw-btn fw-btn-outline"
+            style={{
+              width: '100%', fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12,
+              padding: '11px 20px', textTransform: 'uppercase', letterSpacing: 1,
+              touchAction: 'manipulation', borderRadius: 10,
+            }}
+          >
+            Saltar directo al partido →
+          </button>
+        </div>
+      )}
+
+      {/* Result display */}
+      {result && (
+        <div style={{ width: '100%', maxWidth: 400, padding: '8px 16px', position: 'relative', zIndex: 1 }}>
+          <div className="glass-heavy" style={{
+            borderRadius: 12,
+            padding: '16px 18px',
+            textAlign: 'center',
+            borderColor: T.glassBorder,
+          }}>
+            <div style={{ fontSize: 32, marginBottom: 6 }}>{result.icon}</div>
+            <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx, lineHeight: 1.5 }}>
+              {result.text}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Bottom spacer */}
