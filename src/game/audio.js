@@ -1,7 +1,7 @@
 import * as Tone from "tone";
 
 // ═══════════════════════════════════════
-// SOUND ENGINE — Pro procedural audio v2
+// SOUND ENGINE — Pro procedural audio v3
 // ═══════════════════════════════════════
 let audioStarted = false;
 export const startAudio = async () => { if (!audioStarted) { await Tone.start(); audioStarted = true; } };
