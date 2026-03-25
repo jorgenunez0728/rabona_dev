@@ -7,11 +7,11 @@ import useGameStore from '@/game/store';
 const NAV_SCREENS = new Set(['table', 'roster', 'training', 'market', 'stats']);
 
 const TABS = [
-  { screen: 'table',    icon: '📋', label: 'Tabla' },
-  { screen: 'roster',   icon: '👥', label: 'Roster' },
-  { screen: 'training', icon: '💪', label: 'Entreno' },
-  { screen: 'market',   icon: '🏪', label: 'Mercado' },
-  { screen: 'stats',    icon: '📖', label: 'Legado' },
+  { screen: 'table',    label: 'Tabla',   icon: '⬡' },
+  { screen: 'roster',   label: 'Roster',  icon: '◈' },
+  { screen: 'training', label: 'Entreno', icon: '△' },
+  { screen: 'market',   label: 'Mercado', icon: '◇' },
+  { screen: 'stats',    label: 'Legado',  icon: '☆' },
 ];
 
 export default function BottomNav() {
@@ -23,8 +23,8 @@ export default function BottomNav() {
     <div style={{
       position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 40,
       display: 'flex', alignItems: 'stretch',
-      background: 'rgba(11,17,32,0.95)', backdropFilter: 'blur(8px)',
-      borderTop: `1px solid ${T.border}`,
+      background: 'rgba(8,12,20,0.88)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+      borderTop: '1px solid rgba(255,255,255,0.06)',
       paddingBottom: 'var(--sab, 0px)',
     }}>
       {TABS.map(tab => {
@@ -41,20 +41,25 @@ export default function BottomNav() {
             }}
             style={{
               flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-              justifyContent: 'center', gap: 1,
-              padding: '8px 4px', minHeight: 52,
-              background: active ? 'rgba(255,255,255,0.04)' : 'transparent',
-              border: 'none', borderTop: active ? `2px solid ${T.gold}` : '2px solid transparent',
+              justifyContent: 'center', gap: 2, position: 'relative',
+              padding: '10px 4px', minHeight: 56,
+              background: active ? 'rgba(240,192,64,0.04)' : 'transparent',
+              border: 'none', borderTop: active ? `3px solid ${T.gold}` : '3px solid transparent',
               cursor: active ? 'default' : 'pointer',
               touchAction: 'manipulation',
-              transition: 'background 0.15s ease',
+              transition: 'all 0.25s ease',
             }}
           >
-            <span style={{ fontSize: 18, lineHeight: 1 }}>{tab.icon}</span>
             <span style={{
-              fontFamily: "'Oswald'", fontWeight: active ? 700 : 400,
-              fontSize: 10, color: active ? T.gold : T.tx3,
-              textTransform: 'uppercase', letterSpacing: 0.5,
+              fontSize: 16, lineHeight: 1,
+              color: active ? T.gold : T.tx3,
+              transition: 'color 0.25s ease',
+            }}>{tab.icon}</span>
+            <span style={{
+              fontFamily: T.fontHeading, fontWeight: active ? 700 : 500,
+              fontSize: 9, color: active ? T.gold : T.tx3,
+              textTransform: 'uppercase', letterSpacing: 1,
+              transition: 'color 0.25s ease',
             }}>
               {tab.label}
             </span>

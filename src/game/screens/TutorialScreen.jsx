@@ -11,8 +11,9 @@ function Dots({ total, current }) {
     <div style={{ display: 'flex', gap: 6, justifyContent: 'center', padding: '8px 0' }}>
       {Array.from({ length: total }, (_, i) => (
         <div key={i} style={{
-          width: i === current ? 20 : 6, height: 6, borderRadius: 3,
-          background: i === current ? T.gold : i < current ? T.win : 'rgba(255,255,255,0.15)',
+          width: i === current ? 22 : 6, height: 6, borderRadius: 3,
+          background: i === current ? T.gold : i < current ? T.win : 'rgba(255,255,255,0.1)',
+          boxShadow: i === current ? T.glowGold : 'none',
           transition: 'all 0.3s ease',
         }} />
       ))}
@@ -25,16 +26,16 @@ function MiniCard({ icon, title, desc, color, delay = 0 }) {
   const [visible, setVisible] = useState(false);
   useEffect(() => { const t = setTimeout(() => setVisible(true), delay); return () => clearTimeout(t); }, []);
   return (
-    <div style={{
-      display: 'flex', gap: 10, alignItems: 'center', padding: '10px 12px',
-      background: `${color}08`, border: `1.5px solid ${color}25`,
-      borderRadius: 8, opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(12px)',
+    <div className="glass" style={{
+      display: 'flex', gap: 10, alignItems: 'center', padding: '12px 14px',
+      border: `1.5px solid ${color}25`,
+      borderRadius: 10, opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(12px)',
       transition: 'all 0.4s ease',
     }}>
       <div style={{ fontSize: 28, minWidth: 36, textAlign: 'center' }}>{icon}</div>
       <div style={{ flex: 1 }}>
         <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 13, color }}>{title}</div>
-        <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx2, lineHeight: 1.3, marginTop: 1 }}>{desc}</div>
+        <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx2, lineHeight: 1.3, marginTop: 2 }}>{desc}</div>
       </div>
     </div>
   );
@@ -50,7 +51,7 @@ function AnimBar({ pct, color, label, delay = 0 }) {
         <span style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx2 }}>{label}</span>
         <span style={{ fontFamily: T.fontBody, fontSize: 10, color }}>{pct}%</span>
       </div>
-      <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+      <div style={{ height: 6, background: T.bg2, borderRadius: 3, overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${width}%`, background: color, borderRadius: 3, transition: 'width 0.8s ease' }} />
       </div>
     </div>
@@ -61,15 +62,15 @@ function AnimBar({ pct, color, label, delay = 0 }) {
 function SlotRow({ slots, delay = 0 }) {
   const [visible, setVisible] = useState(false);
   useEffect(() => { const t = setTimeout(() => setVisible(true), delay); return () => clearTimeout(t); }, []);
-  const colors = { offensive: '#f44336', defensive: '#2196f3', economic: '#ffd600', chaotic: '#9c27b0' };
+  const colors = { offensive: T.lose, defensive: T.info, economic: T.gold, chaotic: T.purple };
   const labels = { offensive: 'ATK', defensive: 'DEF', economic: 'ECO', chaotic: 'CAO' };
   return (
-    <div style={{ display: 'flex', gap: 4, justifyContent: 'center', opacity: visible ? 1 : 0, transition: 'opacity 0.5s ease' }}>
+    <div style={{ display: 'flex', gap: 6, justifyContent: 'center', opacity: visible ? 1 : 0, transition: 'opacity 0.5s ease' }}>
       {Object.entries(slots).map(([cat, count]) => (
         Array.from({ length: count }, (_, i) => (
           <div key={`${cat}-${i}`} style={{
-            width: 32, height: 32, borderRadius: 6,
-            background: `${colors[cat]}15`, border: `1.5px solid ${colors[cat]}40`,
+            width: 34, height: 34, borderRadius: 8,
+            background: `${colors[cat]}12`, border: `1.5px solid ${colors[cat]}35`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontFamily: T.fontHeading, fontSize: 8, color: colors[cat], fontWeight: 700,
           }}>
@@ -104,41 +105,40 @@ export default function TutorialScreen() {
   }
 
   const wrap = (bg, children) => (
-    <div style={{
+    <div className="stadium-glow" style={{
       display: 'flex', flexDirection: 'column', height: '100%',
       background: bg, position: 'relative', overflow: 'hidden',
     }}>
       {/* Skip button */}
-      <div style={{ position: 'absolute', top: 10, right: 14, zIndex: 10 }}>
-        <button onClick={skip} style={{
-          fontFamily: T.fontBody, fontSize: 11, color: T.tx3, background: 'rgba(0,0,0,0.3)',
-          border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '4px 12px',
-          cursor: 'pointer',
+      <div style={{ position: 'absolute', top: 12, right: 16, zIndex: 10 }}>
+        <button onClick={skip} className="fw-btn-glass" style={{
+          fontFamily: T.fontBody, fontSize: 11, color: T.tx3,
+          background: T.glass, backdropFilter: 'blur(12px)',
+          border: `1px solid ${T.glassBorder}`, borderRadius: 16, padding: '5px 14px',
+          cursor: 'pointer', transition: 'all 0.2s ease',
         }}>
           Saltar →
         </button>
       </div>
       {/* Content */}
-      <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 20px', gap: 12, textAlign: 'center' }}>
+      <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 20px', gap: 14, textAlign: 'center' }}>
         {children}
       </div>
       {/* Navigation */}
-      <div style={{ padding: '8px 20px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ padding: '8px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <Dots total={TOTAL} current={step} />
         <div style={{ display: 'flex', gap: 8 }}>
           {step > 0 && (
-            <button onClick={prev} style={{
-              flex: 1, fontFamily: T.fontHeading, fontWeight: 600, fontSize: 13, padding: '12px',
-              border: `1px solid ${T.tx3}`, background: 'transparent', color: T.tx2,
-              borderRadius: 6, cursor: 'pointer',
+            <button onClick={prev} className="fw-btn fw-btn-outline" style={{
+              flex: 1, fontSize: 13, padding: '12px', borderRadius: 8,
             }}>
               ← Atrás
             </button>
           )}
           <button onClick={next} className="fw-btn fw-btn-primary" style={{
-            flex: 2, fontSize: 14, padding: '12px',
+            flex: 2, fontSize: 14, padding: '13px', borderRadius: 8,
           }}>
-            {step < TOTAL - 1 ? 'Siguiente →' : 'Comenzar ⚽'}
+            {step < TOTAL - 1 ? 'Siguiente →' : 'Comenzar'}
           </button>
         </div>
       </div>
@@ -149,10 +149,10 @@ export default function TutorialScreen() {
   // SLIDE 0: Welcome / Intro
   // ═══════════════════════════════════════
   if (step === 0) return wrap(
-    'radial-gradient(ellipse at 50% 40%, #1a2a10 0%, #0b1120 70%)',
+    `radial-gradient(ellipse at 50% 40%, rgba(34,197,94,0.06) 0%, ${T.bg} 70%)`,
     <>
       <CoachPortrait id="miguel" size={56} />
-      <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 26, color: T.gold, textTransform: 'uppercase' }}>
+      <div className="text-gradient-gold" style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 26, textTransform: 'uppercase' }}>
         Don Miguel
       </div>
       <div style={{ fontFamily: T.fontBody, fontSize: 16, color: T.tx, maxWidth: 340, lineHeight: 1.7 }}>
@@ -162,12 +162,12 @@ export default function TutorialScreen() {
         "Pero ahora es diferente. Ahora tú decides <span style={{ color: T.gold }}>cómo</span> se juega."
       </div>
       <div style={{
-        display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap', justifyContent: 'center',
+        display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap', justifyContent: 'center',
       }}>
         {['🦅', '📐', '💰', '🔮', '🌱', '🎲'].map((e, i) => (
-          <div key={i} style={{
-            fontSize: 24, width: 40, height: 40, borderRadius: 8,
-            background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.15)',
+          <div key={i} className="glass" style={{
+            fontSize: 24, width: 42, height: 42, borderRadius: 10,
+            border: `1px solid ${T.gold}20`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             animation: `fadeIn 0.3s ease ${i * 0.1}s both`,
           }}>{e}</div>
@@ -180,26 +180,26 @@ export default function TutorialScreen() {
   // SLIDE 1: The Run (Core Loop)
   // ═══════════════════════════════════════
   if (step === 1) return wrap(
-    'radial-gradient(ellipse at 50% 60%, #0b1830 0%, #0b1120 70%)',
+    `radial-gradient(ellipse at 50% 60%, rgba(59,130,246,0.06) 0%, ${T.bg} 70%)`,
     <>
       <div style={{ fontSize: 48 }}>🔄</div>
-      <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 22, color: '#fff', textTransform: 'uppercase' }}>
+      <div style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 22, color: T.tx, textTransform: 'uppercase' }}>
         Cada Run es Único
       </div>
       <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx2, maxWidth: 340, lineHeight: 1.6 }}>
-        Cada partida es una carrera completa — del <span style={{ color: '#00e676' }}>Barrio</span> hasta las <span style={{ color: '#ffd600' }}>Estrellas</span>.
+        Cada partida es una carrera completa — del <span style={{ color: T.win }}>Barrio</span> hasta las <span style={{ color: T.gold }}>Estrellas</span>.
         Si pierdes, empiezas de nuevo. Pero lo que aprendes y desbloqueas <span style={{ color: T.gold }}>se queda para siempre</span>.
       </div>
       {/* Visual flow */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 0, maxWidth: 300, width: '100%', marginTop: 8 }}>
         {[
-          { icon: '🏠', label: 'Liga Barrio', color: '#4caf50' },
+          { icon: '🏠', label: 'Liga Barrio', color: T.win },
           { icon: '⬇', label: '', color: T.tx3 },
-          { icon: '🏟', label: 'Liga Estatal', color: '#2196f3' },
+          { icon: '🏟', label: 'Liga Estatal', color: T.info },
           { icon: '⬇', label: '', color: T.tx3 },
-          { icon: '🌍', label: 'Liga Mundial', color: '#ff9800' },
+          { icon: '🌍', label: 'Liga Mundial', color: T.draw },
           { icon: '⬇', label: '', color: T.tx3 },
-          { icon: '🛸', label: 'Liga Intergaláctica', color: '#ffd600' },
+          { icon: '🛸', label: 'Liga Intergaláctica', color: T.gold },
         ].map((item, i) => (
           <div key={i} style={{
             display: 'flex', alignItems: 'center', gap: 8,
@@ -219,19 +219,19 @@ export default function TutorialScreen() {
   // SLIDE 2: Manager Archetypes
   // ═══════════════════════════════════════
   if (step === 2) return wrap(
-    'radial-gradient(ellipse at 50% 30%, #2d1a4a 0%, #0b1120 70%)',
+    `radial-gradient(ellipse at 50% 30%, rgba(139,92,246,0.08) 0%, ${T.bg} 70%)`,
     <>
-      <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 18, color: T.purple, textTransform: 'uppercase', letterSpacing: 1 }}>
+      <div style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 18, color: T.purple, textTransform: 'uppercase', letterSpacing: 1 }}>
         Filosofía de Juego
       </div>
       <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx2, maxWidth: 340, lineHeight: 1.5 }}>
-        Antes de cada run, elige una <span style={{ color: T.purple, fontWeight: 700 }}>filosofía de manager</span> que cambia <span style={{ color: '#fff' }}>todo</span>: tu economía, tu estilo, tus opciones tácticas.
+        Antes de cada run, elige una <span style={{ color: T.purple, fontWeight: 700 }}>filosofía de manager</span> que cambia <span style={{ color: T.tx }}>todo</span>: tu economía, tu estilo, tus opciones tácticas.
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 340, width: '100%' }}>
-        <MiniCard icon="🦅" title="El Caudillo" desc="Empates = derrota. Pero +25% ATK cuando vas perdiendo." color="#f44336" delay={100} />
-        <MiniCard icon="📐" title="El Arquitecto" desc="Ve la formación rival. Eventos tácticos con opción secreta." color="#2196f3" delay={250} />
-        <MiniCard icon="💰" title="El Mercenario" desc="+30 monedas. -30% precios. Jugadores nuevos llegan con boost." color="#ffd600" delay={400} />
-        <MiniCard icon="🔮" title="El Místico" desc="Maldiciones más fuertes... pero dan bonos ocultos." color="#9c27b0" delay={550} />
+        <MiniCard icon="🦅" title="El Caudillo" desc="Empates = derrota. Pero +25% ATK cuando vas perdiendo." color={T.lose} delay={100} />
+        <MiniCard icon="📐" title="El Arquitecto" desc="Ve la formación rival. Eventos tácticos con opción secreta." color={T.info} delay={250} />
+        <MiniCard icon="💰" title="El Mercenario" desc="+30 monedas. -30% precios. Jugadores nuevos llegan con boost." color={T.gold} delay={400} />
+        <MiniCard icon="🔮" title="El Místico" desc="Maldiciones más fuertes... pero dan bonos ocultos." color={T.purple} delay={550} />
       </div>
       <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, marginTop: 4 }}>
         + La Cantera 🌱 y El Apostador 🎲 (desbloqueables)
@@ -243,24 +243,24 @@ export default function TutorialScreen() {
   // SLIDE 3: Tactical Cards
   // ═══════════════════════════════════════
   if (step === 3) return wrap(
-    'radial-gradient(ellipse at 50% 40%, #1a1030 0%, #0b1120 70%)',
+    `radial-gradient(ellipse at 50% 40%, rgba(139,92,246,0.06) 0%, ${T.bg} 70%)`,
     <>
-      <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 18, color: T.gold, textTransform: 'uppercase', letterSpacing: 1 }}>
+      <div className="text-gradient-gold" style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 18, textTransform: 'uppercase', letterSpacing: 1 }}>
         🎴 Cartas Tácticas
       </div>
       <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx2, maxWidth: 340, lineHeight: 1.5 }}>
-        Colecciona <span style={{ color: T.gold }}>cartas permanentes</span> entre runs. Antes de jugar, arma tu <span style={{ color: '#fff' }}>loadout</span> — las cartas se activan solas durante los partidos.
+        Colecciona <span style={{ color: T.gold }}>cartas permanentes</span> entre runs. Antes de jugar, arma tu <span style={{ color: T.tx }}>loadout</span> — las cartas se activan solas durante los partidos.
       </div>
       {/* Card examples */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 340, width: '100%' }}>
-        <MiniCard icon="⏰" title="Presión Final" desc="Después del min 75, +20% chance de gol." color="#f44336" delay={100} />
-        <MiniCard icon="🧱" title="Muro Humano" desc="Primera chance rival: -15% probabilidad de gol." color="#2196f3" delay={250} />
-        <MiniCard icon="💵" title="Bono por Gol" desc="+5 monedas por cada gol que anotes." color="#ffd600" delay={400} />
-        <MiniCard icon="🌑" title="Pacto Oscuro" desc="+30% gol... pero ganas maldición cada 3 partidos." color="#9c27b0" delay={550} />
+        <MiniCard icon="⏰" title="Presión Final" desc="Después del min 75, +20% chance de gol." color={T.lose} delay={100} />
+        <MiniCard icon="🧱" title="Muro Humano" desc="Primera chance rival: -15% probabilidad de gol." color={T.info} delay={250} />
+        <MiniCard icon="💵" title="Bono por Gol" desc="+5 monedas por cada gol que anotes." color={T.gold} delay={400} />
+        <MiniCard icon="🌑" title="Pacto Oscuro" desc="+30% gol... pero ganas maldición cada 3 partidos." color={T.purple} delay={550} />
       </div>
       {/* Slot preview */}
       <div style={{ marginTop: 8 }}>
-        <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, marginBottom: 4 }}>Tu filosofía define los slots disponibles:</div>
+        <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, marginBottom: 6 }}>Tu filosofía define los slots disponibles:</div>
         <SlotRow slots={{ offensive: 3, defensive: 1, economic: 1, chaotic: 1 }} delay={700} />
       </div>
     </>
@@ -270,28 +270,28 @@ export default function TutorialScreen() {
   // SLIDE 4: Curse Mastery
   // ═══════════════════════════════════════
   if (step === 4) return wrap(
-    'radial-gradient(ellipse at 50% 50%, #2a0a0a 0%, #0b1120 70%)',
+    `radial-gradient(ellipse at 50% 50%, rgba(239,68,68,0.06) 0%, ${T.bg} 70%)`,
     <>
-      <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 18, color: '#ef5350', textTransform: 'uppercase', letterSpacing: 1 }}>
+      <div style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 18, color: T.lose, textTransform: 'uppercase', letterSpacing: 1 }}>
         Dominio de Maldiciones
       </div>
       <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx2, maxWidth: 340, lineHeight: 1.5 }}>
-        Las maldiciones ya no son solo malas. <span style={{ color: '#ef5350' }}>Aguanta el sufrimiento</span> y la maldición se transforma en <span style={{ color: T.gold }}>bendición</span>.
+        Las maldiciones ya no son solo malas. <span style={{ color: T.lose }}>Aguanta el sufrimiento</span> y la maldición se transforma en <span style={{ color: T.gold }}>bendición</span>.
       </div>
       {/* Transformation visual */}
-      <div style={{ maxWidth: 320, width: '100%', background: 'rgba(239,83,80,0.06)', borderRadius: 10, padding: '14px 16px', border: '1px solid rgba(239,83,80,0.15)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+      <div className="glass" style={{ maxWidth: 320, width: '100%', borderRadius: 12, padding: '16px 18px', border: `1px solid ${T.lose}20` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
           <span style={{ fontSize: 24 }}>💸</span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: T.fontHeading, fontSize: 12, color: '#ef5350' }}>Deuda con el Barrio</div>
+            <div style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.lose }}>Deuda con el Barrio</div>
             <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>-10 monedas por jornada</div>
           </div>
         </div>
-        <AnimBar pct={75} color="#ef5350" label="Maestría" delay={300} />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, margin: '6px 0' }}>
-          <div style={{ width: 40, height: 1, background: 'rgba(255,255,255,0.1)' }} />
+        <AnimBar pct={75} color={T.lose} label="Maestría" delay={300} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, margin: '8px 0' }}>
+          <div style={{ width: 40, height: 1, background: T.glassBorder }} />
           <span style={{ fontSize: 10, color: T.tx3 }}>se transforma en</span>
-          <div style={{ width: 40, height: 1, background: 'rgba(255,255,255,0.1)' }} />
+          <div style={{ width: 40, height: 1, background: T.glassBorder }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: 0, animation: 'fadeIn 0.5s ease 1s forwards' }}>
           <span style={{ fontSize: 24 }}>💸</span>
@@ -302,7 +302,7 @@ export default function TutorialScreen() {
         </div>
       </div>
       <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx2, maxWidth: 320, lineHeight: 1.4, marginTop: 4 }}>
-        En el <span style={{ color: '#ef5350' }}>Curandero</span> puedes curar la maldición... pero pierdes el progreso de maestría. <span style={{ color: T.gold }}>¿Curar o aguantar?</span>
+        En el <span style={{ color: T.lose }}>Curandero</span> puedes curar la maldición... pero pierdes el progreso de maestría. <span style={{ color: T.gold }}>¿Curar o aguantar?</span>
       </div>
     </>
   );
@@ -311,22 +311,22 @@ export default function TutorialScreen() {
   // SLIDE 5: Ascension Mutators
   // ═══════════════════════════════════════
   if (step === 5) return wrap(
-    'radial-gradient(ellipse at 50% 60%, #1a1010 0%, #0b1120 70%)',
+    `radial-gradient(ellipse at 50% 60%, rgba(245,158,11,0.06) 0%, ${T.bg} 70%)`,
     <>
-      <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 18, color: '#ff9800', textTransform: 'uppercase', letterSpacing: 1 }}>
+      <div style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 18, color: T.draw, textTransform: 'uppercase', letterSpacing: 1 }}>
         Mutadores de Ascensión
       </div>
       <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx2, maxWidth: 340, lineHeight: 1.5 }}>
-        ¿Quieres más <span style={{ color: '#ff9800' }}>desafío</span>? Activa hasta 3 mutadores antes de tu run. Más difícil = más <span style={{ color: T.gold }}>puntos de legado</span>.
+        ¿Quieres más <span style={{ color: T.draw }}>desafío</span>? Activa hasta 3 mutadores antes de tu run. Más difícil = más <span style={{ color: T.gold }}>puntos de legado</span>.
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 340, width: '100%' }}>
-        <MiniCard icon="⏰" title="Reloj Maldito" desc="Partidos de 120 min. Más ticks, más chances. +1 LP" color="#ff9800" delay={100} />
-        <MiniCard icon="🪟" title="Cristal" desc="Lesiones 3x más probables. +2 LP" color="#ff9800" delay={250} />
-        <MiniCard icon="☠️" title="Maldición Eterna" desc="Empiezas con 2 maldiciones aleatorias. +3 LP" color="#ff9800" delay={400} />
+        <MiniCard icon="⏰" title="Reloj Maldito" desc="Partidos de 120 min. Más ticks, más chances. +1 LP" color={T.draw} delay={100} />
+        <MiniCard icon="🪟" title="Cristal" desc="Lesiones 3x más probables. +2 LP" color={T.draw} delay={250} />
+        <MiniCard icon="☠️" title="Maldición Eterna" desc="Empiezas con 2 maldiciones aleatorias. +3 LP" color={T.draw} delay={400} />
       </div>
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, padding: '8px 14px',
-        background: `${T.gold}08`, border: `1px solid ${T.gold}20`, borderRadius: 8,
+      <div className="glass" style={{
+        display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, padding: '10px 16px',
+        border: `1px solid ${T.gold}20`, borderRadius: 10,
         opacity: 0, animation: 'fadeIn 0.5s ease 0.6s forwards',
       }}>
         <span style={{ fontSize: 20 }}>🌳</span>
@@ -341,9 +341,9 @@ export default function TutorialScreen() {
   // SLIDE 6: Setup Flow + Go
   // ═══════════════════════════════════════
   if (step === 6) return wrap(
-    'radial-gradient(ellipse at 50% 40%, #1a2510 0%, #0b1120 70%)',
+    `radial-gradient(ellipse at 50% 40%, rgba(34,197,94,0.06) 0%, ${T.bg} 70%)`,
     <>
-      <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 18, color: T.win, textTransform: 'uppercase', letterSpacing: 1 }}>
+      <div style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 18, color: T.win, textTransform: 'uppercase', letterSpacing: 1 }}>
         Tu Run, Tus Reglas
       </div>
       <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx2, maxWidth: 340, lineHeight: 1.5 }}>
@@ -354,18 +354,18 @@ export default function TutorialScreen() {
         {[
           { n: '1', icon: '🦅', label: 'Filosofía de Juego', sub: 'Elige tu estilo', color: T.purple },
           { n: '2', icon: '👴', label: 'Entrenador', sub: '8 coaches con habilidades únicas', color: T.gold },
-          { n: '3', icon: '🎴', label: 'Cartas Tácticas', sub: 'Arma tu loadout', color: '#9c27b0' },
-          { n: '4', icon: '📿', label: 'Reliquia Inicial', sub: '¿Segura o maldita?', color: '#ff9800' },
-          { n: '5', icon: '⬆', label: 'Dificultad + Mutadores', sub: 'Riesgo vs recompensa', color: '#ef5350' },
+          { n: '3', icon: '🎴', label: 'Cartas Tácticas', sub: 'Arma tu loadout', color: T.purple },
+          { n: '4', icon: '📿', label: 'Reliquia Inicial', sub: '¿Segura o maldita?', color: T.draw },
+          { n: '5', icon: '⬆', label: 'Dificultad + Mutadores', sub: 'Riesgo vs recompensa', color: T.lose },
         ].map((item, i) => (
           <div key={i}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
               opacity: 0, animation: `slideUp 0.3s ease ${i * 0.12}s forwards`,
             }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: '50%',
-                background: `${item.color}15`, border: `1.5px solid ${item.color}40`,
+              <div className="glass" style={{
+                width: 34, height: 34, borderRadius: '50%',
+                border: `1.5px solid ${item.color}35`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 16,
               }}>
@@ -378,7 +378,7 @@ export default function TutorialScreen() {
             </div>
             {i < 4 && (
               <div style={{ display: 'flex', justifyContent: 'center', height: 8 }}>
-                <div style={{ width: 1, height: '100%', background: 'rgba(255,255,255,0.08)' }} />
+                <div style={{ width: 1, height: '100%', background: T.glassBorder }} />
               </div>
             )}
           </div>

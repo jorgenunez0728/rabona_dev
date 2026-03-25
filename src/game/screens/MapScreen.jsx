@@ -232,39 +232,43 @@ export default function MapScreen() {
   const curses = game.curses || [];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', overflow: 'auto', background: 'linear-gradient(180deg,#0b1120 0%,#1a1030 100%)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', overflow: 'auto', background: T.bg }}>
+      {/* Stadium atmosphere glow */}
+      <div className="stadium-glow" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 200, pointerEvents: 'none', zIndex: 0 }} />
+
       {/* Header */}
-      <div style={{ width: '100%', padding: '16px', textAlign: 'center' }}>
-        <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 20, color: T.tx, textTransform: 'uppercase', letterSpacing: 2 }}>
+      <div style={{ width: '100%', padding: '20px 16px 12px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+        <div style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 22, color: T.tx, textTransform: 'uppercase', letterSpacing: 3 }}>
           Entre Jornadas
         </div>
-        <div style={{ fontFamily: T.fontBody, fontSize: 13, color: T.tx3, marginTop: 4 }}>
+        <div style={{ fontFamily: T.fontBody, fontSize: 13, color: T.tx3, marginTop: 6 }}>
           Jornada {game.matchNum + 1} · Elige tu camino
         </div>
+        <div className="divider-subtle" style={{ marginTop: 12, maxWidth: 200, marginLeft: 'auto', marginRight: 'auto' }} />
       </div>
 
       {/* Active Curses with mastery bars */}
       {curses.length > 0 && (
-        <div style={{ width: '100%', maxWidth: 380, padding: '0 16px', marginBottom: 8 }}>
-          <div style={{ fontFamily: T.fontHeading, fontSize: 10, color: '#ef5350', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
+        <div style={{ width: '100%', maxWidth: 400, padding: '0 16px', marginBottom: 10, position: 'relative', zIndex: 1 }}>
+          <div style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.lose, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>
             Maldiciones Activas
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {curses.map((c, i) => {
               const masteryPct = c.masteryThreshold ? Math.min(100, Math.floor(((c.masteryProgress || 0) / c.masteryThreshold) * 100)) : 0;
               return (
-                <div key={i} style={{ background: 'rgba(239,83,80,0.06)', border: '1px solid rgba(239,83,80,0.15)', borderRadius: 6, padding: '6px 10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                    <span style={{ fontSize: 11, color: '#ef5350', fontFamily: T.fontBody }}>
+                <div key={i} className="glass" style={{ borderRadius: 8, padding: '8px 12px', borderColor: 'rgba(239,68,68,0.2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, color: T.lose, fontFamily: T.fontBody, fontWeight: 500 }}>
                       {c.i} {c.n} {c.remaining > 0 ? `(${c.remaining})` : ''}
                     </span>
                     {c.blessing && (
-                      <span style={{ fontSize: 9, color: T.gold, fontFamily: T.fontBody }}>{masteryPct}% → {c.blessing.i}</span>
+                      <span style={{ fontSize: 10, color: T.gold, fontFamily: T.fontBody }}>{masteryPct}% → {c.blessing.i}</span>
                     )}
                   </div>
                   {c.masteryThreshold && (
-                    <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${masteryPct}%`, background: masteryPct >= 100 ? T.gold : 'linear-gradient(90deg,#ef5350,#ff9800)', borderRadius: 2, transition: 'width 0.3s' }} />
+                    <div className="stat-bar" style={{ height: 4 }}>
+                      <div className="stat-bar-fill" style={{ width: `${masteryPct}%`, background: masteryPct >= 100 ? T.gradientPrimary : 'linear-gradient(90deg,#EF4444,#F59E0B)' }} />
                     </div>
                   )}
                 </div>
@@ -275,13 +279,13 @@ export default function MapScreen() {
       )}
       {/* Active Blessings */}
       {(game.blessings || []).length > 0 && (
-        <div style={{ width: '100%', maxWidth: 380, padding: '0 16px', marginBottom: 8 }}>
-          <div style={{ fontFamily: T.fontHeading, fontSize: 10, color: T.gold, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
+        <div style={{ width: '100%', maxWidth: 400, padding: '0 16px', marginBottom: 10, position: 'relative', zIndex: 1 }}>
+          <div style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.gold, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>
             Bendiciones
           </div>
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {(game.blessings || []).map((b, i) => (
-              <div key={i} style={{ background: `${T.gold}08`, border: `1px solid ${T.gold}20`, borderRadius: 4, padding: '3px 8px', fontSize: 10, color: T.gold, fontFamily: T.fontBody }}>
+              <div key={i} className="glass" style={{ borderRadius: 6, padding: '4px 10px', fontSize: 11, color: T.gold, fontFamily: T.fontBody, borderColor: `${T.gold}25` }}>
                 {b.i} {b.n}
               </div>
             ))}
@@ -290,11 +294,11 @@ export default function MapScreen() {
       )}
 
       {/* Map Nodes */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '8px 16px', width: '100%', maxWidth: 380 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '8px 16px', width: '100%', maxWidth: 400, position: 'relative', zIndex: 1 }}>
         {/* Visual: connecting lines */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 4 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 4 }}>
           {nodes.map((_, i) => (
-            <div key={i} style={{ width: 2, height: 20, background: 'rgba(255,255,255,0.08)' }} />
+            <div key={i} style={{ width: 2, height: 24, background: T.border, borderRadius: 1 }} />
           ))}
         </div>
 
@@ -305,32 +309,37 @@ export default function MapScreen() {
             <div
               key={i}
               onClick={() => !disabled && handleChoose(node)}
+              className={isChosen ? 'card-gold' : 'glass'}
               style={{
-                background: isChosen ? `${node.color}20` : disabled ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.03)',
-                border: `1.5px solid ${isChosen ? node.color : disabled ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.08)'}`,
-                borderRadius: 8,
-                padding: '14px 12px',
+                borderRadius: 10,
+                padding: '16px 14px',
                 cursor: disabled ? 'not-allowed' : 'pointer',
-                opacity: disabled ? 0.3 : 1,
-                transition: 'all 0.2s ease',
+                opacity: disabled ? 0.25 : 1,
+                transition: 'all 0.25s ease',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 12,
-                minHeight: 56,
+                gap: 14,
+                minHeight: 64,
                 touchAction: 'manipulation',
+                transform: isChosen ? 'scale(1.02)' : 'scale(1)',
+                borderColor: isChosen ? T.gold : disabled ? 'rgba(255,255,255,0.03)' : T.glassBorder,
+                boxShadow: isChosen ? T.glowGold : T.shadow,
               }}
             >
-              <div style={{ fontSize: 28, minWidth: 36, textAlign: 'center' }}>{node.i}</div>
+              <div style={{
+                fontSize: 30, minWidth: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: `${node.color}15`, borderRadius: 10, flexShrink: 0,
+              }}>{node.i}</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15, color: isChosen ? node.color : T.tx, textTransform: 'uppercase' }}>
+                <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15, color: isChosen ? T.gold : T.tx, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   {node.n}
                 </div>
-                <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx3, lineHeight: 1.3, marginTop: 2 }}>
+                <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx3, lineHeight: 1.4, marginTop: 3 }}>
                   {node.d}
                 </div>
               </div>
               {!chosen && (
-                <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.2)' }}>→</div>
+                <div style={{ fontSize: 18, color: T.tx4, fontWeight: 300 }}>›</div>
               )}
             </div>
           );
@@ -339,27 +348,25 @@ export default function MapScreen() {
 
       {/* Result */}
       {result && (
-        <div style={{ width: '100%', maxWidth: 380, padding: '12px 16px', marginTop: 12 }}>
-          <div style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 8,
-            padding: '14px 16px',
+        <div style={{ width: '100%', maxWidth: 400, padding: '12px 16px', marginTop: 16, position: 'relative', zIndex: 1 }}>
+          <div className="glass-heavy" style={{
+            borderRadius: 12,
+            padding: '20px 18px',
             textAlign: 'center',
+            borderColor: T.glassBorder,
           }}>
-            <div style={{ fontSize: 32, marginBottom: 6 }}>{result.icon}</div>
-            <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx, lineHeight: 1.4 }}>
+            <div style={{ fontSize: 36, marginBottom: 8 }}>{result.icon}</div>
+            <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx, lineHeight: 1.5 }}>
               {result.text}
             </div>
           </div>
           <button
             onClick={handleContinue}
+            className="fw-btn fw-btn-green"
             style={{
-              width: '100%', marginTop: 12, fontFamily: T.fontHeading, fontWeight: 600, fontSize: 14,
-              padding: '12px 24px', border: 'none',
-              background: 'linear-gradient(135deg,#00c853,#00e676)', color: '#0b1120',
-              clipPath: 'polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)',
-              cursor: 'pointer', textTransform: 'uppercase', touchAction: 'manipulation',
+              width: '100%', marginTop: 14, fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14,
+              padding: '14px 24px', textTransform: 'uppercase', letterSpacing: 1,
+              touchAction: 'manipulation',
             }}
           >
             Continuar al Partido →
@@ -371,16 +378,19 @@ export default function MapScreen() {
       {!chosen && (
         <button
           onClick={() => { SFX.play('click'); go('prematch'); }}
+          className="fw-btn fw-btn-outline"
           style={{
-            marginTop: 16, fontFamily: T.fontHeading, fontWeight: 600, fontSize: 11,
-            padding: '8px 16px', border: `1px solid ${T.tx3}`, background: 'transparent',
-            color: T.tx3, borderRadius: 4, cursor: 'pointer', textTransform: 'uppercase',
-            touchAction: 'manipulation',
+            marginTop: 20, fontFamily: T.fontHeading, fontWeight: 600, fontSize: 11,
+            padding: '10px 20px', textTransform: 'uppercase', letterSpacing: 1,
+            touchAction: 'manipulation', position: 'relative', zIndex: 1,
           }}
         >
           Saltar directo al partido
         </button>
       )}
+
+      {/* Bottom spacer */}
+      <div style={{ height: 24 }} />
     </div>
   );
 }

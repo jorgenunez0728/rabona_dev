@@ -832,17 +832,17 @@ export default function Rabona() {
         {/* Pitch - full width portrait */}
         <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
           <canvas ref={canvasRef} onDoubleClick={() => { sim.current.speed = 0; setDisplay(d => ({ ...d, speed: 0 })); }} style={{ width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated', touchAction: 'manipulation' }} />
-          {/* Scoreboard overlay */}
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 15, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', padding: '6px 10px', minHeight: 44 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderRadius: 4, overflow: 'hidden' }}>
-              <div style={{ padding: '4px 8px', background: '#1565c0', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 12, color: '#fff' }}>HAL</div>
-              <div style={{ padding: '4px 10px', background: '#222', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 18, color: '#fff', minWidth: 48, textAlign: 'center' }}>{display.ps}-{display.rs}</div>
-              <div style={{ padding: '4px 8px', background: '#c62828', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 12, color: '#fff' }}>{match.rival?.name?.substring(0, 4) || 'RIV'}</div>
-              <div style={{ padding: '4px 6px', background: T.accent, fontFamily: "'Oswald'", fontWeight: 700, fontSize: 12, color: '#000' }}>{display.minute}'</div>
+          {/* Scoreboard overlay — premium glass */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 15, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(8,12,20,0.82)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', padding: '6px 10px', minHeight: 46, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderRadius: 6, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+              <div style={{ padding: '5px 10px', background: 'linear-gradient(135deg,#1565c0,#1976d2)', fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: '#fff', letterSpacing: 0.5 }}>HAL</div>
+              <div style={{ padding: '5px 12px', background: T.bg1, fontFamily: T.fontHeading, fontWeight: 700, fontSize: 20, color: '#fff', minWidth: 52, textAlign: 'center' }}>{display.ps}-{display.rs}</div>
+              <div style={{ padding: '5px 10px', background: 'linear-gradient(135deg,#c62828,#d32f2f)', fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: '#fff', letterSpacing: 0.5 }}>{match.rival?.name?.substring(0, 4) || 'RIV'}</div>
+              <div style={{ padding: '5px 8px', background: T.gradientGreen, fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: '#080C14' }}>{display.minute}'</div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 40, height: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 2 }}><div style={{ width: `${display.morale}%`, height: '100%', background: moraleColor, borderRadius: 2 }} /></div>
-              <span style={{ fontSize: 11, color: moraleColor, fontFamily: "'Oswald'", fontWeight: 700 }}>{display.morale}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 44, height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2 }}><div style={{ width: `${display.morale}%`, height: '100%', background: moraleColor, borderRadius: 2, transition: 'width 0.3s ease' }} /></div>
+              <span style={{ fontSize: 11, color: moraleColor, fontFamily: T.fontHeading, fontWeight: 700 }}>{display.morale}</span>
             </div>
           </div>
           {/* Speed controls - floating bottom-right */}
@@ -853,11 +853,11 @@ export default function Rabona() {
             <button onClick={() => { SFX._muted = !SFX._muted; if (SFX._muted) { Crowd.stop(); Music.pause(); } else { if (sim.current && !sim.current.done) Crowd.start(); Music.play(); } setDisplay(d => ({ ...d })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '8px 12px', minWidth: 44, minHeight: 44, border: `1px solid ${SFX._muted ? 'rgba(239,83,80,0.4)' : 'rgba(255,255,255,0.2)'}`, background: SFX._muted ? 'rgba(239,83,80,0.15)' : 'rgba(0,0,0,0.6)', color: SFX._muted ? '#ef5350' : 'rgba(255,255,255,0.5)', borderRadius: 6, cursor: 'pointer', touchAction: 'manipulation', backdropFilter: 'blur(4px)' }}>{SFX._muted ? '🔇' : '🔊'}</button>
           </div>
         </div>
-        {/* Match log - always visible */}
-        <div style={{ flex: '0 0 auto', maxHeight: 80, overflow: 'auto', background: T.bg, borderTop: `1px solid ${T.bg3}`, padding: '4px 8px' }}>
+        {/* Match log — glass panel */}
+        <div style={{ flex: '0 0 auto', maxHeight: 80, overflow: 'auto', background: T.bg, borderTop: `1px solid rgba(255,255,255,0.06)`, padding: '4px 8px' }}>
           {[...display.log].reverse().slice(0, 4).map((e, i) => (
-            <div key={i} style={{ display: 'flex', padding: '2px 4px', borderLeft: `2px solid ${LC[e.type] || 'transparent'}`, marginBottom: 1 }}>
-              <span style={{ fontFamily: "'Barlow'", fontSize: 12, color: LC[e.type] || T.tx2, fontWeight: (e.type === 'goal' || e.type === 'goalRival') ? 700 : 400, lineHeight: 1.3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{e.text}</span>
+            <div key={i} style={{ display: 'flex', padding: '3px 6px', borderLeft: `2px solid ${LC[e.type] || 'transparent'}`, marginBottom: 1, borderRadius: 2 }}>
+              <span style={{ fontFamily: T.fontBody, fontSize: 12, color: LC[e.type] || T.tx2, fontWeight: (e.type === 'goal' || e.type === 'goalRival') ? 700 : 400, lineHeight: 1.3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{e.text}</span>
             </div>
           ))}
         </div>
@@ -869,8 +869,8 @@ export default function Rabona() {
           {/* Pull handle + win probability */}
           <div onClick={() => setFeedOpen(o => !o)} style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', minHeight: 36, touchAction: 'manipulation' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 28, height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 2 }} />
-              <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1 }}>📱 En vivo</span>
+              <div style={{ width: 28, height: 3, background: 'rgba(255,255,255,0.15)', borderRadius: 2 }} />
+              <span style={{ fontFamily: T.fontHeading, fontSize: 10, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1 }}>En vivo</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: '#4DABF7' }}>HAL {winProb}%</span>
@@ -892,8 +892,8 @@ export default function Rabona() {
                   <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx2, flex: 1 }}>{p.acc?.n}</span>
                   <span style={{ fontSize: 10, color: T.tx3 }}>{p.t}</span>
                 </div>
-                <div style={{ fontFamily: "'Barlow'", fontSize: 12, color: T.tx, lineHeight: 1.3 }}>{p.text}</div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 3, fontFamily: "'Barlow Condensed'", fontSize: 10, color: T.tx3 }}>
+                <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx, lineHeight: 1.3 }}>{p.text}</div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 3, fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>
                   <span>❤ {p.likes}</span><span>💬 {p.comments}</span>
                 </div>
               </div>
@@ -903,18 +903,18 @@ export default function Rabona() {
         </div>
         {/* Tactical Event */}
         {ev && !display.pendingPenalty && (
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 50, padding: 12, backdropFilter: 'blur(4px)' }}>
-            <div style={{ background: 'linear-gradient(135deg,#141e3a,#1a2744)', border: '1px solid rgba(213,0,249,0.15)', borderRadius: 8, padding: 16, maxWidth: 340, width: '100%' }}>
-              <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 18, color: '#fff', textAlign: 'center', textTransform: 'uppercase' }}>{ev.n}</div>
-              <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#607d8b', textAlign: 'center' }}>{display.minute}'</div>
-              <div style={{ fontSize: 14, color: '#e8eaf6', textAlign: 'center', lineHeight: 1.3, whiteSpace: 'pre-line', margin: '8px 0' }}>{ev.d}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div className="glass-heavy" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 50, padding: 12 }}>
+            <div className="anim-scale-in" style={{ background: T.gradientDark, border: `1px solid ${T.purple}18`, borderRadius: 12, padding: 20, maxWidth: 360, width: '100%', boxShadow: T.shadowLg }}>
+              <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 18, color: T.tx, textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.5 }}>{ev.n}</div>
+              <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, textAlign: 'center', marginTop: 2 }}>{display.minute}'</div>
+              <div style={{ fontSize: 13, fontFamily: T.fontBody, color: T.tx2, textAlign: 'center', lineHeight: 1.4, whiteSpace: 'pre-line', margin: '10px 0' }}>{ev.d}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {ev.o.map((opt, i) => (
-                  <div key={i} onClick={() => { SFX.play('click'); handleEventChoice(i); }} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, padding: '12px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, minHeight: 48, touchAction: 'manipulation' }}>
+                  <div key={i} onClick={() => { SFX.play('click'); handleEventChoice(i); }} style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${T.border}`, borderRadius: 8, padding: '12px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, minHeight: 48, touchAction: 'manipulation', transition: 'all 0.2s ease' }}>
                     {opt.i && <div style={{ fontSize: 18, minWidth: 24, textAlign: 'center' }}>{opt.i}</div>}
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: '#fff', textTransform: 'uppercase' }}>{opt.n}</div>
-                      <div style={{ fontSize: 11, color: '#607d8b' }}>{opt.d}</div>
+                      <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 14, color: T.tx, textTransform: 'uppercase' }}>{opt.n}</div>
+                      <div style={{ fontSize: 11, fontFamily: T.fontBody, color: T.tx3 }}>{opt.d}</div>
                     </div>
                   </div>
                 ))}
@@ -931,9 +931,9 @@ export default function Rabona() {
             : (pk.result ? '⚽ ¡¡GOOOL!!' : '❌ ¡ATAJADO!');
           const resultColor = isSave ? (pk.result ? '#ff1744' : '#f0c040') : (pk.result ? '#f0c040' : '#ff1744');
           return (
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.92)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 55, padding: 16 }}>
-              <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 24, color: isSave ? '#ef5350' : '#f0c040', textTransform: 'uppercase', textAlign: 'center', marginBottom: 4 }}>
-                {isSave ? '‼ PENAL EN CONTRA' : '‼ PENAL A FAVOR'}
+            <div className="glass-heavy" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 55, padding: 16 }}>
+              <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 24, color: isSave ? T.lose : T.gold, textTransform: 'uppercase', textAlign: 'center', marginBottom: 4, letterSpacing: 1 }}>
+                {isSave ? 'PENAL EN CONTRA' : 'PENAL A FAVOR'}
               </div>
               <div style={{ width: '100%', maxWidth: 280, height: 90, position: 'relative', marginBottom: 16 }}>
                 <div style={{ position: 'absolute', top: 0, left: '10%', width: '80%', height: '100%', background: 'rgba(255,255,255,0.03)', border: '3px solid #fff', borderBottom: 'none', borderRadius: '4px 4px 0 0' }}>
@@ -946,14 +946,14 @@ export default function Rabona() {
               </div>
               {pk.phase === 'aim' ? (
                 <div style={{ width: '100%', maxWidth: 280 }}>
-                  <div style={{ fontFamily: "'Barlow'", fontSize: 13, color: '#e8eaf6', textAlign: 'center', marginBottom: 8 }}>
+                  <div style={{ fontFamily: T.fontBody, fontSize: 13, color: T.tx2, textAlign: 'center', marginBottom: 10 }}>
                     {isSave ? '¿A qué lado te tiras?' : '¿A dónde disparas?'}
                   </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
                     {['left', 'center', 'right'].map(d => (
-                      <button key={d} onClick={() => handlePenaltyShoot(d)} style={{ flex: 1, padding: '14px 8px', minHeight: 56, background: isSave ? 'rgba(40,10,10,0.95)' : 'rgba(20,30,58,0.95)', border: `1px solid ${isSave ? 'rgba(255,50,50,0.2)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 6, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, touchAction: 'manipulation' }}>
+                      <button key={d} onClick={() => handlePenaltyShoot(d)} style={{ flex: 1, padding: '14px 8px', minHeight: 56, background: isSave ? 'rgba(40,10,10,0.9)' : T.bg1, border: `1px solid ${isSave ? 'rgba(239,68,68,0.2)' : T.border}`, borderRadius: 8, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, touchAction: 'manipulation', transition: 'all 0.2s ease' }}>
                         <div style={{ fontSize: 20 }}>{isSave ? (d === 'left' ? '↖' : d === 'center' ? '⬆' : '↗') : (d === 'left' ? '↙' : d === 'center' ? '⬆' : '↘')}</div>
-                        <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, color: '#fff', textTransform: 'uppercase' }}>{d === 'left' ? 'Izq' : d === 'center' ? 'Centro' : 'Der'}</div>
+                        <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12, color: T.tx, textTransform: 'uppercase' }}>{d === 'left' ? 'Izq' : d === 'center' ? 'Centro' : 'Der'}</div>
                       </button>
                     ))}
                   </div>
@@ -1006,27 +1006,33 @@ export default function Rabona() {
   return (
     <div className="fw-bg-pattern" style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative', background: T.bg }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500;600&family=Silkscreen:wght@400;700&display=swap');
-        @keyframes fw-fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500;600&display=swap');
+        @keyframes fw-fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
         @keyframes fw-pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
         @keyframes fw-shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-        @keyframes fw-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
-        @keyframes fw-slideIn { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
-        @keyframes fw-scaleIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
-        @keyframes fw-bounceIn { 0%{opacity:0;transform:scale(0.3)} 50%{transform:scale(1.05)} 70%{transform:scale(0.95)} 100%{opacity:1;transform:scale(1)} }
+        @keyframes fw-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+        @keyframes fw-slideIn { from{opacity:0;transform:translateX(24px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes fw-scaleIn { from{opacity:0;transform:scale(0.92)} to{opacity:1;transform:scale(1)} }
+        @keyframes fw-bounceIn { 0%{opacity:0;transform:scale(0.3)} 50%{transform:scale(1.04)} 70%{transform:scale(0.97)} 100%{opacity:1;transform:scale(1)} }
         @keyframes fw-countUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        .fw-anim-1{animation:fw-fadeUp .4s ease .05s both}.fw-anim-2{animation:fw-fadeUp .4s ease .12s both}.fw-anim-3{animation:fw-fadeUp .4s ease .2s both}.fw-anim-4{animation:fw-fadeUp .4s ease .28s both}.fw-anim-5{animation:fw-fadeUp .4s ease .36s both}
+        @keyframes fw-glowPulse { 0%,100%{box-shadow:0 0 16px rgba(240,192,64,0.12)} 50%{box-shadow:0 0 28px rgba(240,192,64,0.25)} }
+        .fw-anim-1{animation:fw-fadeUp .4s cubic-bezier(.16,1,.3,1) .05s both}.fw-anim-2{animation:fw-fadeUp .4s cubic-bezier(.16,1,.3,1) .12s both}.fw-anim-3{animation:fw-fadeUp .4s cubic-bezier(.16,1,.3,1) .2s both}.fw-anim-4{animation:fw-fadeUp .4s cubic-bezier(.16,1,.3,1) .28s both}.fw-anim-5{animation:fw-fadeUp .4s cubic-bezier(.16,1,.3,1) .36s both}
         .fw-float{animation:fw-float 3s ease-in-out infinite}.fw-pulse{animation:fw-pulse 2s ease infinite}
-        .fw-slideIn{animation:fw-slideIn .3s ease both}.fw-scaleIn{animation:fw-scaleIn .25s ease both}.fw-bounceIn{animation:fw-bounceIn .5s ease both}
-        .fw-hover{transition:transform .15s ease,box-shadow .15s ease}.fw-hover:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.3)}.fw-hover:active{transform:translateY(0)}
-        .fw-shimmer{background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.06) 50%,transparent 100%);background-size:200% 100%;animation:fw-shimmer 2.5s linear infinite}
-        .fw-btn{font-family:'Oswald';font-weight:600;font-size:14px;padding:11px 28px;border:none;border-radius:6px;cursor:pointer;text-transform:uppercase;letter-spacing:1px;transition:transform .15s ease,filter .15s ease,box-shadow .15s ease;}
-        .fw-btn:hover{transform:translateY(-1px);filter:brightness(1.1);box-shadow:0 4px 12px rgba(0,0,0,0.3)}.fw-btn:active{transform:scale(.93)!important;filter:brightness(.9)}.fw-btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important;filter:none!important}
-        .fw-btn-primary{background:linear-gradient(135deg,#d4a017,#f0c040);color:#0b1120}.fw-btn-green{background:linear-gradient(135deg,#00c853,#00e676);color:#0b1120}.fw-btn-outline{background:transparent;border:1.5px solid currentColor}
-        .fw-bg-pattern{background-image:radial-gradient(circle,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:20px 20px}
-        *{box-sizing:border-box}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
+        .fw-slideIn{animation:fw-slideIn .3s cubic-bezier(.16,1,.3,1) both}.fw-scaleIn{animation:fw-scaleIn .25s cubic-bezier(.16,1,.3,1) both}.fw-bounceIn{animation:fw-bounceIn .5s cubic-bezier(.16,1,.3,1) both}
+        .fw-hover{transition:transform .2s ease,box-shadow .2s ease}.fw-hover:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.4)}.fw-hover:active{transform:translateY(0)}
+        .fw-shimmer{background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.04) 50%,transparent 100%);background-size:200% 100%;animation:fw-shimmer 2s linear infinite}
+        .fw-glow-pulse{animation:fw-glowPulse 2s ease-in-out infinite}
+        .fw-btn{font-family:'Oswald';font-weight:600;font-size:14px;padding:13px 32px;border:none;border-radius:8px;cursor:pointer;text-transform:uppercase;letter-spacing:1.2px;transition:transform .2s cubic-bezier(.16,1,.3,1),filter .2s ease,box-shadow .2s ease}
+        .fw-btn:hover{transform:translateY(-1px);filter:brightness(1.08);box-shadow:0 6px 20px rgba(0,0,0,0.4)}.fw-btn:active{transform:scale(.95)!important;filter:brightness(.92)}.fw-btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important;filter:none!important}
+        .fw-btn-primary{background:linear-gradient(135deg,#D4A017,#F0C040);color:#080C14;box-shadow:0 2px 12px rgba(240,192,64,0.2)}
+        .fw-btn-green{background:linear-gradient(135deg,#16A34A,#22C55E);color:#080C14;box-shadow:0 2px 12px rgba(34,197,94,0.2)}
+        .fw-btn-danger{background:linear-gradient(135deg,#DC2626,#EF4444);color:#fff;box-shadow:0 2px 12px rgba(239,68,68,0.2)}
+        .fw-btn-glass{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#F0F4F8;backdrop-filter:blur(8px)}
+        .fw-btn-outline{background:transparent;border:1.5px solid rgba(255,255,255,0.15);color:#94A3B8}
+        .fw-bg-pattern{background-image:radial-gradient(circle,rgba(255,255,255,0.02) 1px,transparent 1px);background-size:24px 24px}
+        *{box-sizing:border-box}
       `}</style>
       <div
         onTouchStart={isHubScreen ? handleSwipeStart : undefined}
