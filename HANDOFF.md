@@ -1,174 +1,192 @@
-# Rabona — Handoff / Estado del Proyecto
+# Handoff: Remaining Work on Branch `claude/modern-football-ui-design-s42Z7`
 
-> Documento para continuar en una nueva conversación de Claude Code.
-> Branch: `claude/enhance-ui-accessibility-0RamB`
-> Fecha: 2026-03-23
+## PR: https://github.com/jorgenunez0728/rabona_dev/pull/22
 
 ---
 
-## Resumen de lo hecho en esta sesión
+## What's Done (committed & pushed)
 
-### Commits en la rama (sobre `main`)
-1. **`a618f0a`** — Sistema de imágenes de estadios (`stadiums/index.js`) con carga dinámica via `import.meta.glob`
-2. **`2b0c2da`** — Sistema de chibi assets con emoji fallback, fuente Silkscreen, componentes `ChibiImg`, `CoachPortrait`, `NemesisPortrait`, `PosIcon`
-3. **`9b7aece`** — 14 PNGs de estadios (niveles 0-6, front + pitch)
+### UI Redesign (complete)
+- Premium FIFA-like design system (theme.css, T.* tokens, glass-morphism)
+- All screens and overlays restyled
+- Loading screen with 4-stage progress bars
+- Metallic shine CSS backgrounds (`bg-metallic-shine`)
+- Button repositioning ("Siguiente" in first third of screen)
+- Accordion/collapsible sections throughout
 
-### Ya mergeado en `main` (PRs anteriores)
-- Match engine completo (momentum, tactics, rival AI, stats, substitutions)
-- Refactor: Zustand store, screens separados, data modules
-- Save system con LZ compression + checksum
-- 116 tests passing
+### Match Screen Overhaul (complete)
+- Canvas reduced to 45vh, match info bar below
+- Live matchday results (2-3 simultaneous matches)
+- Projected mini table with position arrows (green up/red down)
+- Social feed expanded to 170px default
 
----
+### TableScreen Enhancements (complete)
+- Matchday results section
+- Tabbed stats: Goals / Assists / Clean Sheets
+- Tournament social feed (league-tier accounts: memes in low leagues, real media in high)
+- "Abandonar Carrera" button with confirmation modal
 
-## Assets: Estado actual
+### Pre-match Reminder System (complete)
+- `betweenMatchVisits` tracking in store
+- Visit indicators (green/orange dots) on hub buttons
+- Hard block modal when <7 starters
+- Soft reminder overlay when screens not visited
 
-### Stadiums — COMPLETO
-**Ubicación:** `src/assets/stadiums/`
-**Estado:** 14/14 PNGs presentes
-**Carga:** `import.meta.glob('./*.png')` en `index.js`
-**Uso:**
-- `PrematchScreen.jsx` → `getStadiumFront(league)` (fachada antes del partido)
-- `Rabona.jsx` → `getStadiumPitch(league)` (vista aérea durante el match)
-
-| Nivel | Nombre | front | pitch |
-|-------|--------|-------|-------|
-| 0 | Potrero (cancha barrial) | stadium_0_front.png | stadium_0_pitch.png |
-| 1 | Liga Amateur | stadium_1_front.png | stadium_1_pitch.png |
-| 2 | Liga Regional | stadium_2_front.png | stadium_2_pitch.png |
-| 3 | El Coloso | stadium_3_front.png | stadium_3_pitch.png |
-| 4 | Liga Nacional | stadium_4_front.png | stadium_4_pitch.png |
-| 5 | Liga Continental | stadium_5_front.png | stadium_5_pitch.png |
-| 6 | Arena Galáctica | stadium_6_front.png | stadium_6_pitch.png |
-
-**Nota:** Todos los PNGs tienen fondo verde chroma (#00FF00). El código los muestra tal cual — si necesitas quitar el fondo, hay que procesarlos o hacerlo con CSS.
-
----
-
-### Chibi Assets — PENDIENTES (todas las carpetas vacías)
-
-**Registro:** `src/game/data/chibiAssets.jsx`
-**Componentes:** `src/game/components.jsx` (`CoachPortrait`, `NemesisPortrait`, `PosIcon`)
-**Fallback:** Emojis (el juego funciona 100% sin imágenes)
-**Specs:** `src/assets/chibi/README.md`
-
-#### Prioridad 1: Coaches (128x128px PNG transparente)
-```
-src/assets/chibi/coaches/
-├── coach-miguel.png      👴 Don Miguel (elderly, wise)
-├── coach-bestia.png      🦁 La Bestia (fierce, intense)
-├── coach-lupe.png        👩‍🦳 Doña Lupe (grandmotherly, sharp)
-├── coach-profeta.png     🔮 El Profeta (mystical, robed)
-├── coach-chispa.png      ⚡ La Chispa (energetic, electric)
-├── coach-fantasma.png    👻 El Fantasma (ghostly, hooded)
-├── coach-moneda.png      🪙 La Moneda (wealthy, golden)
-└── coach-zyx7.png        👽 Zyx-7 (alien, futuristic)
-```
-
-#### Prioridad 2: Nemesis (128x128px PNG transparente)
-```
-src/assets/chibi/coaches/
-├── nemesis-cacique.png   🦅 El Cacique Paredes (eagle, warrior)
-├── nemesis-cirujano.png  🔪 El Cirujano Delgado (precise, surgical)
-├── nemesis-patron.png    🎩 El Patrón Sandoval (rich, top hat)
-├── nemesis-chaman.png    🌀 El Chamán Orozco (mystical, swirling)
-├── nemesis-tanque.png    🪖 El Tanque Ibarra (armored, tank-like)
-├── nemesis-detective.png 🕵️ El Detective Mora (magnifying glass)
-├── nemesis-jeque.png     💎 El Jeque Al-Rashid (luxury, diamonds)
-└── nemesis-kx9.png       🤖 Kx-9 El Heraldo (robot, cybernetic)
-```
-
-#### Prioridad 3: Position Icons (64x64px PNG transparente)
-```
-src/assets/chibi/icons/
-├── pos-gk.png    🧤 Goalkeeper (gloves, yellow)
-├── pos-def.png   🛡 Defender (shield, blue)
-├── pos-mid.png   ⚙ Midfielder (gear, green)
-└── pos-fwd.png   ⚡ Forward (lightning, red)
-```
-
-#### Prioridad 4: Extras (opcionales para MVP)
-```
-src/assets/chibi/icons/
-├── status-injured.png
-├── status-fatigued.png
-└── status-captain.png
-
-src/assets/chibi/items/     → Relics & consumables (64x64)
-src/assets/chibi/ui/        → Card frames, buttons (256x256 9-slice)
-src/assets/chibi/backgrounds/ → Tileable patterns (512x512)
-```
+### Run Tracker Data Layer (complete)
+- `src/game/data/runTracker.js` — `buildRunSnapshot()`, `addRunToHistory()`, `computeRecords()`, `computeArchetypeAnalytics()`
+- `store.js` — `runsHistory[]`, `allTimeAssisters{}`, `allTimeCleanSheets{}` in globalStats
+- `store.js` — `runLog[]`, `cursesEncountered[]`, `mapChoices[]` in game state
+- `store.js` — `saveRunSnapshot()` and `abandonRun()` actions
+- `Rabona.jsx` — runLog entry accumulated after each match
+- `DeathScreen.jsx` — saves run snapshot + all-time assisters/cleanSheets
+- `ChampionScreen.jsx` — saves run snapshot (result='champion')
+- `save.js` — migration 3.3 to 3.4, version bumped to 3.4
 
 ---
 
-## Paleta de colores para assets
+## What's NOT Done (needs implementation)
 
-| Token | Hex | Uso |
-|-------|-----|-----|
-| bg | `#0D1117` | Fondo oscuro principal |
-| win | `#3FB950` | Verde/éxito |
-| lose | `#F85149` | Rojo/peligro |
-| draw | `#D29922` | Amarillo/empate |
-| info | `#58A6FF` | Azul/info |
-| gold | `#FFD700` | Dorado/premium |
-| purple | `#A855F7` | Morado/reliquias |
+### 1. StatsScreen.jsx — Massive Overhaul (HIGHEST PRIORITY)
+
+The current `src/game/screens/StatsScreen.jsx` has 5 tabs. It needs 8 tabs with a horizontally scrollable tab bar. The data layer (runTracker.js) is already built — this is purely UI work.
+
+**New tab structure:**
+```js
+const tabs = [
+  { k: 'stats',      l: '📊', label: 'General' },    // Enhanced with win rate, avg goals, assisters/cleanSheets leaderboards
+  { k: 'runs',       l: '📜', label: 'Runs' },        // NEW — Hades-style run history list
+  { k: 'records',    l: '🏅', label: 'Records' },     // NEW — all-time bests from computeRecords()
+  { k: 'arquetipos', l: '🎭', label: 'Arquetipos' },  // NEW — per-archetype analytics
+  { k: 'legacy',     l: '🌳', label: 'Legado' },      // Keep existing
+  { k: 'cards',      l: '🎴', label: 'Cartas' },      // Keep existing
+  { k: 'fame',       l: '🌟', label: 'Fama' },        // Keep existing
+  { k: 'achieve',    l: '🏆', label: 'Logros' },      // Keep existing
+];
+```
+
+**Tab bar must be horizontally scrollable** (8 tabs won't fit at 420px):
+- `overflow-x: auto`, `scrollbar-width: none`, `WebkitOverflowScrolling: 'touch'`
+- Each tab `min-width: 55px`, `flex: 0 0 auto`
+
+#### 1a. Enhanced "General" tab
+Add to existing 6-metric grid:
+- Win Rate %: `((gs.totalWins || 0) / Math.max(1, gs.totalMatches || 0) * 100).toFixed(1) + '%'`
+- Avg Goals/Match: `((gs.totalGoals || 0) / Math.max(1, gs.totalMatches || 0)).toFixed(1)`
+- Total Matches (gs.totalMatches — currently tracked but not displayed)
+
+Add leaderboard sections below grid:
+- **Top Assisters**: `Object.entries(gs.allTimeAssisters || {}).sort((a,b) => b[1]-a[1]).slice(0,5)` — same format as existing Top Scorers
+- **Top Clean Sheets**: `Object.entries(gs.allTimeCleanSheets || {}).sort((a,b) => b[1]-a[1]).slice(0,5)`
+
+#### 1b. "Runs" tab (NEW — Hades-style run history)
+**Imports needed:**
+```js
+import { computeRecords, computeArchetypeAnalytics } from '@/game/data/runTracker.js';
+import { MANAGER_ARCHETYPES } from '@/game/data/archetypes.js';
+import { LEAGUES } from '@/game/data';
+```
+
+**Data:** `(gs.runsHistory || []).slice().reverse()` (most recent first)
+
+**Each run = expandable glass card:**
+- Header row: `#${run.runNumber}` + archetype icon (from `MANAGER_ARCHETYPES.find(a => a.id === run.archetypeId)?.i`) + league icon (`LEAGUES[run.leagueReached]?.i`) + league name
+- Stats row: `${run.careerStats.wins}W ${run.careerStats.draws}D ${run.careerStats.losses}L` + `⚽ ${run.careerStats.goalsFor}` + end type badge
+- End type badges: 💀 death (color: T.lose), 🏆 champion (T.gold), 🚪 abandoned (T.draw)
+- Top scorer: `run.topScorer?.name (${run.topScorer?.goals} goles)` if exists
+- W/D/L dot strip from `run.runLog`: tiny colored circles — green=W, amber=D, red=L, in sequence
+- **Tap to expand:** coach name, mutators, relics (IDs — look up from RELICS), curses, blessings, cards, coins earned
+- Use `useState` with `expandedRun` ID to toggle expand
+
+If no runs: show empty state "Completa tu primera carrera para ver el historial"
+
+#### 1c. "Records" tab (NEW)
+Call `computeRecords(gs.runsHistory || [])` and display gold-bordered cards:
+
+```js
+const RECORD_DEFS = [
+  { key: 'mostGoals', label: 'Mas Goles en una Carrera', icon: '⚽', valueFn: r => r?.careerStats?.goalsFor },
+  { key: 'highestLeague', label: 'Liga Mas Alta', icon: '🏟', valueFn: r => r?.leagueName },
+  { key: 'longestStreak', label: 'Mejor Racha', icon: '🔥', valueFn: r => r?.careerStats?.bestStreak },
+  { key: 'bestWinRate', label: 'Mejor Win Rate', icon: '📈', valueFn: r => r ? `${(r.careerStats.wins/r.careerStats.matchesPlayed*100).toFixed(0)}%` : null },
+  { key: 'mostRelics', label: 'Mas Reliquias', icon: '💎', valueFn: r => r?.relicsCollected?.length },
+  { key: 'longestRun', label: 'Carrera Mas Larga', icon: '📅', valueFn: r => r ? `${r.careerStats.matchesPlayed} partidos` : null },
+  { key: 'fastestAscension', label: 'Ascension Rapida', icon: '⚡', valueFn: r => r ? `${r.careerStats.matchesPlayed} partidos` : null },
+  { key: 'bestDefense', label: 'Mejor Defensa', icon: '🛡', valueFn: r => r ? `${(r.careerStats.goalsAgainst/r.careerStats.matchesPlayed).toFixed(1)} rec/P` : null },
+];
+```
+
+Each record as `card-gold` style card showing: icon + label + value + "Run #X"
+If record is null (no qualifying runs), show grayed out with "—"
+
+#### 1d. "Arquetipos" tab (NEW)
+Call `computeArchetypeAnalytics(gs.runsHistory || [])` and for each `MANAGER_ARCHETYPES`:
+
+```
+┌─────────────────────────────────────────┐
+│ 🦅 El Caudillo                          │
+│ 5 runs · Win Rate: ███████░░░ 62%       │
+│ Avg Liga: 2.4 · 🏆 1 · 💀 4            │
+└─────────────────────────────────────────┘
+```
+
+- Win rate as horizontal fill bar (width = percentage, background T.win)
+- If no runs for archetype: grayed out, opacity 0.4, "Sin datos"
 
 ---
 
-## Arquitectura de assets (cómo funciona)
+### 2. TutorialScreen.jsx — Enhanced with Mini-Previews
 
-### Stadiums
-```
-src/assets/stadiums/index.js
-  → import.meta.glob('./*.png') carga todos los PNG
-  → getStadiumFront(league) / getStadiumPitch(league)
-  → Usado en PrematchScreen.jsx y Rabona.jsx
-```
+**File:** `src/game/screens/TutorialScreen.jsx`
 
-### Chibi
-```
-src/game/data/chibiAssets.jsx
-  → CHIBI registry (paths + emoji fallbacks)
-  → ChibiImg component (auto-fallback on load error)
-  → Usado via CoachPortrait, NemesisPortrait, PosIcon en components.jsx
-```
+The tutorial agent timed out. Read the current file first. The screen needs mini-preview mockup components that look like miniature screenshots of actual game screens.
 
-Solo hay que poner los PNGs en las carpetas correctas. No hace falta tocar código — el sistema ya está cableado.
+**For each of the 7 tutorial slides, add a visual mini-preview:**
 
----
+1. **Welcome slide**: Mini mockup of TableScreen (tiny league table with 4-5 rows, gold highlight on player row)
+2. **Roster slide**: Mini mockup showing 3-4 PlayerCard-style boxes (colored position border, name, OVR number)
+3. **Match slide**: Mini mockup of match view (tiny green rectangle "pitch", scoreboard "HAL 2-1 RIV", 2-3 event lines)
+4. **Relics slide**: Mini mockup showing 3 relic choice cards (icon + name, one highlighted gold)
+5. **Legacy Tree slide**: Mini mockup showing 3 branch rows with circle nodes (green=owned, gray=locked)
+6. **Cards slide**: Mini mockup showing 3 tactical cards with category color pills
+7. **Final slide**: Flow diagram: "Table -> Map -> Prematch -> Match -> Rewards -> Table"
 
-## Archivos clave para referencia
+**Mini-preview container:** ~200px wide, ~140px tall, borderRadius 12, border `1px solid ${T.glassBorder}`, background T.bg1, overflow hidden, subtle box-shadow
 
-| Archivo | Qué hace |
-|---------|----------|
-| `src/assets/stadiums/index.js` | Loader de imágenes de estadios |
-| `src/game/data/chibiAssets.jsx` | Registry de assets chibi + componente ChibiImg |
-| `src/assets/chibi/README.md` | Specs detalladas para generar assets |
-| `src/game/components.jsx` | Componentes que usan chibi (CoachPortrait, etc.) |
-| `src/game/screens/PrematchScreen.jsx` | Pantalla que muestra fachada del estadio |
-| `src/pages/Rabona.jsx` | Match sim que muestra pitch del estadio |
-| `src/game/data/visuals.js` | Sprites de jugadores (dibujados por código, no assets) |
-| `src/game/store.js` | Zustand store (estado global) |
+**Add tip boxes per slide:**
+- Gold-bordered glass card: "💡 Consejo: [tip text]"
+
+**Animation improvements:**
+- Progress bar at top (thin gold bar filling left to right based on step/totalSteps)
+- Smoother slide transitions (CSS translateX)
 
 ---
 
-## MVP — Lo mínimo para que se vea completo
+### 3. MapScreen — Track mapChoices (small change)
 
-1. **Stadiums** — HECHO
-2. **8 coach portraits** — Se muestran en selección de coach y pantallas de partido
-3. **8 nemesis portraits** — Se muestran cuando enfrentas al rival especial
-4. **4 position icons** — Se muestran en el roster junto a cada jugador
+**File:** `src/game/screens/MapScreen.jsx`
 
-**Total MVP: 20 PNGs** (+ los 14 stadiums ya hechos = 34 total)
+Find the node selection handler (where `setGame` is called after choosing a node). Add `mapChoices` tracking:
+```js
+mapChoices: [...(g.mapChoices || []), { matchNum: g.matchNum, nodeType: chosenNode.type }]
+```
 
-Todo lo demás (items, UI frames, backgrounds) es polish post-MVP.
+This is ~1 line but needed for run history to show map decisions.
 
 ---
 
-## Para la próxima sesión
+## Key Imports Reference
 
+```js
+// Run tracker (already created)
+import { buildRunSnapshot, addRunToHistory, computeRecords, computeArchetypeAnalytics } from '@/game/data/runTracker.js';
+
+// Archetypes (for display)
+import { MANAGER_ARCHETYPES } from '@/game/data/archetypes.js';
+
+// Theme + data
+import { T, LEAGUES, PN, POS_COLORS, ACHIEVEMENTS, RELICS } from '@/game/data';
 ```
-Contexto: Estoy trabajando en Rabona, un football manager en React+Vite.
-Branch: claude/enhance-ui-accessibility-0RamB
-Lee HANDOFF.md para el estado completo del proyecto.
-```
+
+## Current save version: 3.4
+## Branch: `claude/modern-football-ui-design-s42Z7`
+## Tests: `npm test` (should pass — all changes are UI/persistence, no logic changes)
