@@ -16,28 +16,28 @@ export default function TrainingScreen() {
   function doTrain() {
     if (!selected || !training) return;
     const opt = TRAINING_OPTIONS.find(t => t.id === training);
-    if (!opt || opt.cost > game.coins) { setResult('❌ Sin monedas'); return; }
+    if (!opt || opt.cost > game.coins) { setResult('Sin monedas suficientes'); return; }
     const playerExists = game.roster.some(p => p.id === selected);
-    if (!playerExists) { setResult('❌ Jugador no encontrado'); setSelected(null); setTraining(null); return; }
+    if (!playerExists) { setResult('Jugador no encontrado'); setSelected(null); setTraining(null); return; }
     SFX.play('reward');
     let resultText = '';
     setGame(g => {
       const roster = g.roster.map(p => {
         if (p.id !== selected) return p;
         const p2 = { ...p };
-        if (opt.stat === 'rest') { p2.fatigue = Math.max(0, (p2.fatigue || 0) - 30); resultText = `😴 ${p2.name} descansó.`; }
+        if (opt.stat === 'rest') { p2.fatigue = Math.max(0, (p2.fatigue || 0) - 30); resultText = `${p2.name} descansó y recuperó energía.`; }
         else if (opt.stat === 'all') {
           const gain = rnd(opt.range[0], opt.range[1]);
           p2.atk += gain; p2.def += gain; p2.spd += gain;
           p2.fatigue = Math.min(100, (p2.fatigue || 0) + (opt.fatigueCost || 0));
-          resultText = `🔥 ${p2.name}: +${gain} ATK/DEF/VEL`;
+          resultText = `${p2.name}: +${gain} ATK/DEF/VEL`;
         } else {
           const gain = rnd(opt.range[0], opt.range[1]);
           const lucky = Math.random() < 0.15;
           const finalGain = lucky ? gain + 2 : gain;
           p2[opt.stat] = (p2[opt.stat] || 1) + finalGain;
           const statName = opt.stat === 'atk' ? 'ATK' : opt.stat === 'def' ? 'DEF' : opt.stat === 'sav' ? 'PAR' : 'VEL';
-          resultText = `${lucky ? '🌟 ¡Sesión brillante!' : '✅'} ${p2.name}: +${finalGain} ${statName}`;
+          resultText = `${lucky ? 'Sesion brillante! ' : ''}${p2.name}: +${finalGain} ${statName}`;
         }
         return p2;
       });
@@ -47,71 +47,211 @@ export default function TrainingScreen() {
     setTimeout(() => setResult(resultText), 50);
   }
 
+  const statBadge = (label, value, color) => (
+    <span style={{
+      fontFamily: T.fontBody, fontWeight: 600, fontSize: 10,
+      color, background: `${color}1A`,
+      padding: '2px 6px', borderRadius: 4
+    }}>{label} {value}</span>
+  );
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', overflow: 'auto', background: T.bg, padding: 12 }}>
-      <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 24, color: '#fff', textTransform: 'uppercase' }}>🏋️ Entrenamiento</div>
-      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: slotsLeft > 0 ? T.win : T.lose, marginBottom: 8 }}>
-        {slotsLeft > 0 ? `${slotsLeft} sesión(es) disponible(s)` : '❌ Sin sesiones hoy'}
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', overflow: 'auto', background: T.bg }}>
+      {/* Header */}
+      <div style={{ width: '100%', padding: '18px 14px 14px', textAlign: 'center', borderBottom: `1px solid ${T.border}`, marginBottom: 8 }}>
+        <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 22, color: T.tx, textTransform: 'uppercase', letterSpacing: 2 }}>Entrenamiento</div>
+        <div style={{
+          fontFamily: T.fontBody, fontSize: 12, marginTop: 6,
+          color: slotsLeft > 0 ? T.win : T.lose,
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          padding: '4px 12px', borderRadius: 12,
+          background: slotsLeft > 0 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+          border: `1px solid ${slotsLeft > 0 ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`
+        }}>
+          {slotsLeft > 0 ? `${slotsLeft} sesion(es) disponible(s)` : 'Sin sesiones hoy'}
+        </div>
       </div>
-      {result && (
-        <div style={{ background: `${T.win}0F`, border: `1px solid ${T.win}30`, borderRadius: 8, padding: 12, marginBottom: 8, width: '100%', maxWidth: 400, textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 14, color: T.tx }}>{result}</div>
-          <button onClick={() => setResult(null)} style={{ fontFamily: "'Oswald'", fontSize: 11, padding: '5px 16px', border: `1px solid ${T.tx3}`, background: 'transparent', color: T.tx2, borderRadius: 4, cursor: 'pointer', marginTop: 6 }}>OK</button>
-        </div>
-      )}
-      {slotsLeft <= 0 && !result ? (
-        <div style={{ textAlign: 'center', padding: 16, color: T.tx2, fontSize: 14 }}>Juega el siguiente partido para más sesiones.</div>
-      ) : reserves.length === 0 && !result ? (
-        <div style={{ textAlign: 'center', padding: 16, color: T.tx2, fontSize: 14 }}>No hay reservas disponibles.</div>
-      ) : (slotsLeft > 0 && !result && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', maxWidth: 400 }}>
-          {!selected && reserves.map(p => (
-            <div key={p.id} onClick={() => setSelected(p.id)} style={{ background: T.bg1, border: `1px solid ${T.border}`, borderLeft: `4px solid ${POS_COLORS[p.pos]}`, borderRadius: 6, padding: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 11, color: POS_COLORS[p.pos], minWidth: 28, textAlign: 'center' }}>{PN[p.pos]}</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: "'Barlow Condensed'", fontWeight: 600, fontSize: 14, color: T.tx }}>{p.name}</div>
-              </div>
-              <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 20, color: T.gold }}>{calcOvr(p)}</div>
-            </div>
-          ))}
-          {selected && !training && (() => {
-            const p = game.roster.find(x => x.id === selected);
-            return (
-              <>
-                <div style={{ background: T.bg1, borderRadius: 8, padding: 10, border: `1px solid ${T.border}`, textAlign: 'center' }}>
-                  <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: T.tx }}>Entrenando: <span style={{ color: T.gold }}>{p?.name}</span></div>
+
+      <div style={{ width: '100%', maxWidth: 420, padding: '0 14px 14px' }}>
+        {/* Result notification */}
+        {result && (
+          <div className="glass" style={{
+            borderRadius: 10,
+            padding: 14,
+            marginBottom: 10,
+            textAlign: 'center',
+            border: `1px solid rgba(34,197,94,0.25)`,
+            background: 'rgba(34,197,94,0.08)'
+          }}>
+            <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx, fontWeight: 500 }}>{result}</div>
+            <button className="fw-btn fw-btn-outline" onClick={() => setResult(null)} style={{
+              fontFamily: T.fontHeading, fontSize: 11,
+              padding: '5px 18px',
+              marginTop: 8
+            }}>OK</button>
+          </div>
+        )}
+
+        {/* No sessions state */}
+        {slotsLeft <= 0 && !result ? (
+          <div className="glass" style={{ borderRadius: 10, padding: 20, textAlign: 'center' }}>
+            <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx3 }}>Juega el siguiente partido para mas sesiones.</div>
+          </div>
+        ) : reserves.length === 0 && !result ? (
+          <div className="glass" style={{ borderRadius: 10, padding: 20, textAlign: 'center' }}>
+            <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx3 }}>No hay reservas disponibles.</div>
+          </div>
+        ) : (slotsLeft > 0 && !result && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+
+            {/* Player selector */}
+            {!selected && reserves.map((p, idx) => (
+              <div key={p.id} onClick={() => setSelected(p.id)} className="card-premium" style={{
+                background: T.bg1,
+                border: `1px solid ${T.glassBorder}`,
+                borderRadius: 10,
+                padding: 10,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                position: 'relative',
+                overflow: 'hidden',
+                transition: 'border-color 0.2s'
+              }}>
+                {/* Position accent */}
+                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: POS_COLORS[p.pos], borderRadius: '10px 0 0 10px' }} />
+
+                {/* Position badge */}
+                <div style={{
+                  fontFamily: T.fontHeading, fontWeight: 700, fontSize: 11,
+                  color: '#fff',
+                  background: POS_COLORS[p.pos],
+                  padding: '3px 8px',
+                  borderRadius: 4,
+                  minWidth: 32,
+                  textAlign: 'center',
+                  textTransform: 'uppercase'
+                }}>{PN[p.pos]}</div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 14, color: T.tx, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                  {/* Stat badges */}
+                  <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                    {statBadge('ATK', p.atk, T.lose)}
+                    {statBadge('DEF', p.def, T.info)}
+                    {statBadge('VEL', p.spd, T.win)}
+                    {p.pos === 'GK' && statBadge('PAR', p.sav, T.goldLight)}
+                  </div>
                 </div>
-                {TRAINING_OPTIONS.map(opt => {
-                  const canAfford = game.coins >= opt.cost;
-                  return (
-                    <div key={opt.id} onClick={() => canAfford && setTraining(opt.id)} style={{ background: canAfford ? T.bg1 : 'rgba(30,30,30,0.5)', border: `1px solid ${T.border}`, borderRadius: 6, padding: 12, cursor: canAfford ? 'pointer' : 'not-allowed', opacity: canAfford ? 1 : 0.4 }}>
-                      <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: T.gold }}>{opt.name}</div>
-                      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: T.tx }}>{opt.desc}</div>
-                      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx2, marginTop: 2 }}>{opt.cost > 0 ? `💰 ${opt.cost}` : 'Gratis'}</div>
-                    </div>
-                  );
-                })}
-                <button onClick={() => setSelected(null)} style={{ fontFamily: "'Oswald'", fontSize: 11, padding: '6px 14px', border: `1px solid ${T.tx3}`, background: 'transparent', color: T.tx2, borderRadius: 4, cursor: 'pointer', alignSelf: 'center' }}>← Volver</button>
-              </>
-            );
-          })()}
-          {selected && training && (() => {
-            const p = game.roster.find(x => x.id === selected);
-            const opt = TRAINING_OPTIONS.find(t => t.id === training);
-            return (
-              <div style={{ background: T.bg1, borderRadius: 8, padding: 16, border: `1px solid ${T.gold}25`, textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 16, color: T.tx }}>¿Confirmar?</div>
-                <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 14, color: T.gold, marginTop: 4 }}>{p?.name} → {opt?.name}</div>
-                <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 10 }}>
-                  <button onClick={doTrain} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '10px 28px', border: 'none', background: `linear-gradient(135deg,${T.accent},#00e676)`, color: T.bg, borderRadius: 6, cursor: 'pointer' }}>✅ Entrenar</button>
-                  <button onClick={() => { setTraining(null); setSelected(null); }} style={{ fontFamily: "'Oswald'", fontSize: 12, padding: '10px 20px', border: `1px solid ${T.tx3}`, background: 'transparent', color: T.tx2, borderRadius: 6, cursor: 'pointer' }}>Cancelar</button>
+
+                {/* OVR */}
+                <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                  <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 22, color: T.gold, lineHeight: 1 }}>{calcOvr(p)}</div>
+                  <div style={{ fontFamily: T.fontBody, fontSize: 9, color: T.tx3, textTransform: 'uppercase', letterSpacing: 0.5 }}>OVR</div>
                 </div>
               </div>
-            );
-          })()}
-        </div>
-      ))}
-      <button onClick={() => go('table')} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, padding: '8px 16px', border: `1.5px solid ${T.tx3}`, background: 'transparent', color: T.tx, borderRadius: 4, cursor: 'pointer', textTransform: 'uppercase', marginTop: 10 }}>Volver a la Tabla</button>
+            ))}
+
+            {/* Training options */}
+            {selected && !training && (() => {
+              const p = game.roster.find(x => x.id === selected);
+              return (
+                <>
+                  {/* Selected player header */}
+                  <div className="glass" style={{
+                    borderRadius: 10, padding: 12, textAlign: 'center',
+                    border: `1px solid rgba(240,192,64,0.2)`,
+                    background: 'rgba(240,192,64,0.06)'
+                  }}>
+                    <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1 }}>Entrenando</div>
+                    <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 18, color: T.gold, marginTop: 2 }}>{p?.name}</div>
+                  </div>
+
+                  {/* Training option cards */}
+                  {TRAINING_OPTIONS.map((opt, idx) => {
+                    const canAfford = game.coins >= opt.cost;
+                    return (
+                      <div key={opt.id} onClick={() => canAfford && setTraining(opt.id)} className="card-premium" style={{
+                        background: canAfford ? T.bg1 : T.bg2,
+                        border: `1px solid ${canAfford ? T.glassBorder : T.border}`,
+                        borderRadius: 10,
+                        padding: 14,
+                        cursor: canAfford ? 'pointer' : 'not-allowed',
+                        opacity: canAfford ? 1 : 0.4,
+                        transition: 'border-color 0.2s, transform 0.15s'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15, color: T.gold }}>{opt.name}</div>
+                          {/* Cost badge */}
+                          <div style={{
+                            fontFamily: T.fontHeading, fontWeight: 600, fontSize: 11,
+                            padding: '3px 10px', borderRadius: 12,
+                            background: opt.cost > 0 ? 'rgba(240,192,64,0.12)' : 'rgba(34,197,94,0.12)',
+                            color: opt.cost > 0 ? T.gold : T.win,
+                            border: `1px solid ${opt.cost > 0 ? 'rgba(240,192,64,0.2)' : 'rgba(34,197,94,0.2)'}`
+                          }}>
+                            {opt.cost > 0 ? `${opt.cost}` : 'Gratis'}
+                          </div>
+                        </div>
+                        <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx2, marginTop: 4 }}>{opt.desc}</div>
+                      </div>
+                    );
+                  })}
+
+                  <button className="fw-btn fw-btn-outline" onClick={() => setSelected(null)} style={{
+                    fontFamily: T.fontHeading, fontSize: 11,
+                    padding: '6px 16px',
+                    alignSelf: 'center'
+                  }}>Volver</button>
+                </>
+              );
+            })()}
+
+            {/* Confirm dialog */}
+            {selected && training && (() => {
+              const p = game.roster.find(x => x.id === selected);
+              const opt = TRAINING_OPTIONS.find(t => t.id === training);
+              return (
+                <div className="glass" style={{
+                  borderRadius: 12, padding: 20, textAlign: 'center',
+                  border: `1px solid rgba(240,192,64,0.2)`,
+                  background: 'rgba(240,192,64,0.05)',
+                  boxShadow: T.glowGold
+                }}>
+                  <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 18, color: T.tx, textTransform: 'uppercase', letterSpacing: 1 }}>Confirmar</div>
+                  <div className="divider-subtle" style={{ margin: '10px auto', width: 60 }} />
+                  <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 15, color: T.gold, marginTop: 8 }}>{p?.name}</div>
+                  <div style={{ fontFamily: T.fontBody, fontSize: 13, color: T.tx2, marginTop: 4 }}>{opt?.name}</div>
+                  <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 16 }}>
+                    <button className="fw-btn fw-btn-green" onClick={doTrain} style={{
+                      fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14,
+                      padding: '10px 28px',
+                      letterSpacing: 0.5
+                    }}>Entrenar</button>
+                    <button className="fw-btn fw-btn-outline" onClick={() => { setTraining(null); setSelected(null); }} style={{
+                      fontFamily: T.fontHeading, fontSize: 12,
+                      padding: '10px 20px'
+                    }}>Cancelar</button>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        ))}
+      </div>
+
+      {/* Back button */}
+      <div style={{ padding: '8px 14px 16px' }}>
+        <button className="fw-btn fw-btn-outline" onClick={() => go('table')} style={{
+          fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12,
+          padding: '8px 20px',
+          textTransform: 'uppercase',
+          letterSpacing: 1
+        }}>
+          Volver a la Tabla
+        </button>
+      </div>
     </div>
   );
 }

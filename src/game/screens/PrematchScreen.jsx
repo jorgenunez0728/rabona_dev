@@ -43,84 +43,176 @@ export default function PrematchScreen() {
   const tp = teamPower(starters, currentFormation?.mods), rtp = teamPower(rpRef.current);
   const injuredStarters = starters.filter(p => p.injuredFor > 0);
 
+  const matchBadgeBg = isNemesisMatch
+    ? 'linear-gradient(135deg, #8B5CF6, #7C3AED)'
+    : isCopaMatch
+      ? T.gradientPrimary
+      : 'linear-gradient(135deg, #3B82F6, #2563EB)';
+  const matchBadgeColor = isCopaMatch ? T.bg : '#fff';
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'auto', background: T.bg }}>
-      <div style={{ background: isNemesisMatch ? 'linear-gradient(135deg,#4a148c,#880e4f)' : isCopaMatch ? 'linear-gradient(135deg,#f9a825,#e65100)' : 'linear-gradient(135deg,#4FC3F7,#0288D1)', padding: '14px 16px', textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: 'rgba(255,255,255,0.7)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>
-          {isCopaMatch ? `🏆 Copa · Ronda ${(copa?.round || 0) + 1}` : isNemesisMatch ? '⚔️ DUELO DE RIVALES' : `${lg.i} Jornada ${game.matchNum + 1}`}
+
+      {/* Stadium glow background + VS header */}
+      <div style={{ position: 'relative', background: T.gradientDark, borderBottom: `1px solid ${T.glassBorder}` }}>
+        {/* Stadium atmosphere */}
+        <div style={{ position: 'absolute', inset: 0, background: T.gradientStadium, pointerEvents: 'none' }} />
+
+        <div style={{ position: 'relative', padding: '18px 16px 14px', textAlign: 'center' }}>
+          {/* Match type badge */}
+          <div style={{ display: 'inline-block', marginBottom: 10 }}>
+            <span style={{
+              fontFamily: T.fontHeading, fontSize: 11, color: matchBadgeColor,
+              letterSpacing: 1.5, textTransform: 'uppercase', fontWeight: 600,
+              background: matchBadgeBg, padding: '4px 14px', borderRadius: 20,
+              boxShadow: T.shadow
+            }}>
+              {isCopaMatch ? `Copa \u00B7 Ronda ${(copa?.round || 0) + 1}` : isNemesisMatch ? 'Duelo de Rivales' : `${lg.i} Jornada ${game.matchNum + 1}`}
+            </span>
+          </div>
+
+          {/* VS layout */}
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 20 }}>
+            <div style={{ flex: 1, textAlign: 'right' }}>
+              <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 24, color: T.tx, textTransform: 'uppercase', lineHeight: 1.1 }}>HALCONES</div>
+            </div>
+            <div style={{
+              fontFamily: T.fontHeading, fontWeight: 700, fontSize: 28, color: T.tx4,
+              width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: `1px solid ${T.glassBorder}`, borderRadius: 8,
+              background: T.glass
+            }}>VS</div>
+            <div style={{ flex: 1, textAlign: 'left' }}>
+              <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 24, color: T.tx, textTransform: 'uppercase', lineHeight: 1.1 }}>{rivalName}</div>
+            </div>
+          </div>
+
+          {isCopaMatch && (
+            <div style={{
+              fontFamily: T.fontHeading, fontSize: 11, color: '#fff', marginTop: 10,
+              background: 'rgba(239,68,68,0.25)', padding: '5px 12px', borderRadius: 6,
+              fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase',
+              border: '1px solid rgba(239,68,68,0.3)', display: 'inline-block'
+            }}>Perder = Fin de la Carrera</div>
+          )}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14 }}>
-          <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 22, color: '#fff', textTransform: 'uppercase' }}>HALCONES</div>
-          <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 16, color: 'rgba(255,255,255,0.25)' }}>VS</div>
-          <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 22, color: '#fff', textTransform: 'uppercase' }}>{rivalName}</div>
-        </div>
-        {isCopaMatch && <div style={{ fontSize: 12, color: '#fff', marginTop: 4, background: 'rgba(255,0,0,0.3)', padding: '3px 10px', borderRadius: 4, fontWeight: 700 }}>💀 PERDER = FIN DE LA CARRERA</div>}
       </div>
+
+      {/* Stadium image */}
       {getStadiumFront(game.league) ? (
-        <div style={{ position: 'relative', overflow: 'hidden', maxHeight: 140, background: '#0a1628' }}>
+        <div style={{ position: 'relative', overflow: 'hidden', maxHeight: 140, background: T.bg1 }}>
           <img src={getStadiumFront(game.league)} alt={st.n} style={{ width: '100%', display: 'block', objectFit: 'cover', objectPosition: 'top' }} />
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.85))', padding: '16px 16px 6px' }}>
-            <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: st.c, textTransform: 'uppercase', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{st.n}</div>
-            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{st.d}</div>
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: `linear-gradient(transparent, ${T.bg})`, padding: '16px 16px 8px' }}>
+            <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 14, color: st.c, textTransform: 'uppercase', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{st.n}</div>
+            <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>{st.d}</div>
           </div>
         </div>
       ) : (
-        <div style={{ background: T.bg1, padding: '8px 16px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: st.c, textTransform: 'uppercase' }}>{st.n}</div>
+        <div style={{ background: T.bg1, padding: '8px 16px', textAlign: 'center', borderBottom: `1px solid ${T.border}` }}>
+          <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 14, color: st.c, textTransform: 'uppercase' }}>{st.n}</div>
         </div>
       )}
+
       {/* Formation Selector */}
-      <div style={{ padding: '8px 12px', background: T.bg1, borderBottom: `1px solid ${T.border}` }}>
-        <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 5 }}>Formación</div>
-        <div style={{ display: 'flex', gap: 4 }}>
+      <div className="glass-light" style={{ margin: '8px 10px', borderRadius: 10, padding: '10px 12px' }}>
+        <div style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8, fontWeight: 600 }}>Formacion</div>
+        <div style={{ display: 'flex', gap: 5 }}>
           {FORMATIONS.map(f => {
             const active = game.formation === f.id;
             return (
-              <div key={f.id} onClick={() => setGame(g => ({ ...g, formation: f.id }))} style={{ flex: 1, padding: '6px 4px', background: active ? `${T.info}15` : T.bg2, border: `1px solid ${active ? T.info + '60' : T.border}`, borderRadius: 5, cursor: 'pointer', textAlign: 'center' }}>
+              <div key={f.id} onClick={() => setGame(g => ({ ...g, formation: f.id }))} style={{
+                flex: 1, padding: '8px 4px',
+                background: active ? `${T.gold}10` : T.bg2,
+                border: `1.5px solid ${active ? T.gold + '80' : T.border}`,
+                borderRadius: 8, cursor: 'pointer', textAlign: 'center',
+                boxShadow: active ? T.glowGold : 'none',
+                transition: 'all 0.2s ease'
+              }}>
                 <FormIcon id={f.id} size={28} />
-                <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: active ? T.info : T.tx3, textTransform: 'uppercase', marginTop: 1, lineHeight: 1.2, letterSpacing: 0.5 }}>{f.n.split('(')[1]?.replace(')','') || f.id}</div>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 2, marginTop: 3, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 10, color: f.mods.atkMult > 1 ? T.win : f.mods.atkMult < 1 ? T.lose : T.tx3 }}>ATK {f.mods.atkMult > 1 ? '▲' : f.mods.atkMult < 1 ? '▼' : '—'}</span>
-                  <span style={{ fontSize: 10, color: f.mods.defMult > 1 ? T.win : f.mods.defMult < 1 ? T.lose : T.tx3 }}>DEF {f.mods.defMult > 1 ? '▲' : f.mods.defMult < 1 ? '▼' : '—'}</span>
-                  <span style={{ fontSize: 10, color: f.mods.spdMult > 1 ? T.win : f.mods.spdMult < 1 ? T.lose : T.tx3 }}>VEL {f.mods.spdMult > 1 ? '▲' : f.mods.spdMult < 1 ? '▼' : '—'}</span>
+                <div style={{ fontFamily: T.fontHeading, fontSize: 10, color: active ? T.gold : T.tx3, textTransform: 'uppercase', marginTop: 2, lineHeight: 1.2, letterSpacing: 0.5 }}>{f.n.split('(')[1]?.replace(')','') || f.id}</div>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 2, marginTop: 4, flexWrap: 'wrap' }}>
+                  <span style={{ fontFamily: T.fontBody, fontSize: 9, color: f.mods.atkMult > 1 ? T.win : f.mods.atkMult < 1 ? T.lose : T.tx4 }}>ATK {f.mods.atkMult > 1 ? '+' : f.mods.atkMult < 1 ? '-' : '='}</span>
+                  <span style={{ fontFamily: T.fontBody, fontSize: 9, color: f.mods.defMult > 1 ? T.win : f.mods.defMult < 1 ? T.lose : T.tx4 }}>DEF {f.mods.defMult > 1 ? '+' : f.mods.defMult < 1 ? '-' : '='}</span>
+                  <span style={{ fontFamily: T.fontBody, fontSize: 9, color: f.mods.spdMult > 1 ? T.win : f.mods.spdMult < 1 ? T.lose : T.tx4 }}>VEL {f.mods.spdMult > 1 ? '+' : f.mods.spdMult < 1 ? '-' : '='}</span>
                 </div>
               </div>
             );
           })}
         </div>
-        {currentFormation && <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx2, marginTop: 4, textAlign: 'center' }}>{currentFormation.desc}</div>}
+        {currentFormation && <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx2, marginTop: 6, textAlign: 'center' }}>{currentFormation.desc}</div>}
       </div>
-      {injuredStarters.length > 0 && <div style={{ padding: '10px 14px', background: 'rgba(248,81,73,0.06)', borderBottom: `1px solid rgba(248,81,73,0.15)` }}><div style={{ fontSize: 14, color: T.lose, fontFamily: "'Oswald'", fontWeight: 600 }}>🏥 {injuredStarters.length} LESIONADO(S) — ¡no pueden jugar!</div></div>}
-      <div style={{ display: 'flex', gap: 3, padding: 8, flex: 1 }}>
-        {[{ t: '🔵 Halcones', p: starters, c: game.coach, h: true }, { t: `🔴 ${rivalName}`, p: rpRef.current, c: rcRef.current, h: false }].map((team, ti) => (
-          <div key={ti} style={{ flex: 1, padding: 6, background: T.bg1, borderRadius: 6 }}>
-            <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: team.h ? T.info : '#ef5350', textTransform: 'uppercase', paddingBottom: 3, borderBottom: `2px solid ${T.border}`, marginBottom: 4 }}>{team.t}</div>
+
+      {/* Injured warning */}
+      {injuredStarters.length > 0 && (
+        <div style={{ margin: '0 10px 8px', padding: '10px 14px', background: 'rgba(239,68,68,0.08)', borderRadius: 8, border: '1px solid rgba(239,68,68,0.2)' }}>
+          <div style={{ fontSize: 13, color: T.lose, fontFamily: T.fontHeading, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase' }}>{injuredStarters.length} Lesionado(s) -- no pueden jugar</div>
+        </div>
+      )}
+
+      {/* Team comparison panels */}
+      <div style={{ display: 'flex', gap: 8, padding: '0 10px 8px', flex: 1 }}>
+        {[{ t: 'Halcones', p: starters, c: game.coach, h: true }, { t: rivalName, p: rpRef.current, c: rcRef.current, h: false }].map((team, ti) => (
+          <div key={ti} className="glass" style={{ flex: 1, padding: 8, borderRadius: 10, border: `1px solid ${T.glassBorder}` }}>
+            <div style={{
+              fontFamily: T.fontHeading, fontWeight: 600, fontSize: 11,
+              color: team.h ? T.info : T.lose, textTransform: 'uppercase',
+              paddingBottom: 6, borderBottom: `1px solid ${T.glassBorder}`, marginBottom: 6,
+              letterSpacing: 0.8
+            }}>{team.t}</div>
             {team.p.map((p, i) => (
-              <div key={i} style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, padding: '2px 0', display: 'flex', justifyContent: 'space-between', color: p.injuredFor > 0 ? T.lose : (p.fatigue || 0) > 70 ? T.draw : T.tx }}>
+              <div key={i} style={{
+                fontFamily: T.fontBody, fontSize: 12, padding: '3px 0',
+                display: 'flex', justifyContent: 'space-between',
+                color: p.injuredFor > 0 ? T.lose : (p.fatigue || 0) > 70 ? T.draw : T.tx
+              }}>
                 <span style={{ flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{PN[p.pos]} {p.name}</span>
-                <span style={{ fontWeight: 700, color: T.gold, fontSize: 12 }}>{effectiveOvr(p)}</span>
+                <span style={{ fontWeight: 700, color: T.gold, fontSize: 12, fontFamily: T.fontHeading }}>{effectiveOvr(p)}</span>
               </div>
             ))}
-            <div style={{ marginTop: 4, paddingTop: 4, borderTop: `1px solid ${T.border}` }}>
-              <div style={{ fontFamily: "'Barlow Condensed'", fontWeight: 600, fontSize: 11, color: T.win }}>{team.c?.i} {team.c?.n}</div>
+            <div style={{ marginTop: 6, paddingTop: 6, borderTop: `1px solid ${T.glassBorder}` }}>
+              <div style={{ fontFamily: T.fontBody, fontWeight: 600, fontSize: 11, color: T.accent }}>{team.c?.i} {team.c?.n}</div>
             </div>
           </div>
         ))}
       </div>
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, padding: 8, background: '#141e3a' }}>
-        <div style={{ textAlign: 'center' }}><div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#607d8b', textTransform: 'uppercase' }}>Halcones</div><div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 28, color: '#42a5f5' }}>{tp}</div></div>
-        <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: '#455a64' }}>VS</div>
-        <div style={{ textAlign: 'center' }}><div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#607d8b', textTransform: 'uppercase' }}>{rivalName}</div><div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 28, color: '#ef5350' }}>{rtp}</div></div>
+
+      {/* Power comparison bar */}
+      <div className="glass" style={{ margin: '0 10px 8px', borderRadius: 10, padding: '10px 0', border: `1px solid ${T.glassBorder}` }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 24 }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 }}>Halcones</div>
+            <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 30, color: T.info }}>{tp}</div>
+          </div>
+          <div style={{
+            fontFamily: T.fontHeading, fontSize: 12, color: T.tx4,
+            width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: `1px solid ${T.border}`, borderRadius: 6, background: T.bg2
+          }}>VS</div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 }}>{rivalName}</div>
+            <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 30, color: T.lose }}>{rtp}</div>
+          </div>
+        </div>
       </div>
-      <div style={{ display: 'flex', gap: 8, padding: '8px 16px', justifyContent: 'center', background: T.bg }}>
-        <button onClick={() => go('roster')} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, padding: '8px 16px', border: '1.5px solid #607d8b', background: 'transparent', color: '#e8eaf6', borderRadius: 4, cursor: 'pointer', textTransform: 'uppercase' }}>Roster</button>
-        <button onClick={() => {
+
+      {/* Action buttons */}
+      <div style={{ display: 'flex', gap: 8, padding: '4px 16px 12px', justifyContent: 'center', background: T.bg }}>
+        <button className="fw-btn fw-btn-outline" onClick={() => go('roster')} style={{
+          fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12,
+          padding: '9px 18px', color: T.tx2, textTransform: 'uppercase',
+          letterSpacing: 0.8, borderRadius: 8
+        }}>Roster</button>
+        <button className={`fw-btn ${injuredStarters.length > 0 ? 'fw-btn-danger' : 'fw-btn-green'}`} onClick={() => {
           const objs = objRef.current || [];
           setGame(g => ({ ...g, currentObjectives: objs }));
           setMatch({ ps: 0, rs: 0, minute: 0, speed: 2, running: true, rival: { name: rivalName }, rivalPlayers: rpRef.current, rivalCoach: rcRef.current, ballX: .5, ballY: .5, possession: true, log: [], eventPopup: null });
           rpRef.current = null; rcRef.current = null; objRef.current = null;
           SFX.play('whistle'); setScreen('match');
-        }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '10px 28px', border: 'none', background: injuredStarters.length > 0 ? 'linear-gradient(135deg,#c62828,#ff1744)' : 'linear-gradient(135deg,#00c853,#00e676)', color: injuredStarters.length > 0 ? '#fff' : '#0b1120', clipPath: 'polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)', cursor: 'pointer', textTransform: 'uppercase' }}>⚽ Jugar</button>
+        }} style={{
+          fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14,
+          padding: '10px 32px', textTransform: 'uppercase',
+          letterSpacing: 1, borderRadius: 8
+        }}>Jugar</button>
       </div>
     </div>
   );

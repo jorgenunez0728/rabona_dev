@@ -61,7 +61,7 @@ function AnimBar({ pct, color, label, delay = 0 }) {
 function SlotRow({ slots, delay = 0 }) {
   const [visible, setVisible] = useState(false);
   useEffect(() => { const t = setTimeout(() => setVisible(true), delay); return () => clearTimeout(t); }, []);
-  const colors = { offensive: '#f44336', defensive: '#2196f3', economic: '#ffd600', chaotic: '#9c27b0' };
+  const colors = { offensive: '#f44336', defensive: '#2196f3', economic: '#F0C040', chaotic: '#9c27b0' };
   const labels = { offensive: 'ATK', defensive: 'DEF', economic: 'ECO', chaotic: 'CAO' };
   return (
     <div style={{ display: 'flex', gap: 4, justifyContent: 'center', opacity: visible ? 1 : 0, transition: 'opacity 0.5s ease' }}>
@@ -104,41 +104,40 @@ export default function TutorialScreen() {
   }
 
   const wrap = (bg, children) => (
-    <div style={{
+    <div className="stadium-glow" style={{
       display: 'flex', flexDirection: 'column', height: '100%',
       background: bg, position: 'relative', overflow: 'hidden',
     }}>
       {/* Skip button */}
-      <div style={{ position: 'absolute', top: 10, right: 14, zIndex: 10 }}>
-        <button onClick={skip} style={{
-          fontFamily: T.fontBody, fontSize: 11, color: T.tx3, background: 'rgba(0,0,0,0.3)',
-          border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '4px 12px',
-          cursor: 'pointer',
+      <div style={{ position: 'absolute', top: 12, right: 16, zIndex: 10 }}>
+        <button onClick={skip} className="fw-btn-glass" style={{
+          fontFamily: T.fontBody, fontSize: 11, color: T.tx3,
+          background: 'rgba(15,25,35,0.6)', backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '5px 14px',
+          cursor: 'pointer', transition: 'all 0.2s ease',
         }}>
           Saltar →
         </button>
       </div>
       {/* Content */}
-      <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 20px', gap: 12, textAlign: 'center' }}>
+      <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 20px', gap: 14, textAlign: 'center' }}>
         {children}
       </div>
       {/* Navigation */}
-      <div style={{ padding: '8px 20px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ padding: '8px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <Dots total={TOTAL} current={step} />
         <div style={{ display: 'flex', gap: 8 }}>
           {step > 0 && (
-            <button onClick={prev} style={{
-              flex: 1, fontFamily: T.fontHeading, fontWeight: 600, fontSize: 13, padding: '12px',
-              border: `1px solid ${T.tx3}`, background: 'transparent', color: T.tx2,
-              borderRadius: 6, cursor: 'pointer',
+            <button onClick={prev} className="fw-btn fw-btn-outline" style={{
+              flex: 1, fontSize: 13, padding: '12px', borderRadius: 8,
             }}>
               ← Atrás
             </button>
           )}
           <button onClick={next} className="fw-btn fw-btn-primary" style={{
-            flex: 2, fontSize: 14, padding: '12px',
+            flex: 2, fontSize: 14, padding: '13px', borderRadius: 8,
           }}>
-            {step < TOTAL - 1 ? 'Siguiente →' : 'Comenzar ⚽'}
+            {step < TOTAL - 1 ? 'Siguiente →' : 'Comenzar'}
           </button>
         </div>
       </div>
@@ -149,7 +148,7 @@ export default function TutorialScreen() {
   // SLIDE 0: Welcome / Intro
   // ═══════════════════════════════════════
   if (step === 0) return wrap(
-    'radial-gradient(ellipse at 50% 40%, #1a2a10 0%, #0b1120 70%)',
+    'radial-gradient(ellipse at 50% 40%, #1a2a10 0%, #080C14 70%)',
     <>
       <CoachPortrait id="miguel" size={56} />
       <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 26, color: T.gold, textTransform: 'uppercase' }}>
@@ -180,14 +179,14 @@ export default function TutorialScreen() {
   // SLIDE 1: The Run (Core Loop)
   // ═══════════════════════════════════════
   if (step === 1) return wrap(
-    'radial-gradient(ellipse at 50% 60%, #0b1830 0%, #0b1120 70%)',
+    'radial-gradient(ellipse at 50% 60%, #0b1830 0%, #080C14 70%)',
     <>
       <div style={{ fontSize: 48 }}>🔄</div>
       <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 22, color: '#fff', textTransform: 'uppercase' }}>
         Cada Run es Único
       </div>
       <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx2, maxWidth: 340, lineHeight: 1.6 }}>
-        Cada partida es una carrera completa — del <span style={{ color: '#00e676' }}>Barrio</span> hasta las <span style={{ color: '#ffd600' }}>Estrellas</span>.
+        Cada partida es una carrera completa — del <span style={{ color: '#22C55E' }}>Barrio</span> hasta las <span style={{ color: '#F0C040' }}>Estrellas</span>.
         Si pierdes, empiezas de nuevo. Pero lo que aprendes y desbloqueas <span style={{ color: T.gold }}>se queda para siempre</span>.
       </div>
       {/* Visual flow */}
@@ -199,7 +198,7 @@ export default function TutorialScreen() {
           { icon: '⬇', label: '', color: T.tx3 },
           { icon: '🌍', label: 'Liga Mundial', color: '#ff9800' },
           { icon: '⬇', label: '', color: T.tx3 },
-          { icon: '🛸', label: 'Liga Intergaláctica', color: '#ffd600' },
+          { icon: '🛸', label: 'Liga Intergaláctica', color: '#F0C040' },
         ].map((item, i) => (
           <div key={i} style={{
             display: 'flex', alignItems: 'center', gap: 8,
@@ -219,7 +218,7 @@ export default function TutorialScreen() {
   // SLIDE 2: Manager Archetypes
   // ═══════════════════════════════════════
   if (step === 2) return wrap(
-    'radial-gradient(ellipse at 50% 30%, #2d1a4a 0%, #0b1120 70%)',
+    'radial-gradient(ellipse at 50% 30%, #2d1a4a 0%, #080C14 70%)',
     <>
       <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 18, color: T.purple, textTransform: 'uppercase', letterSpacing: 1 }}>
         Filosofía de Juego
@@ -230,7 +229,7 @@ export default function TutorialScreen() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 340, width: '100%' }}>
         <MiniCard icon="🦅" title="El Caudillo" desc="Empates = derrota. Pero +25% ATK cuando vas perdiendo." color="#f44336" delay={100} />
         <MiniCard icon="📐" title="El Arquitecto" desc="Ve la formación rival. Eventos tácticos con opción secreta." color="#2196f3" delay={250} />
-        <MiniCard icon="💰" title="El Mercenario" desc="+30 monedas. -30% precios. Jugadores nuevos llegan con boost." color="#ffd600" delay={400} />
+        <MiniCard icon="💰" title="El Mercenario" desc="+30 monedas. -30% precios. Jugadores nuevos llegan con boost." color="#F0C040" delay={400} />
         <MiniCard icon="🔮" title="El Místico" desc="Maldiciones más fuertes... pero dan bonos ocultos." color="#9c27b0" delay={550} />
       </div>
       <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, marginTop: 4 }}>
@@ -243,7 +242,7 @@ export default function TutorialScreen() {
   // SLIDE 3: Tactical Cards
   // ═══════════════════════════════════════
   if (step === 3) return wrap(
-    'radial-gradient(ellipse at 50% 40%, #1a1030 0%, #0b1120 70%)',
+    'radial-gradient(ellipse at 50% 40%, #1a1030 0%, #080C14 70%)',
     <>
       <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 18, color: T.gold, textTransform: 'uppercase', letterSpacing: 1 }}>
         🎴 Cartas Tácticas
@@ -255,7 +254,7 @@ export default function TutorialScreen() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 340, width: '100%' }}>
         <MiniCard icon="⏰" title="Presión Final" desc="Después del min 75, +20% chance de gol." color="#f44336" delay={100} />
         <MiniCard icon="🧱" title="Muro Humano" desc="Primera chance rival: -15% probabilidad de gol." color="#2196f3" delay={250} />
-        <MiniCard icon="💵" title="Bono por Gol" desc="+5 monedas por cada gol que anotes." color="#ffd600" delay={400} />
+        <MiniCard icon="💵" title="Bono por Gol" desc="+5 monedas por cada gol que anotes." color="#F0C040" delay={400} />
         <MiniCard icon="🌑" title="Pacto Oscuro" desc="+30% gol... pero ganas maldición cada 3 partidos." color="#9c27b0" delay={550} />
       </div>
       {/* Slot preview */}
@@ -270,7 +269,7 @@ export default function TutorialScreen() {
   // SLIDE 4: Curse Mastery
   // ═══════════════════════════════════════
   if (step === 4) return wrap(
-    'radial-gradient(ellipse at 50% 50%, #2a0a0a 0%, #0b1120 70%)',
+    'radial-gradient(ellipse at 50% 50%, #2a0a0a 0%, #080C14 70%)',
     <>
       <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 18, color: '#ef5350', textTransform: 'uppercase', letterSpacing: 1 }}>
         Dominio de Maldiciones
@@ -311,7 +310,7 @@ export default function TutorialScreen() {
   // SLIDE 5: Ascension Mutators
   // ═══════════════════════════════════════
   if (step === 5) return wrap(
-    'radial-gradient(ellipse at 50% 60%, #1a1010 0%, #0b1120 70%)',
+    'radial-gradient(ellipse at 50% 60%, #1a1010 0%, #080C14 70%)',
     <>
       <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 18, color: '#ff9800', textTransform: 'uppercase', letterSpacing: 1 }}>
         Mutadores de Ascensión
@@ -341,7 +340,7 @@ export default function TutorialScreen() {
   // SLIDE 6: Setup Flow + Go
   // ═══════════════════════════════════════
   if (step === 6) return wrap(
-    'radial-gradient(ellipse at 50% 40%, #1a2510 0%, #0b1120 70%)',
+    'radial-gradient(ellipse at 50% 40%, #1a2510 0%, #080C14 70%)',
     <>
       <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 18, color: T.win, textTransform: 'uppercase', letterSpacing: 1 }}>
         Tu Run, Tus Reglas

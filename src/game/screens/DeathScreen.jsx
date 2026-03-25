@@ -58,63 +58,79 @@ export default function DeathScreen() {
   const donMiguelQuote = game.league === 0 ? '"No siempre se gana, mijo. Pero lo que importa es que lo intentamos."' : '"Estuvimos tan cerca de las estrellas que casi las tocamos. No es el final... es solo el descanso."';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', overflow: 'auto', background: 'linear-gradient(180deg,#1a0a0a 0%,#0b1120 30%)' }}>
-      <div style={{ width: '100%', padding: '24px 16px', textAlign: 'center', background: 'linear-gradient(180deg,rgba(255,23,68,0.08) 0%,transparent 100%)' }}>
-        <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 28, color: '#ff1744', textTransform: 'uppercase', letterSpacing: 2 }}>Fin de la Carrera</div>
-        <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 18, color: '#607d8b', textTransform: 'uppercase', letterSpacing: 1, marginTop: 4 }}>{lg.i} {lg.n}</div>
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', overflow: 'auto',
+      background: `radial-gradient(ellipse at 50% 20%, rgba(239,68,68,0.06) 0%, ${T.bg} 60%)`,
+    }}>
+      {/* Header */}
+      <div className="anim-stagger-1" style={{ width: '100%', padding: '28px 16px 16px', textAlign: 'center' }}>
+        <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 30, color: T.lose, textTransform: 'uppercase', letterSpacing: 3 }}>Fin de la Carrera</div>
+        <div style={{ fontFamily: T.fontBody, fontSize: 16, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 6 }}>{lg.i} {lg.n}</div>
       </div>
-      <div style={{ padding: '12px 20px', maxWidth: 400, textAlign: 'center' }}>
-        <div style={{ fontSize: 36 }}>👴</div>
-        <div style={{ fontFamily: "'Barlow'", fontSize: 16, color: '#e8eaf6', lineHeight: 1.5, fontStyle: 'italic', marginTop: 8 }}>{donMiguelQuote}</div>
+
+      {/* Quote section — glass panel */}
+      <div className="glass anim-stagger-2" style={{ borderRadius: 12, padding: '16px 24px', margin: '0 16px 12px', maxWidth: 400, textAlign: 'center' }}>
+        <div style={{ fontSize: 36, marginBottom: 8 }}>👴</div>
+        <div style={{ fontFamily: T.fontBody, fontSize: 15, color: T.tx2, lineHeight: 1.6, fontStyle: 'italic' }}>{donMiguelQuote}</div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, maxWidth: 360, width: '100%', padding: '0 16px', margin: '8px 0' }}>
-        {[{ l: 'Partidos', v: cs.matchesPlayed, c: '#fff' }, { l: 'Victorias', v: cs.wins, c: '#00e676' }, { l: 'Goles', v: cs.goalsFor, c: '#42a5f5' }, { l: 'Liga máxima', v: lg.n, c: '#d500f9' }].map((s, i) => (
-          <div key={i} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 4, padding: '6px 8px', textAlign: 'center' }}>
-            <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 24, color: s.c }}>{s.v}</div>
-            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#607d8b', textTransform: 'uppercase' }}>{s.l}</div>
+
+      {/* Stats summary — glass cards grid */}
+      <div className="anim-stagger-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, maxWidth: 380, width: '100%', padding: '0 16px', margin: '4px 0 12px' }}>
+        {[
+          { l: 'Partidos', v: cs.matchesPlayed, c: T.tx },
+          { l: 'Victorias', v: cs.wins, c: T.win },
+          { l: 'Goles', v: cs.goalsFor, c: T.info },
+          { l: 'Liga maxima', v: lg.n, c: T.purple },
+        ].map((s, i) => (
+          <div key={i} className="glass" style={{ borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+            <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 26, color: s.c }}>{s.v}</div>
+            <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 }}>{s.l}</div>
           </div>
         ))}
       </div>
 
-      {/* ── Immortalize Player Section ── */}
+      {/* Immortalize Player Section — premium gold-framed */}
       {!immortalized && rosterSorted.length > 0 && (
-        <div style={{ width: '100%', maxWidth: 400, padding: '8px 16px' }}>
-          <div style={{ background: 'linear-gradient(145deg,#2a2510,#3a3215)', borderRadius: 10, padding: 12, border: `1px solid ${T.gold}30` }}>
-            <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 14, color: T.gold, textTransform: 'uppercase', textAlign: 'center', marginBottom: 8 }}>
-              Inmortalizar Jugador
+        <div className="anim-stagger-4" style={{ width: '100%', maxWidth: 400, padding: '4px 16px' }}>
+          <div className="card-gold" style={{ padding: 16 }}>
+            <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15, textTransform: 'uppercase', textAlign: 'center', marginBottom: 6, letterSpacing: 1 }}>
+              <span className="text-gradient-gold">Inmortalizar Jugador</span>
             </div>
-            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: T.tx2, textAlign: 'center', marginBottom: 10, lineHeight: 1.3 }}>
-              Elige 1 jugador para el Hall of Fame. Aparecerá en futuras runs.
+            <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx3, textAlign: 'center', marginBottom: 12, lineHeight: 1.4 }}>
+              Elige 1 jugador para el Hall of Fame. Aparecera en futuras runs.
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 180, overflow: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 200, overflow: 'auto' }}>
               {rosterSorted.slice(0, 7).map((p) => {
                 const ovr = calcOvr(p);
                 const isSelected = selectedPlayer?.id === p.id;
                 return (
                   <div key={p.id} onClick={() => handleImmortalize(p)} style={{
-                    display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
-                    background: isSelected ? `${T.gold}15` : 'rgba(255,255,255,0.02)',
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                    background: isSelected ? `${T.gold}15` : T.bg1,
                     border: `1.5px solid ${isSelected ? T.gold : T.border}`,
-                    borderRadius: 6, cursor: 'pointer', touchAction: 'manipulation',
+                    borderRadius: 10, cursor: 'pointer', touchAction: 'manipulation',
+                    boxShadow: isSelected ? T.glowGold : 'none',
+                    transition: 'all 0.2s ease',
                   }}>
-                    <div style={{ minWidth: 32, textAlign: 'center' }}>
-                      <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 18, color: T.gold }}>{ovr}</div>
-                      <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: POS_COLORS[p.pos] || T.tx2 }}>{PN[p.pos] || p.pos}</div>
+                    <div style={{ minWidth: 36, textAlign: 'center' }}>
+                      <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 20, color: T.gold }}>{ovr}</div>
+                      <div style={{ fontFamily: T.fontHeading, fontSize: 10, color: POS_COLORS[p.pos] || T.tx2, fontWeight: 600 }}>{PN[p.pos] || p.pos}</div>
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: "'Barlow Condensed'", fontWeight: 600, fontSize: 13, color: T.tx }}>{p.name}</div>
-                      {p.trait && <div style={{ fontSize: 10, color: T.purple }}>✦ {p.trait.n}</div>}
+                      <div style={{ fontFamily: T.fontBody, fontWeight: 600, fontSize: 14, color: T.tx }}>{p.name}</div>
+                      {p.trait && <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.purple, marginTop: 1 }}>✦ {p.trait.n}</div>}
                     </div>
-                    {isSelected && <div style={{ color: T.gold, fontSize: 16 }}>✓</div>}
+                    {isSelected && <div style={{ color: T.gold, fontSize: 18, fontWeight: 700 }}>✓</div>}
                   </div>
                 );
               })}
             </div>
             {selectedPlayer && (
               <button onClick={confirmImmortalize} style={{
-                fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, padding: '10px', marginTop: 8,
-                border: 'none', background: `linear-gradient(135deg,${T.gold},#f0c040)`, color: '#1a1a2e',
-                borderRadius: 6, cursor: 'pointer', textTransform: 'uppercase', width: '100%',
+                fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14, padding: '12px', marginTop: 10,
+                border: 'none', background: T.gradientPrimary, color: T.bg,
+                borderRadius: 10, cursor: 'pointer', textTransform: 'uppercase', width: '100%',
+                boxShadow: T.glowGold, letterSpacing: 0.5,
               }}>
                 Inmortalizar a {selectedPlayer.name.split(' ').pop()}
               </button>
@@ -123,89 +139,103 @@ export default function DeathScreen() {
         </div>
       )}
       {immortalized && (
-        <div style={{ padding: '8px 16px', textAlign: 'center', width: '100%', maxWidth: 400 }}>
-          <div style={{ background: `${T.gold}10`, border: `1px solid ${T.gold}30`, borderRadius: 8, padding: 12 }}>
-            <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 14, color: T.gold }}>
-              {selectedPlayer.name} entra al Hall of Fame
+        <div className="anim-stagger-4" style={{ padding: '4px 16px', textAlign: 'center', width: '100%', maxWidth: 400 }}>
+          <div className="card-gold" style={{ padding: 14 }}>
+            <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15 }}>
+              <span className="text-gradient-gold">{selectedPlayer.name} entra al Hall of Fame</span>
             </div>
-            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: T.tx2, marginTop: 4 }}>
-              Aparecerá como legendario en futuras runs.
+            <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx3, marginTop: 4 }}>
+              Aparecera como legendario en futuras runs.
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Mutator Bonus ── */}
+      {/* Mutator Bonus */}
       {(game.activeMutators || []).length > 0 && (
-        <div style={{ padding: '4px 16px', width: '100%', maxWidth: 400 }}>
-          <div style={{ background: 'rgba(239,83,80,0.06)', border: '1px solid rgba(239,83,80,0.15)', borderRadius: 8, padding: '8px 12px', textAlign: 'center' }}>
-            <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: '#ef5350', textTransform: 'uppercase' }}>Mutadores Activos</div>
-            <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 18, color: T.gold, marginTop: 2 }}>
+        <div className="anim-stagger-5" style={{ padding: '6px 16px', width: '100%', maxWidth: 400 }}>
+          <div className="glass" style={{ borderRadius: 10, padding: '10px 14px', textAlign: 'center', borderColor: T.lose + '25' }}>
+            <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 11, color: T.lose, textTransform: 'uppercase', letterSpacing: 1 }}>Mutadores Activos</div>
+            <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 20, color: T.gold, marginTop: 4 }}>
               +{calcMutatorLegacyBonus(game.activeMutators, game.ascension || 0)} Puntos de Legado
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Card Reward ── */}
+      {/* Card Reward — purple glass container */}
       {cardReward && !cardClaimed && (
-        <div style={{ width: '100%', maxWidth: 400, padding: '8px 16px' }}>
-          <div style={{ background: 'linear-gradient(145deg,#1a1030,#2d1a4a)', borderRadius: 10, padding: 12, border: `1px solid ${T.purple}30` }}>
-            <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 14, color: T.purple, textTransform: 'uppercase', textAlign: 'center', marginBottom: 8 }}>
-              🎴 Carta Táctica
+        <div className="anim-stagger-5" style={{ width: '100%', maxWidth: 400, padding: '6px 16px' }}>
+          <div className="card-purple" style={{ padding: 16 }}>
+            <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15, color: T.purple, textTransform: 'uppercase', textAlign: 'center', marginBottom: 6, letterSpacing: 1 }}>
+              🎴 Carta Tactica
             </div>
-            <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, textAlign: 'center', marginBottom: 10 }}>
-              Elige 1 carta para tu colección permanente.
+            <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx3, textAlign: 'center', marginBottom: 12 }}>
+              Elige 1 carta para tu coleccion permanente.
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {cardReward.map(card => {
                 const rarity = CARD_RARITIES[card.rarity];
                 const isSelected = selectedCard?.id === card.id;
                 return (
                   <div key={card.id} onClick={() => setSelectedCard(card)} style={{
-                    display: 'flex', gap: 10, alignItems: 'center', padding: '8px 10px',
-                    background: isSelected ? `${T.purple}15` : 'rgba(255,255,255,0.02)',
+                    display: 'flex', gap: 12, alignItems: 'center', padding: '10px 12px',
+                    background: isSelected ? `${T.purple}15` : T.bg1,
                     border: `1.5px solid ${isSelected ? T.purple : T.border}`,
-                    borderRadius: 6, cursor: 'pointer',
+                    borderRadius: 10, cursor: 'pointer',
+                    boxShadow: isSelected ? '0 0 16px rgba(139,92,246,0.15)' : 'none',
+                    transition: 'all 0.2s ease',
                   }}>
-                    <div style={{ fontSize: 22, minWidth: 28, textAlign: 'center' }}>{card.i}</div>
+                    <div style={{ fontSize: 24, minWidth: 30, textAlign: 'center' }}>{card.i}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12, color: T.tx }}>{card.n}</span>
-                        <span style={{ fontSize: 8, color: rarity.color, fontFamily: T.fontBody, border: `1px solid ${rarity.color}30`, padding: '0 4px', borderRadius: 3 }}>{rarity.n}</span>
+                        <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 13, color: T.tx }}>{card.n}</span>
+                        <span style={{ fontSize: 9, color: rarity.color, fontFamily: T.fontBody, fontWeight: 600, border: `1px solid ${rarity.color}30`, padding: '1px 6px', borderRadius: 4 }}>{rarity.n}</span>
                       </div>
-                      <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, lineHeight: 1.3, marginTop: 1 }}>{card.d}</div>
+                      <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, lineHeight: 1.4, marginTop: 2 }}>{card.d}</div>
                     </div>
-                    {isSelected && <div style={{ color: T.purple, fontSize: 16 }}>✓</div>}
+                    {isSelected && <div style={{ color: T.purple, fontSize: 18, fontWeight: 700 }}>✓</div>}
                   </div>
                 );
               })}
             </div>
             {selectedCard && (
               <button onClick={() => { addCardToCollection(selectedCard.id); setCardClaimed(true); SFX.play('reward'); Haptics.success(); }} style={{
-                fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, padding: '10px', marginTop: 8,
-                border: 'none', background: `linear-gradient(135deg,${T.purple},#7c4dff)`, color: '#fff',
-                borderRadius: 6, cursor: 'pointer', textTransform: 'uppercase', width: '100%',
+                fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14, padding: '12px', marginTop: 10,
+                border: 'none', background: T.gradientPurple, color: '#fff',
+                borderRadius: 10, cursor: 'pointer', textTransform: 'uppercase', width: '100%',
+                boxShadow: '0 0 20px rgba(139,92,246,0.2)', letterSpacing: 0.5,
               }}>
-                Agregar {selectedCard.n} a colección
+                Agregar {selectedCard.n} a coleccion
               </button>
             )}
           </div>
         </div>
       )}
       {cardClaimed && (
-        <div style={{ padding: '4px 16px', textAlign: 'center', width: '100%', maxWidth: 400 }}>
-          <div style={{ background: `${T.purple}10`, border: `1px solid ${T.purple}30`, borderRadius: 8, padding: 8 }}>
-            <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 12, color: T.purple }}>
-              {selectedCard.i} {selectedCard.n} añadida a tu colección
+        <div style={{ padding: '6px 16px', textAlign: 'center', width: '100%', maxWidth: 400 }}>
+          <div className="card-purple" style={{ padding: 12 }}>
+            <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 13, color: T.purple }}>
+              {selectedCard.i} {selectedCard.n} anadida a tu coleccion
             </div>
           </div>
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 16px', width: '100%', maxWidth: 400 }}>
-        <button onClick={() => { handleDeleteSave(); go('tutorial'); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 16, padding: '12px 32px', border: 'none', background: 'linear-gradient(135deg,#d4a017,#f0c040)', color: '#1a1a2e', clipPath: 'polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)', cursor: 'pointer', textTransform: 'uppercase', width: '100%' }}>Nueva Carrera</button>
-        <button onClick={() => go('title')} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, padding: '8px 16px', border: '1.5px solid #607d8b', background: 'transparent', color: '#e8eaf6', borderRadius: 4, cursor: 'pointer', textTransform: 'uppercase', width: '100%' }}>Menú Principal</button>
+      {/* Bottom actions */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '16px 16px 24px', width: '100%', maxWidth: 400 }}>
+        <button onClick={() => { handleDeleteSave(); go('tutorial'); }} style={{
+          fontFamily: T.fontHeading, fontWeight: 700, fontSize: 16, padding: '14px',
+          border: 'none', borderRadius: 10, width: '100%',
+          background: T.gradientPrimary, color: T.bg,
+          cursor: 'pointer', textTransform: 'uppercase', letterSpacing: 1,
+          boxShadow: T.glowGold,
+        }}>Nueva Carrera</button>
+        <button className="fw-btn fw-btn-outline" onClick={() => go('title')} style={{
+          fontFamily: T.fontHeading, fontWeight: 600, fontSize: 13, padding: '10px 16px',
+          border: `1.5px solid ${T.tx4}`, background: 'transparent', color: T.tx2,
+          borderRadius: 10, cursor: 'pointer', textTransform: 'uppercase', width: '100%',
+        }}>Menu Principal</button>
       </div>
     </div>
   );

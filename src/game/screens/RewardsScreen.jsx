@@ -11,106 +11,144 @@ export default function RewardsScreen() {
   const xpGain = rewards.xpGain || 0;
   const resultColor = r.won ? T.win : r.drew ? T.draw : T.lose;
   const resultLabel = r.won ? 'VICTORIA' : r.drew ? 'EMPATE' : 'DERROTA';
+  const resultGradient = r.won ? T.gradientGreen : r.drew ? 'linear-gradient(135deg,#F59E0B,#D97706)' : T.gradientDanger;
   const [tab, setTab] = [rewardsTab, setRewardsTab];
   useEffect(() => { if (r.won) SFX.play('victory'); else if (r.lost) SFX.play('defeat'); }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', overflow: 'auto', background: T.bg }}>
-      <div style={{ width: '100%', background: 'linear-gradient(135deg,#1565c0 0%,#0d47a1 50%,#c62828 100%)', padding: '16px', textAlign: 'center' }}>
-        <div style={{ fontFamily: T.fontPixel, fontWeight: 700, fontSize: 22, color: resultColor, textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>{resultLabel}</div>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, margin: '4px 0' }}>
-          <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 14, color: '#fff', textTransform: 'uppercase' }}>HALCONES</div>
-          <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 48, color: '#fff' }}>{r.ps} - {r.rs}</div>
-          <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 14, color: '#fff', textTransform: 'uppercase' }}>{r.rivalName}</div>
+    <div className="stadium-glow" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', overflow: 'auto', background: T.bg }}>
+      {/* Hero header with stadium gradient */}
+      <div style={{
+        width: '100%',
+        background: `${T.gradientStadium}, linear-gradient(180deg, ${T.bg1} 0%, ${T.bg} 100%)`,
+        padding: '24px 16px 16px', textAlign: 'center', position: 'relative',
+      }}>
+        {/* Result badge */}
+        <div className="anim-stagger-1" style={{
+          display: 'inline-block', padding: '4px 20px', borderRadius: 20,
+          background: resultGradient, marginBottom: 8,
+        }}>
+          <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 13, color: '#fff', textTransform: 'uppercase', letterSpacing: 2 }}>{resultLabel}</span>
         </div>
-        <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>+{r.xpGain} XP · +{r.coinGain || 0} 💰</div>
+        {/* Score */}
+        <div className="anim-stagger-2" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 20, margin: '4px 0' }}>
+          <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14, color: T.tx2, textTransform: 'uppercase', textAlign: 'right', minWidth: 80 }}>HALCONES</div>
+          <div style={{
+            fontFamily: T.fontHeading, fontWeight: 700, fontSize: 52, color: T.tx,
+            textShadow: `0 0 30px ${resultColor}40`,
+            letterSpacing: 4,
+          }}>{r.ps} - {r.rs}</div>
+          <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14, color: T.tx2, textTransform: 'uppercase', textAlign: 'left', minWidth: 80 }}>{r.rivalName}</div>
+        </div>
+        <div className="anim-stagger-3" style={{ fontFamily: T.fontBody, fontSize: 13, color: T.tx3 }}>+{r.xpGain} XP · +{r.coinGain || 0} 💰</div>
       </div>
+
+      {/* Stolen player alert */}
       {rewards.stolen && (
-        <div style={{ background: 'rgba(255,23,68,0.08)', borderBottom: '1px solid rgba(255,23,68,0.2)', padding: '8px 16px', width: '100%', textAlign: 'center' }}>
-          <span style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 12, color: '#ff1744', textTransform: 'uppercase' }}>💀 {r.rivalName} se lleva a {rewards.stolen.name} ({PN[rewards.stolen.pos]})</span>
+        <div className="glass" style={{ borderColor: T.lose + '30', borderRadius: 0, padding: '8px 16px', width: '100%', textAlign: 'center' }}>
+          <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: T.lose, textTransform: 'uppercase' }}>💀 {r.rivalName} se lleva a {rewards.stolen.name} ({PN[rewards.stolen.pos]})</span>
         </div>
       )}
-      <div style={{ display: 'flex', width: '100%', maxWidth: 420, background: T.bg1, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+
+      {/* Tab bar with gold underline */}
+      <div style={{ display: 'flex', width: '100%', maxWidth: 420, background: T.bg1, borderBottom: `1px solid ${T.border}` }}>
         {[{ k: 'summary', l: '📊 Resumen' }, { k: 'social', l: '📱 Redes' }, { k: 'roster', l: '📋 Roster' }, { k: 'rewards', l: '🎁 Recomp.' }].map(t => (
-          <div key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '8px 4px', textAlign: 'center', fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: tab === t.k ? '#f0c040' : '#607d8b', cursor: 'pointer', borderBottom: tab === t.k ? '2px solid #f0c040' : '2px solid transparent' }}>{t.l}</div>
+          <div key={t.k} onClick={() => setTab(t.k)} style={{
+            flex: 1, padding: '10px 4px', textAlign: 'center',
+            fontFamily: T.fontHeading, fontWeight: 600, fontSize: 11, letterSpacing: 0.3,
+            color: tab === t.k ? T.gold : T.tx4, cursor: 'pointer',
+            borderBottom: tab === t.k ? `2px solid ${T.gold}` : '2px solid transparent',
+            transition: 'color 0.2s ease, border-color 0.2s ease',
+          }}>{t.l}</div>
         ))}
       </div>
-      <div style={{ width: '100%', maxWidth: 420, padding: 8, flex: 1 }}>
+
+      <div style={{ width: '100%', maxWidth: 420, padding: 10, flex: 1 }}>
         {tab === 'summary' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {/* Man of the Match */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Man of the Match — premium gold card */}
             {r.manOfTheMatch && (
-              <div style={{ background: 'linear-gradient(135deg,rgba(240,192,64,0.08),rgba(240,192,64,0.02))', borderRadius: 6, padding: 10, border: '1px solid rgba(240,192,64,0.2)', textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 11, color: T.gold, textTransform: 'uppercase', marginBottom: 2 }}>⭐ Figura del Partido</div>
-                <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 16, color: '#fff' }}>{r.manOfTheMatch.name}</div>
-                <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#607d8b' }}>{PN[r.manOfTheMatch.pos]} · OVR {calcOvr(r.manOfTheMatch)}</div>
+              <div className="card-gold anim-stagger-1" style={{ padding: 14, textAlign: 'center' }}>
+                <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>
+                  <span className="text-gradient-gold">⭐ Figura del Partido</span>
+                </div>
+                <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 18, color: T.tx }}>{r.manOfTheMatch.name}</div>
+                <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx3, marginTop: 2 }}>{PN[r.manOfTheMatch.pos]} · OVR {calcOvr(r.manOfTheMatch)}</div>
               </div>
             )}
-            {/* Match Statistics */}
-            <div style={{ background: T.bg1, borderRadius: 6, padding: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: '#607d8b', textTransform: 'uppercase', marginBottom: 4 }}>Estadísticas</div>
+            {/* Match Statistics — glass container with dual bars */}
+            <div className="glass anim-stagger-2" style={{ borderRadius: 10, padding: 14 }}>
+              <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 11, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Estadisticas</div>
               {(() => {
                 const es = r.engineStats;
                 const statRows = es ? [
-                  { l: 'Posesión', h: `${es.possessionPct?.home || 50}%`, a: `${es.possessionPct?.away || 50}%`, hp: es.possessionPct?.home || 50 },
+                  { l: 'Posesion', h: `${es.possessionPct?.home || 50}%`, a: `${es.possessionPct?.away || 50}%`, hp: es.possessionPct?.home || 50 },
                   { l: 'Tiros', h: es.shots?.home || 0, a: es.shots?.away || 0, hp: es.shots?.home ? Math.round(es.shots.home / Math.max(1, es.shots.home + es.shots.away) * 100) : 50 },
                   { l: 'A puerta', h: es.shotsOnTarget?.home || 0, a: es.shotsOnTarget?.away || 0, hp: es.shotsOnTarget?.home ? Math.round(es.shotsOnTarget.home / Math.max(1, es.shotsOnTarget.home + es.shotsOnTarget.away) * 100) : 50 },
-                  { l: 'Córners', h: es.corners?.home || 0, a: es.corners?.away || 0, hp: 50 },
+                  { l: 'Corners', h: es.corners?.home || 0, a: es.corners?.away || 0, hp: 50 },
                   { l: 'Faltas', h: es.fouls?.home || 0, a: es.fouls?.away || 0, hp: 50 },
                   { l: 'Moral final', h: r.morale || 50, a: '-', hp: r.morale || 50 },
                 ] : [
-                  { l: 'Posesión', h: `${r.possPct || 50}%`, a: `${100 - (r.possPct || 50)}%`, hp: r.possPct || 50 },
+                  { l: 'Posesion', h: `${r.possPct || 50}%`, a: `${100 - (r.possPct || 50)}%`, hp: r.possPct || 50 },
                   { l: 'Tiros', h: r.shots || 0, a: rnd(2, 6), hp: 60 },
                   { l: 'Moral final', h: r.morale || 50, a: '-', hp: r.morale || 50 },
                 ];
                 return statRows.map((s, i) => (
-                  <div key={i} style={{ marginBottom: 4 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#e8eaf6', marginBottom: 2 }}><span>{s.h}</span><span style={{ color: '#607d8b', fontSize: 11 }}>{s.l}</span><span>{s.a}</span></div>
-                    <div style={{ display: 'flex', height: 3, borderRadius: 2, overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
-                      <div style={{ width: `${s.hp}%`, background: '#42a5f5', borderRadius: 2 }} /><div style={{ flex: 1, background: 'rgba(239,83,80,0.3)', borderRadius: 2 }} />
+                  <div key={i} style={{ marginBottom: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.fontBody, fontSize: 12, color: T.tx, marginBottom: 3 }}>
+                      <span style={{ fontWeight: 600, minWidth: 28 }}>{s.h}</span>
+                      <span style={{ color: T.tx3, fontSize: 11, fontFamily: T.fontHeading, textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.l}</span>
+                      <span style={{ fontWeight: 600, minWidth: 28, textAlign: 'right' }}>{s.a}</span>
+                    </div>
+                    <div style={{ display: 'flex', height: 5, borderRadius: 3, overflow: 'hidden', background: 'rgba(255,255,255,0.04)', gap: 2 }}>
+                      <div style={{ width: `${s.hp}%`, background: T.gradientBlue, borderRadius: 3, transition: 'width 0.6s ease' }} />
+                      <div style={{ flex: 1, background: `rgba(239,68,68,0.35)`, borderRadius: 3 }} />
                     </div>
                   </div>
                 ));
               })()}
             </div>
-            {/* Scorers with assists */}
+            {/* Scorers */}
             {r.engineStats?.goals?.filter(g => g.team === 'home').length > 0 && (
-              <div style={{ background: T.bg1, borderRadius: 6, padding: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: T.gold, textTransform: 'uppercase', marginBottom: 4 }}>⚽ Goles</div>
+              <div className="glass anim-stagger-3" style={{ borderRadius: 10, padding: 14 }}>
+                <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 11, color: T.gold, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>⚽ Goles</div>
                 {r.engineStats.goals.filter(g => g.team === 'home').map((g, i) => (
-                  <div key={i} style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: '#e8eaf6', padding: '2px 0' }}>
+                  <div key={i} style={{ fontFamily: T.fontBody, fontSize: 13, color: T.tx, padding: '3px 0' }}>
                     ⚽ {g.minute}' {g.scorer || 'Gol'}{g.assister ? ` (asist. ${g.assister})` : ''}
                   </div>
                 ))}
                 {r.engineStats.goals.filter(g => g.team === 'away').map((g, i) => (
-                  <div key={`a${i}`} style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: '#ef5350', padding: '2px 0' }}>
+                  <div key={`a${i}`} style={{ fontFamily: T.fontBody, fontSize: 13, color: T.lose, padding: '3px 0' }}>
                     💀 {g.minute}' Gol rival
                   </div>
                 ))}
               </div>
             )}
+            {/* Injuries */}
             {r.injuryList?.length > 0 && (
-              <div style={{ background: 'rgba(255,23,68,0.04)', borderRadius: 6, padding: 10, border: '1px solid rgba(255,23,68,0.1)' }}>
-                <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: '#ff1744', textTransform: 'uppercase', marginBottom: 4 }}>🏥 Lesiones</div>
-                {r.injuryList.map((inj, i) => (<div key={i} style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#ff1744', padding: '1px 0' }}>🏥 {inj.name} — fuera {inj.games} partido(s)</div>))}
+              <div className="glass anim-stagger-4" style={{ borderRadius: 10, padding: 14, borderColor: T.lose + '20' }}>
+                <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 11, color: T.lose, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>🏥 Lesiones</div>
+                {r.injuryList.map((inj, i) => (<div key={i} style={{ fontFamily: T.fontBody, fontSize: 12, color: T.lose, padding: '2px 0' }}>🏥 {inj.name} — fuera {inj.games} partido(s)</div>))}
               </div>
             )}
+            {/* Objectives */}
             {r.objResults?.length > 0 && (
-              <div style={{ background: T.bg1, borderRadius: 6, padding: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: T.gold, textTransform: 'uppercase', marginBottom: 4 }}>🎯 Objetivos</div>
-                {r.objResults.map((o, i) => (<div key={i} style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: o.completed ? '#00e676' : '#607d8b', padding: '1px 0' }}>{o.completed ? '✅' : '❌'} {o.n} {o.completed ? `(+${o.r.coins}💰)` : ''}</div>))}
+              <div className="glass anim-stagger-5" style={{ borderRadius: 10, padding: 14 }}>
+                <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 11, color: T.gold, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>🎯 Objetivos</div>
+                {r.objResults.map((o, i) => (<div key={i} style={{ fontFamily: T.fontBody, fontSize: 12, color: o.completed ? T.win : T.tx4, padding: '2px 0' }}>{o.completed ? '✅' : '❌'} {o.n} {o.completed ? `(+${o.r.coins}💰)` : ''}</div>))}
               </div>
             )}
+            {/* Active Relics */}
             {(game.relics||[]).length > 0 && (
-              <div style={{ background: `rgba(168,85,247,0.05)`, borderRadius: 6, padding: 10, border: `1px solid rgba(168,85,247,0.15)` }}>
-                <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, color: T.purple, textTransform: 'uppercase', marginBottom: 5 }}>📿 Reliquias Activas</div>
-                <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+              <div className="card-purple anim-stagger-6" style={{ padding: 14 }}>
+                <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 11, color: T.purple, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>📿 Reliquias Activas</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                   {(game.relics||[]).map(rid => { const r = RELICS.find(x=>x.id===rid); return r ? (
-                    <div key={rid} style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <RelicIcon id={r.id} size={24} />
+                    <div key={rid} style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <RelicIcon id={r.id} size={26} />
                       <div>
-                        <div style={{ fontFamily:"'Oswald'", fontSize:11, color:T.tx }}>{r.n}</div>
-                        <div style={{ fontFamily:"'Barlow Condensed'", fontSize:11, color:T.tx3 }}>{r.d}</div>
+                        <div style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.tx, fontWeight: 600 }}>{r.n}</div>
+                        <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>{r.d}</div>
                       </div>
                     </div>
                   ) : null; })}
@@ -119,59 +157,92 @@ export default function RewardsScreen() {
             )}
           </div>
         )}
+
+        {/* Social tab */}
         {tab === 'social' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {(r.socialPosts || []).map((post, i) => (
-              <div key={i} style={{ background: T.bg1, borderRadius: 10, border: `1px solid ${T.border}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: T.bg2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{post.account.av}</div>
+              <div key={i} className={`glass anim-stagger-${Math.min(i + 1, 6)}`} style={{ borderRadius: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px' }}>
+                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: T.bg2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, border: `1px solid ${T.border}` }}>{post.account.av}</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, color: T.tx }}>{post.account.n}{post.account.v && <span style={{ color: '#1DA1F2', fontSize: 11, marginLeft: 4 }}>✓</span>}</div>
-                    <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx3 }}>{post.account.f} · {post.time}</div>
+                    <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 13, color: T.tx }}>{post.account.n}{post.account.v && <span style={{ color: T.info, fontSize: 11, marginLeft: 4 }}>✓</span>}</div>
+                    <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx4 }}>{post.account.f} · {post.time}</div>
                   </div>
                 </div>
-                <div style={{ padding: '0 12px 10px', fontFamily: "'Barlow'", fontSize: 14, color: T.tx, lineHeight: 1.5 }}>{post.text}</div>
-                <div style={{ display: 'flex', gap: 16, padding: '6px 12px 10px', borderTop: `1px solid ${T.border}` }}>
-                  <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx2 }}>❤️ {post.likes}</span>
-                  <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx2 }}>💬 {post.comments}</span>
-                  <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: T.tx2 }}>🔄 {post.retweets}</span>
+                <div style={{ padding: '0 14px 12px', fontFamily: T.fontBody, fontSize: 14, color: T.tx, lineHeight: 1.5 }}>{post.text}</div>
+                <div style={{ display: 'flex', gap: 20, padding: '8px 14px 12px', borderTop: `1px solid ${T.border}` }}>
+                  <span style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>❤️ {post.likes}</span>
+                  <span style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>💬 {post.comments}</span>
+                  <span style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>🔄 {post.retweets}</span>
                 </div>
               </div>
             ))}
           </div>
         )}
+
+        {/* Roster tab */}
         {tab === 'roster' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {(r.rosterSnapshot || []).sort((a, b) => (a.role === 'st' ? 0 : 1) - (b.role === 'st' ? 0 : 1)).map(p => (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 8px', background: T.bg1, borderRadius: 3, border: '1px solid rgba(255,255,255,0.03)' }}>
-                <span style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 11, color: POS_COLORS[p.pos], minWidth: 26, textAlign: 'center', letterSpacing: 0.5 }}>{PN[p.pos]}</span>
-                <span style={{ flex: 1, fontFamily: "'Barlow Condensed'", fontWeight: 600, fontSize: 13, color: '#fff', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{p.role === 'st' ? '⚽ ' : ''}{p.name}</span>
-                <span style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 14, color: '#f0c040' }}>{calcOvr(p)}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {(r.rosterSnapshot || []).sort((a, b) => (a.role === 'st' ? 0 : 1) - (b.role === 'st' ? 0 : 1)).map((p, i) => (
+              <div key={p.id} className={`anim-stagger-${Math.min(i + 1, 6)}`} style={{
+                display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
+                background: T.bg1, borderRadius: 8, border: `1px solid ${T.border}`,
+              }}>
+                <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 11, color: POS_COLORS[p.pos], minWidth: 28, textAlign: 'center', letterSpacing: 0.5 }}>{PN[p.pos]}</span>
+                <span style={{ flex: 1, fontFamily: T.fontBody, fontWeight: 600, fontSize: 13, color: T.tx, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{p.role === 'st' ? '⚽ ' : ''}{p.name}</span>
+                <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15, color: T.gold }}>{calcOvr(p)}</span>
               </div>
             ))}
           </div>
         )}
+
+        {/* Rewards tab */}
         {tab === 'rewards' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: '#fff', textTransform: 'uppercase', textAlign: 'center', marginBottom: 2 }}>Elige Recompensa</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div className="anim-stagger-1" style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 16, color: T.tx, textTransform: 'uppercase', textAlign: 'center', marginBottom: 4, letterSpacing: 1 }}>Elige Recompensa</div>
             {rewards.options.map((rw, i) => (
-              <div key={i} onClick={() => {
+              <div key={i} className={`card-premium anim-stagger-${Math.min(i + 2, 6)}`} onClick={() => {
                 if (rewards.selected === i) { SFX.play('click'); setRewards(rv => ({ ...rv, selected: null })); }
                 else if (rewards.selected === null) { SFX.play('reward'); rw.fn(); setRewards(rv => ({ ...rv, selected: i })); }
-              }} style={{ background: rewards.selected === i ? 'rgba(0,200,83,0.04)' : 'linear-gradient(135deg,rgba(20,30,58,0.95),rgba(26,39,68,0.95))', border: `1px solid ${rewards.selected === i ? 'rgba(0,230,118,0.3)' : 'rgba(255,255,255,0.06)'}`, borderLeft: `4px solid ${rewards.selected === i ? '#00e676' : '#455a64'}`, borderRadius: 4, padding: 10, cursor: rewards.selected !== null && rewards.selected !== i ? 'not-allowed' : 'pointer', opacity: rewards.selected !== null && rewards.selected !== i ? .3 : 1 }}>
-                <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: '#f0c040', textTransform: 'uppercase' }}>{rw.title}</div>
-                <div style={{ fontSize: 13, color: '#e8eaf6', lineHeight: 1.2, marginTop: 2 }}>{rw.desc}</div>
-                <div style={{ fontSize: 11, color: '#607d8b', marginTop: 2 }}>{rw.detail}</div>
+              }} style={{
+                padding: 14, cursor: rewards.selected !== null && rewards.selected !== i ? 'not-allowed' : 'pointer',
+                opacity: rewards.selected !== null && rewards.selected !== i ? .25 : 1,
+                borderColor: rewards.selected === i ? T.win + '50' : undefined,
+                borderLeft: `3px solid ${rewards.selected === i ? T.win : T.tx4}`,
+                transition: 'all 0.2s ease',
+              }}>
+                <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15, color: T.gold, textTransform: 'uppercase', letterSpacing: 0.5 }}>{rw.title}</div>
+                <div style={{ fontFamily: T.fontBody, fontSize: 13, color: T.tx, lineHeight: 1.3, marginTop: 3 }}>{rw.desc}</div>
+                <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx4, marginTop: 3 }}>{rw.detail}</div>
               </div>
             ))}
           </div>
         )}
       </div>
-      <div style={{ padding: '8px 16px', width: '100%', maxWidth: 420 }}>
+
+      {/* Bottom action */}
+      <div style={{ padding: '10px 16px 16px', width: '100%', maxWidth: 420 }}>
         {tab === 'rewards' ? (
-          <button onClick={() => { if (rewards.selected !== null) go('table'); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '10px 28px', border: 'none', background: rewards.selected !== null ? 'linear-gradient(135deg,#d4a017,#f0c040)' : '#333', color: rewards.selected !== null ? '#1a1a2e' : '#666', clipPath: 'polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)', cursor: rewards.selected !== null ? 'pointer' : 'not-allowed', textTransform: 'uppercase', opacity: rewards.selected !== null ? 1 : .4, width: '100%', marginBottom: 12 }}>Ver Tabla</button>
+          <button onClick={() => { if (rewards.selected !== null) go('table'); }} style={{
+            fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15, padding: '14px',
+            border: 'none', borderRadius: 10, width: '100%',
+            background: rewards.selected !== null ? T.gradientPrimary : T.bg2,
+            color: rewards.selected !== null ? T.bg : T.tx4,
+            cursor: rewards.selected !== null ? 'pointer' : 'not-allowed',
+            textTransform: 'uppercase', letterSpacing: 1,
+            opacity: rewards.selected !== null ? 1 : .4,
+            boxShadow: rewards.selected !== null ? T.glowGold : 'none',
+            transition: 'all 0.2s ease',
+          }}>Ver Tabla</button>
         ) : (
-          <button onClick={() => setTab('rewards')} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '10px 28px', border: 'none', background: 'linear-gradient(135deg,#d4a017,#f0c040)', color: '#1a1a2e', clipPath: 'polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)', cursor: 'pointer', textTransform: 'uppercase', width: '100%', marginBottom: 12 }}>🎁 Elegir Recompensa →</button>
+          <button onClick={() => setTab('rewards')} style={{
+            fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15, padding: '14px',
+            border: 'none', borderRadius: 10, width: '100%',
+            background: T.gradientPrimary, color: T.bg,
+            cursor: 'pointer', textTransform: 'uppercase', letterSpacing: 1,
+            boxShadow: T.glowGold,
+          }}>🎁 Elegir Recompensa →</button>
         )}
       </div>
     </div>
