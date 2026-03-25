@@ -832,17 +832,17 @@ export default function Rabona() {
         {/* Pitch - full width portrait */}
         <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
           <canvas ref={canvasRef} onDoubleClick={() => { sim.current.speed = 0; setDisplay(d => ({ ...d, speed: 0 })); }} style={{ width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated', touchAction: 'manipulation' }} />
-          {/* Scoreboard overlay */}
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 15, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', padding: '6px 10px', minHeight: 44 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderRadius: 4, overflow: 'hidden' }}>
-              <div style={{ padding: '4px 8px', background: '#1565c0', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 12, color: '#fff' }}>HAL</div>
-              <div style={{ padding: '4px 10px', background: '#222', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 18, color: '#fff', minWidth: 48, textAlign: 'center' }}>{display.ps}-{display.rs}</div>
-              <div style={{ padding: '4px 8px', background: '#c62828', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 12, color: '#fff' }}>{match.rival?.name?.substring(0, 4) || 'RIV'}</div>
-              <div style={{ padding: '4px 6px', background: T.accent, fontFamily: "'Oswald'", fontWeight: 700, fontSize: 12, color: '#000' }}>{display.minute}'</div>
+          {/* Scoreboard overlay — premium glass */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 15, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(8,12,20,0.82)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', padding: '6px 10px', minHeight: 46, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderRadius: 6, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+              <div style={{ padding: '5px 10px', background: 'linear-gradient(135deg,#1565c0,#1976d2)', fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: '#fff', letterSpacing: 0.5 }}>HAL</div>
+              <div style={{ padding: '5px 12px', background: T.bg1, fontFamily: T.fontHeading, fontWeight: 700, fontSize: 20, color: '#fff', minWidth: 52, textAlign: 'center' }}>{display.ps}-{display.rs}</div>
+              <div style={{ padding: '5px 10px', background: 'linear-gradient(135deg,#c62828,#d32f2f)', fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: '#fff', letterSpacing: 0.5 }}>{match.rival?.name?.substring(0, 4) || 'RIV'}</div>
+              <div style={{ padding: '5px 8px', background: T.gradientGreen, fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: '#080C14' }}>{display.minute}'</div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 40, height: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 2 }}><div style={{ width: `${display.morale}%`, height: '100%', background: moraleColor, borderRadius: 2 }} /></div>
-              <span style={{ fontSize: 11, color: moraleColor, fontFamily: "'Oswald'", fontWeight: 700 }}>{display.morale}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 44, height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2 }}><div style={{ width: `${display.morale}%`, height: '100%', background: moraleColor, borderRadius: 2, transition: 'width 0.3s ease' }} /></div>
+              <span style={{ fontSize: 11, color: moraleColor, fontFamily: T.fontHeading, fontWeight: 700 }}>{display.morale}</span>
             </div>
           </div>
           {/* Speed controls - floating bottom-right */}
@@ -853,11 +853,11 @@ export default function Rabona() {
             <button onClick={() => { SFX._muted = !SFX._muted; if (SFX._muted) { Crowd.stop(); Music.pause(); } else { if (sim.current && !sim.current.done) Crowd.start(); Music.play(); } setDisplay(d => ({ ...d })); }} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '8px 12px', minWidth: 44, minHeight: 44, border: `1px solid ${SFX._muted ? 'rgba(239,83,80,0.4)' : 'rgba(255,255,255,0.2)'}`, background: SFX._muted ? 'rgba(239,83,80,0.15)' : 'rgba(0,0,0,0.6)', color: SFX._muted ? '#ef5350' : 'rgba(255,255,255,0.5)', borderRadius: 6, cursor: 'pointer', touchAction: 'manipulation', backdropFilter: 'blur(4px)' }}>{SFX._muted ? '🔇' : '🔊'}</button>
           </div>
         </div>
-        {/* Match log - always visible */}
-        <div style={{ flex: '0 0 auto', maxHeight: 80, overflow: 'auto', background: T.bg, borderTop: `1px solid ${T.bg3}`, padding: '4px 8px' }}>
+        {/* Match log — glass panel */}
+        <div style={{ flex: '0 0 auto', maxHeight: 80, overflow: 'auto', background: T.bg, borderTop: `1px solid rgba(255,255,255,0.06)`, padding: '4px 8px' }}>
           {[...display.log].reverse().slice(0, 4).map((e, i) => (
-            <div key={i} style={{ display: 'flex', padding: '2px 4px', borderLeft: `2px solid ${LC[e.type] || 'transparent'}`, marginBottom: 1 }}>
-              <span style={{ fontFamily: "'Barlow'", fontSize: 12, color: LC[e.type] || T.tx2, fontWeight: (e.type === 'goal' || e.type === 'goalRival') ? 700 : 400, lineHeight: 1.3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{e.text}</span>
+            <div key={i} style={{ display: 'flex', padding: '3px 6px', borderLeft: `2px solid ${LC[e.type] || 'transparent'}`, marginBottom: 1, borderRadius: 2 }}>
+              <span style={{ fontFamily: T.fontBody, fontSize: 12, color: LC[e.type] || T.tx2, fontWeight: (e.type === 'goal' || e.type === 'goalRival') ? 700 : 400, lineHeight: 1.3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{e.text}</span>
             </div>
           ))}
         </div>
@@ -869,8 +869,8 @@ export default function Rabona() {
           {/* Pull handle + win probability */}
           <div onClick={() => setFeedOpen(o => !o)} style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', minHeight: 36, touchAction: 'manipulation' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 28, height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 2 }} />
-              <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1 }}>📱 En vivo</span>
+              <div style={{ width: 28, height: 3, background: 'rgba(255,255,255,0.15)', borderRadius: 2 }} />
+              <span style={{ fontFamily: T.fontHeading, fontSize: 10, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1 }}>En vivo</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: '#4DABF7' }}>HAL {winProb}%</span>
@@ -892,8 +892,8 @@ export default function Rabona() {
                   <span style={{ fontFamily: "'Oswald'", fontSize: 10, color: T.tx2, flex: 1 }}>{p.acc?.n}</span>
                   <span style={{ fontSize: 10, color: T.tx3 }}>{p.t}</span>
                 </div>
-                <div style={{ fontFamily: "'Barlow'", fontSize: 12, color: T.tx, lineHeight: 1.3 }}>{p.text}</div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 3, fontFamily: "'Barlow Condensed'", fontSize: 10, color: T.tx3 }}>
+                <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx, lineHeight: 1.3 }}>{p.text}</div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 3, fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>
                   <span>❤ {p.likes}</span><span>💬 {p.comments}</span>
                 </div>
               </div>
@@ -903,18 +903,18 @@ export default function Rabona() {
         </div>
         {/* Tactical Event */}
         {ev && !display.pendingPenalty && (
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 50, padding: 12, backdropFilter: 'blur(4px)' }}>
-            <div style={{ background: 'linear-gradient(135deg,#141e3a,#1a2744)', border: '1px solid rgba(213,0,249,0.15)', borderRadius: 8, padding: 16, maxWidth: 340, width: '100%' }}>
-              <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 18, color: '#fff', textAlign: 'center', textTransform: 'uppercase' }}>{ev.n}</div>
-              <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#607d8b', textAlign: 'center' }}>{display.minute}'</div>
-              <div style={{ fontSize: 14, color: '#e8eaf6', textAlign: 'center', lineHeight: 1.3, whiteSpace: 'pre-line', margin: '8px 0' }}>{ev.d}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div className="glass-heavy" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 50, padding: 12 }}>
+            <div className="anim-scale-in" style={{ background: T.gradientDark, border: `1px solid ${T.purple}18`, borderRadius: 12, padding: 20, maxWidth: 360, width: '100%', boxShadow: T.shadowLg }}>
+              <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 18, color: T.tx, textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.5 }}>{ev.n}</div>
+              <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, textAlign: 'center', marginTop: 2 }}>{display.minute}'</div>
+              <div style={{ fontSize: 13, fontFamily: T.fontBody, color: T.tx2, textAlign: 'center', lineHeight: 1.4, whiteSpace: 'pre-line', margin: '10px 0' }}>{ev.d}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {ev.o.map((opt, i) => (
-                  <div key={i} onClick={() => { SFX.play('click'); handleEventChoice(i); }} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, padding: '12px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, minHeight: 48, touchAction: 'manipulation' }}>
+                  <div key={i} onClick={() => { SFX.play('click'); handleEventChoice(i); }} style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${T.border}`, borderRadius: 8, padding: '12px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, minHeight: 48, touchAction: 'manipulation', transition: 'all 0.2s ease' }}>
                     {opt.i && <div style={{ fontSize: 18, minWidth: 24, textAlign: 'center' }}>{opt.i}</div>}
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, color: '#fff', textTransform: 'uppercase' }}>{opt.n}</div>
-                      <div style={{ fontSize: 11, color: '#607d8b' }}>{opt.d}</div>
+                      <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 14, color: T.tx, textTransform: 'uppercase' }}>{opt.n}</div>
+                      <div style={{ fontSize: 11, fontFamily: T.fontBody, color: T.tx3 }}>{opt.d}</div>
                     </div>
                   </div>
                 ))}
@@ -931,9 +931,9 @@ export default function Rabona() {
             : (pk.result ? '⚽ ¡¡GOOOL!!' : '❌ ¡ATAJADO!');
           const resultColor = isSave ? (pk.result ? '#ff1744' : '#f0c040') : (pk.result ? '#f0c040' : '#ff1744');
           return (
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.92)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 55, padding: 16 }}>
-              <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 24, color: isSave ? '#ef5350' : '#f0c040', textTransform: 'uppercase', textAlign: 'center', marginBottom: 4 }}>
-                {isSave ? '‼ PENAL EN CONTRA' : '‼ PENAL A FAVOR'}
+            <div className="glass-heavy" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 55, padding: 16 }}>
+              <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 24, color: isSave ? T.lose : T.gold, textTransform: 'uppercase', textAlign: 'center', marginBottom: 4, letterSpacing: 1 }}>
+                {isSave ? 'PENAL EN CONTRA' : 'PENAL A FAVOR'}
               </div>
               <div style={{ width: '100%', maxWidth: 280, height: 90, position: 'relative', marginBottom: 16 }}>
                 <div style={{ position: 'absolute', top: 0, left: '10%', width: '80%', height: '100%', background: 'rgba(255,255,255,0.03)', border: '3px solid #fff', borderBottom: 'none', borderRadius: '4px 4px 0 0' }}>
@@ -946,14 +946,14 @@ export default function Rabona() {
               </div>
               {pk.phase === 'aim' ? (
                 <div style={{ width: '100%', maxWidth: 280 }}>
-                  <div style={{ fontFamily: "'Barlow'", fontSize: 13, color: '#e8eaf6', textAlign: 'center', marginBottom: 8 }}>
+                  <div style={{ fontFamily: T.fontBody, fontSize: 13, color: T.tx2, textAlign: 'center', marginBottom: 10 }}>
                     {isSave ? '¿A qué lado te tiras?' : '¿A dónde disparas?'}
                   </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
                     {['left', 'center', 'right'].map(d => (
-                      <button key={d} onClick={() => handlePenaltyShoot(d)} style={{ flex: 1, padding: '14px 8px', minHeight: 56, background: isSave ? 'rgba(40,10,10,0.95)' : 'rgba(20,30,58,0.95)', border: `1px solid ${isSave ? 'rgba(255,50,50,0.2)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 6, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, touchAction: 'manipulation' }}>
+                      <button key={d} onClick={() => handlePenaltyShoot(d)} style={{ flex: 1, padding: '14px 8px', minHeight: 56, background: isSave ? 'rgba(40,10,10,0.9)' : T.bg1, border: `1px solid ${isSave ? 'rgba(239,68,68,0.2)' : T.border}`, borderRadius: 8, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, touchAction: 'manipulation', transition: 'all 0.2s ease' }}>
                         <div style={{ fontSize: 20 }}>{isSave ? (d === 'left' ? '↖' : d === 'center' ? '⬆' : '↗') : (d === 'left' ? '↙' : d === 'center' ? '⬆' : '↘')}</div>
-                        <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, color: '#fff', textTransform: 'uppercase' }}>{d === 'left' ? 'Izq' : d === 'center' ? 'Centro' : 'Der'}</div>
+                        <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12, color: T.tx, textTransform: 'uppercase' }}>{d === 'left' ? 'Izq' : d === 'center' ? 'Centro' : 'Der'}</div>
                       </button>
                     ))}
                   </div>
