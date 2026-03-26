@@ -227,6 +227,89 @@ export default function StatsScreen() {
           );
         })()}
 
+        {tab === 'records' && (() => {
+          const records = computeRecords(gs.runsHistory || []);
+          const RECORD_DEFS = [
+            { key: 'mostGoals', label: 'Mas Goles en una Carrera', icon: '⚽', valueFn: r => r?.careerStats?.goalsFor },
+            { key: 'highestLeague', label: 'Liga Mas Alta', icon: '🏟', valueFn: r => r?.leagueName || (r ? LEAGUES[r.leagueReached]?.n : null) },
+            { key: 'longestStreak', label: 'Mejor Racha', icon: '🔥', valueFn: r => r?.careerStats?.bestStreak },
+            { key: 'bestWinRate', label: 'Mejor Win Rate', icon: '📈', valueFn: r => r ? `${(r.careerStats.wins / r.careerStats.matchesPlayed * 100).toFixed(0)}%` : null },
+            { key: 'mostRelics', label: 'Mas Reliquias', icon: '💎', valueFn: r => r?.relicsCollected?.length },
+            { key: 'longestRun', label: 'Carrera Mas Larga', icon: '📅', valueFn: r => r ? `${r.careerStats.matchesPlayed} partidos` : null },
+            { key: 'fastestAscension', label: 'Ascension Rapida', icon: '⚡', valueFn: r => r ? `${r.careerStats.matchesPlayed} partidos` : null },
+            { key: 'bestDefense', label: 'Mejor Defensa', icon: '🛡', valueFn: r => r ? `${(r.careerStats.goalsAgainst / r.careerStats.matchesPlayed).toFixed(1)} rec/P` : null },
+          ];
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {RECORD_DEFS.map(def => {
+                const run = records[def.key];
+                const val = def.valueFn(run);
+                const hasData = run && val != null;
+                return (
+                  <div key={def.key} className={hasData ? 'card-gold' : 'glass'} style={{
+                    borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12,
+                    opacity: hasData ? 1 : 0.4,
+                  }}>
+                    <div style={{ fontSize: 24, minWidth: 36, textAlign: 'center' }}>{def.icon}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12, color: hasData ? T.gold : T.tx3, textTransform: 'uppercase', letterSpacing: 0.5 }}>{def.label}</div>
+                      <div style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 20, color: hasData ? T.tx : T.tx4, marginTop: 2 }}>
+                        {hasData ? val : '—'}
+                      </div>
+                    </div>
+                    {hasData && (
+                      <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, textAlign: 'right' }}>
+                        Run #{run.runNumber}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
+        {tab === 'arquetipos' && (() => {
+          const analytics = computeArchetypeAnalytics(gs.runsHistory || []);
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {MANAGER_ARCHETYPES.map(arch => {
+                const data = analytics[arch.id];
+                const hasData = data && data.runs > 0;
+                const winRate = hasData ? Math.round(data.wins / Math.max(1, data.matches) * 100) : 0;
+                const avgLeague = hasData ? (data.totalLeague / data.runs).toFixed(1) : 0;
+                return (
+                  <div key={arch.id} className="glass" style={{
+                    borderRadius: 10, padding: '12px 14px', opacity: hasData ? 1 : 0.4,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: hasData ? 8 : 0 }}>
+                      <span style={{ fontSize: 24 }}>{arch.i}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14, color: T.tx }}>{arch.n}</div>
+                        {hasData ? (
+                          <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>
+                            {data.runs} runs · Avg Liga: {avgLeague} · 🏆 {data.champions} · 💀 {data.deaths}
+                          </div>
+                        ) : (
+                          <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx4 }}>Sin datos</div>
+                        )}
+                      </div>
+                    </div>
+                    {hasData && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.win, minWidth: 32 }}>{winRate}%</div>
+                        <div style={{ flex: 1, height: 8, background: T.bg2, borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${winRate}%`, background: T.win, borderRadius: 4, transition: 'width 0.5s ease' }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
         {tab === 'legacy' && (() => {
           const totalPts = calcLegacyPoints(gs);
           const spentPts = calcSpentLegacy(gs);
