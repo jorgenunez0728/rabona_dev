@@ -1,7 +1,7 @@
 # Rabona — Estado del Proyecto y Roadmap
 
 ## Branch activo: `claude/modern-football-ui-design-pHfwV`
-## Save version: 3.4
+## Save version: 3.5
 
 ---
 
@@ -43,7 +43,32 @@
 - TipBox per slide (7 contextual tips)
 - 7 mini-preview mockups (table, roster, match, relics, legacy, cards, flow)
 
-### MapScreen — mapChoices tracking
+### MapScreen — mapChoices tracking + Easter Egg Nodes
+- mapChoices tracked on node selection for run history
+- El Fantasma del 94 (rare, weight 0.3, league 2+): Don Miguel flashback + free rare relic
+- El Coleccionista (rare, weight 0.4, 3+ relics): Trade 2 cheapest relics for 1 rare/uncommon
+
+### Achievements Expansion (17 → 52)
+- 35 new achievements across 6 categories
+- **Gameplay positivo** (8): goleada, invicto, remontada, clean5, gol_90, hat_trick, runs20, goals500
+- **Gameplay negativo** (8): racha_negra, humillacion, sin_gol_3, final_perdida, descenso_epico, bancarrota, lesion_masiva, abandono
+- **Economía** (2): tacano, comerciante
+- **Secretos/Meta** (7): el_94, maldito_triple, maestro_oscuro, no_mercado, one_man_army, mutador_total, speedrun
+- **Maestría arquetipos** (7): filosofo + 6 archetype-specific champion wins
+- **Colección** (3): hall_full, arbol_completo, todas_cartas
+- In-run tracking in Rabona.jsx (goleada, remontada, clean streak, lose streak, hat trick, etc.)
+- Flag merging at run-end in DeathScreen, ChampionScreen, and abandonRun
+- maxSimultaneousCurses tracked in addCurse action
+- playersBought tracked in MarketScreen
+- chibiAssets fallbacks for all 36 new entries
+- Save migration 3.4 → 3.5
+
+### Secret Narrations
+- 3 categories in narration.js: claseMagistral, remontadaEpica, ultimoSuspiro (9 templates)
+
+### Hidden Easter Egg Players
+- 0.5% chance to generate special named players with stat bonuses
+- Hugo Sánchez Jr. (FWD +3 ATK), El Niño del 94 (+1 all), Fantasma Reyes (+3 SPD), Memo Ochoa III (GK +4 SAV), Rafa Márquez Jr. (DEF +3 DEF)
 
 ---
 
@@ -60,7 +85,8 @@
 | Maldiciones | 6 (con sistema mastery → bendiciones) | Completo |
 | Mutadores | 10 (ascension-gated) | Completo |
 | Legacy Tree | 18 nodos (6 ramas × 3 tiers) | Completo |
-| Achievements | 17 | **BAJO — ver abajo** |
+| Achievements | 52 (17 base + 35 new) | Completo |
+| Easter Eggs | 2 map nodes + 5 hidden players + 3 secret narrations | Completo |
 | Cutscenes | 6 (promoción entre ligas) | Completo |
 | Board Events | 10 | Completo |
 | Map Nodes | 8 tipos | Completo |
@@ -73,7 +99,11 @@
 
 ### PRIORIDAD ALTA — Core Roguelike Depth
 
-#### 1. MÁS ACHIEVEMENTS (de 17 a ~40+)
+#### 1. ~~MÁS ACHIEVEMENTS~~ ✅ COMPLETADO (52 achievements)
+
+#### ~~2. SECRETOS Y EASTER EGGS~~ ✅ COMPLETADO (map nodes + hidden players + narrations)
+
+#### 3. MODO HISTORIA / NARRATIVA EXPANDIDA (SIGUIENTE PRIORIDAD)
 Los roguelikes top tienen 50-100 achievements. Solo tenemos 17, la mayoría son "alcanza X número".
 Faltan achievements de:
 
