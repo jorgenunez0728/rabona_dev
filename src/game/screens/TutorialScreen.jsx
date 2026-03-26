@@ -98,6 +98,177 @@ function SlotRow({ slots, delay = 0 }) {
   );
 }
 
+// ── Mini-preview container ──
+function MiniPreview({ children }) {
+  return (
+    <div style={{
+      width: 200, height: 140, borderRadius: 12, overflow: 'hidden',
+      border: `1px solid ${T.glassBorder}`, background: T.bg1,
+      boxShadow: '0 2px 12px rgba(0,0,0,0.3)', flexShrink: 0,
+      padding: 8, display: 'flex', flexDirection: 'column', gap: 3,
+      fontSize: 8, fontFamily: T.fontBody, color: T.tx3,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+// ── Preview: Mini league table ──
+function PreviewTable() {
+  const rows = [
+    { n: 'Águilas FC', p: 12, c: T.gold, you: true },
+    { n: 'Tigres', p: 10, c: T.tx3 },
+    { n: 'Lobos', p: 7, c: T.tx4 },
+    { n: 'Coyotes', p: 5, c: T.tx4 },
+    { n: 'Búhos FC', p: 3, c: T.lose },
+  ];
+  return (
+    <MiniPreview>
+      <div style={{ fontSize: 7, color: T.gold, textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center', marginBottom: 2 }}>Liga Barrio</div>
+      {rows.map((r, i) => (
+        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 4px', background: r.you ? `${T.gold}15` : 'transparent', borderRadius: 3 }}>
+          <span style={{ color: r.c || T.tx3 }}>{i + 1}. {r.n}</span>
+          <span style={{ color: r.c || T.tx4, fontWeight: 600 }}>{r.p}pts</span>
+        </div>
+      ))}
+    </MiniPreview>
+  );
+}
+
+// ── Preview: Mini roster ──
+function PreviewRoster() {
+  const players = [
+    { pos: 'POR', n: 'García', ovr: 62, c: '#42a5f5' },
+    { pos: 'DEF', n: 'López', ovr: 58, c: '#66bb6a' },
+    { pos: 'MED', n: 'Rodríguez', ovr: 65, c: '#ffa726' },
+    { pos: 'DEL', n: 'Martínez', ovr: 70, c: '#ef5350' },
+  ];
+  return (
+    <MiniPreview>
+      <div style={{ fontSize: 7, color: T.info, textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center', marginBottom: 2 }}>Plantilla</div>
+      {players.map((p, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 4px', background: T.bg2, borderRadius: 4, borderLeft: `2px solid ${p.c}` }}>
+          <span style={{ fontSize: 7, color: p.c, fontWeight: 700, minWidth: 20 }}>{p.pos}</span>
+          <span style={{ flex: 1, color: T.tx2 }}>{p.n}</span>
+          <span style={{ fontWeight: 700, color: T.tx, fontSize: 9 }}>{p.ovr}</span>
+        </div>
+      ))}
+    </MiniPreview>
+  );
+}
+
+// ── Preview: Mini match ──
+function PreviewMatch() {
+  return (
+    <MiniPreview>
+      <div style={{ background: '#1a472a', borderRadius: 4, flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #2d5a3a' }}>
+        <div style={{ width: '70%', height: '60%', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 2, position: 'relative' }}>
+          <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'rgba(255,255,255,0.1)' }} />
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, padding: '3px 0' }}>
+        <span style={{ color: T.tx, fontWeight: 700, fontSize: 9 }}>HAL</span>
+        <span style={{ color: T.gold, fontWeight: 700, fontSize: 11 }}>2 - 1</span>
+        <span style={{ color: T.tx3, fontSize: 9 }}>RIV</span>
+      </div>
+      <div style={{ fontSize: 7, color: T.tx4, textAlign: 'center' }}>⚽ 23' Martínez · ⚽ 67' López</div>
+    </MiniPreview>
+  );
+}
+
+// ── Preview: Mini relic draft ──
+function PreviewRelics() {
+  const relics = [
+    { i: '👟', n: 'Botines del 94', active: false },
+    { i: '❤️', n: 'Corazón de Barrio', active: true },
+    { i: '📿', n: 'Amuleto', active: false },
+  ];
+  return (
+    <MiniPreview>
+      <div style={{ fontSize: 7, color: T.purple, textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center', marginBottom: 2 }}>Elige Reliquia</div>
+      {relics.map((r, i) => (
+        <div key={i} style={{
+          display: 'flex', alignItems: 'center', gap: 4, padding: '4px 6px',
+          background: r.active ? `${T.gold}15` : T.bg2, borderRadius: 4,
+          border: r.active ? `1px solid ${T.gold}40` : '1px solid transparent',
+        }}>
+          <span style={{ fontSize: 12 }}>{r.i}</span>
+          <span style={{ color: r.active ? T.gold : T.tx3, flex: 1 }}>{r.n}</span>
+          {r.active && <span style={{ color: T.gold, fontSize: 9 }}>✓</span>}
+        </div>
+      ))}
+    </MiniPreview>
+  );
+}
+
+// ── Preview: Mini legacy tree ──
+function PreviewLegacy() {
+  const branches = [
+    { i: '🔭', n: 'Scouting', nodes: [true, true, false] },
+    { i: '🌱', n: 'Cantera', nodes: [true, false, false] },
+    { i: '💰', n: 'Sponsor', nodes: [false, false, false] },
+  ];
+  return (
+    <MiniPreview>
+      <div style={{ fontSize: 7, color: T.gold, textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center', marginBottom: 3 }}>Árbol de Legado</div>
+      {branches.map((b, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 4px' }}>
+          <span style={{ fontSize: 10 }}>{b.i}</span>
+          <span style={{ fontSize: 7, color: T.tx3, minWidth: 36 }}>{b.n}</span>
+          <div style={{ display: 'flex', gap: 3 }}>
+            {b.nodes.map((owned, ni) => (
+              <div key={ni} style={{
+                width: 10, height: 10, borderRadius: '50%',
+                background: owned ? T.win : T.bg2, border: `1px solid ${owned ? T.win : T.border}`,
+              }} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </MiniPreview>
+  );
+}
+
+// ── Preview: Mini tactical cards ──
+function PreviewCards() {
+  const cards = [
+    { i: '⏰', n: 'Presión Final', cat: 'offensive', c: T.lose },
+    { i: '🧱', n: 'Muro Humano', cat: 'defensive', c: T.info },
+    { i: '💵', n: 'Bono por Gol', cat: 'economic', c: T.gold },
+  ];
+  return (
+    <MiniPreview>
+      <div style={{ fontSize: 7, color: T.purple, textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center', marginBottom: 2 }}>Cartas Tácticas</div>
+      {cards.map((card, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 6px', background: T.bg2, borderRadius: 4 }}>
+          <span style={{ fontSize: 11 }}>{card.i}</span>
+          <span style={{ flex: 1, color: T.tx2 }}>{card.n}</span>
+          <span style={{ fontSize: 6, color: card.c, fontWeight: 700, textTransform: 'uppercase', background: `${card.c}15`, padding: '1px 4px', borderRadius: 3 }}>{card.cat.slice(0, 3)}</span>
+        </div>
+      ))}
+    </MiniPreview>
+  );
+}
+
+// ── Preview: Game flow diagram ──
+function PreviewFlow() {
+  const steps = ['Tabla', 'Mapa', 'Prematch', 'Partido', 'Rewards'];
+  return (
+    <MiniPreview>
+      <div style={{ fontSize: 7, color: T.win, textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center', marginBottom: 4 }}>Flujo del Juego</div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flex: 1, justifyContent: 'center' }}>
+        {steps.map((s, i) => (
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ background: `${T.gold}15`, border: `1px solid ${T.gold}30`, borderRadius: 4, padding: '2px 10px', fontSize: 8, color: T.gold, fontWeight: 600 }}>{s}</div>
+            {i < steps.length - 1 && <div style={{ width: 1, height: 6, background: T.gold + '40' }} />}
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 7, textAlign: 'center', color: T.tx4 }}>↺ Repite hasta ascender o caer</div>
+    </MiniPreview>
+  );
+}
+
 export default function TutorialScreen() {
   const { go } = useGameStore();
   const [step, setStep] = useState(0);
@@ -216,6 +387,7 @@ export default function TutorialScreen() {
           }}>{e}</div>
         ))}
       </div>
+      <PreviewTable />
       <TipBox text="Tu filosofía de juego define todo el run. Elige sabiamente." />
     </>
   );
@@ -256,6 +428,7 @@ export default function TutorialScreen() {
           </div>
         ))}
       </div>
+      <PreviewRoster />
       <TipBox text="Cada derrota es una lección. Los desbloqueos permanentes hacen tu siguiente run más fuerte." />
     </>
   );
@@ -281,6 +454,7 @@ export default function TutorialScreen() {
       <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, marginTop: 4 }}>
         + La Cantera 🌱 y El Apostador 🎲 (desbloqueables)
       </div>
+      <PreviewMatch />
       <TipBox text="El Caudillo es agresivo pero arriesgado. El Arquitecto da control. Prueba todos." />
     </>
   );
@@ -309,6 +483,7 @@ export default function TutorialScreen() {
         <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, marginBottom: 6 }}>Tu filosofía define los slots disponibles:</div>
         <SlotRow slots={{ offensive: 3, defensive: 1, economic: 1, chaotic: 1 }} delay={700} />
       </div>
+      <PreviewCards />
       <TipBox text="Las cartas se activan solas durante el partido. Busca sinergias con tu arquetipo." />
     </>
   );
@@ -351,6 +526,7 @@ export default function TutorialScreen() {
       <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx2, maxWidth: 320, lineHeight: 1.4, marginTop: 4 }}>
         En el <span style={{ color: T.lose }}>Curandero</span> puedes curar la maldición... pero pierdes el progreso de maestría. <span style={{ color: T.gold }}>¿Curar o aguantar?</span>
       </div>
+      <PreviewRelics />
       <TipBox text="El Místico gana maestría 50% más rápido. Las bendiciones valen la pena." />
     </>
   );
@@ -382,6 +558,7 @@ export default function TutorialScreen() {
           Los puntos de legado desbloquean mejoras <strong>permanentes</strong> en el Árbol de Legado.
         </div>
       </div>
+      <PreviewLegacy />
       <TipBox text="No actives mutadores en tu primer run. Cuando domines el juego, sube la dificultad." />
     </>
   );
@@ -439,6 +616,7 @@ export default function TutorialScreen() {
       }}>
         Cada combinación crea una experiencia <span style={{ color: T.gold, fontWeight: 700 }}>completamente distinta</span>. No hay dos runs iguales.
       </div>
+      <PreviewFlow />
       <TipBox text="Revisa tu roster y entrena jugadores entre partidos. No vayas directo al partido." />
     </>
   );
