@@ -222,6 +222,8 @@ export default function MapScreen() {
     const actualNode = node.blind ? pick(MAP_NODES.filter(n => !n.blind && !n.requiresCurse)) : node;
     const res = resolveNode(actualNode.id, game, setGame, go, addCurse, removeCurse, globalStats);
     setResult({ ...res, nodeId: actualNode.id });
+    // Track map choice for run history
+    setGame(g => ({ ...g, mapChoices: [...(g.mapChoices || []), { matchNum: g.matchNum, nodeType: actualNode.id }] }));
   };
 
   const handleContinue = () => {
