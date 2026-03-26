@@ -78,6 +78,22 @@ const NARR = {
   rivalStrategyChange: [
     (ctx) => `📋 ${ctx.rivalName} cambia: ${ctx.strategyDesc}`,
   ],
+  // ── Secret / Special narrations ──
+  claseMagistral: [
+    () => '🎓 Clase magistral. Esto fue una exhibición de fútbol puro.',
+    () => '🎓 Perfección absoluta. El rival nunca tuvo una oportunidad real.',
+    () => '🎓 Dominio total. Así se escribe la historia.',
+  ],
+  remontadaEpica: [
+    () => '🔥 ¡REMONTADA ÉPICA! De las cenizas surge la gloria.',
+    () => '🔥 Nadie creía... ¡pero este equipo nunca se rinde!',
+    () => '🔥 Esto es para la historia. ¡Remontada increíble!',
+  ],
+  ultimoSuspiro: [
+    () => '⏱ ¡GOL EN EL ÚLTIMO SUSPIRO! ¡Locura total en el estadio!',
+    () => '⏱ ¡Al último minuto! Los aficionados no pueden creerlo.',
+    () => '⏱ ¡Gol agónico! El destino tenía otros planes.',
+  ],
 };
 
 function buildContext(base, extras = {}) {
