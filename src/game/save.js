@@ -4,7 +4,7 @@
 
 const SAVE_KEY = 'rabona-save';
 const STATS_KEY = 'rabona-stats';
-export const CURRENT_VERSION = '3.4';
+export const CURRENT_VERSION = '3.5';
 
 // ── Simple checksum for integrity ──
 // Not cryptographic — just detects corruption/tampering
@@ -65,6 +65,21 @@ const MIGRATIONS = {
     g.cursesEncountered = g.cursesEncountered || [];
     g.mapChoices = g.mapChoices || [];
     data.version = '3.4';
+    return data;
+  },
+  '3.4': (data) => {
+    const g = data.game;
+    // In-run achievement tracking fields
+    g.playersBought = g.playersBought || 0;
+    g.playersSold = g.playersSold || 0;
+    if (g.careerStats) {
+      g.careerStats.currentCleanStreak = g.careerStats.currentCleanStreak || 0;
+      g.careerStats.bestCleanStreak = g.careerStats.bestCleanStreak || 0;
+      g.careerStats.narrowLosses = g.careerStats.narrowLosses || 0;
+      g.careerStats.worstLoseStreak = g.careerStats.worstLoseStreak || 0;
+      g.careerStats.maxSimultaneousCurses = g.careerStats.maxSimultaneousCurses || 0;
+    }
+    data.version = '3.5';
     return data;
   },
 };
