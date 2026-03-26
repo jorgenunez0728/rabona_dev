@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { T, PN, POS_COLORS, ACHIEVEMENTS } from "@/game/data";
+import { T, PN, POS_COLORS, ACHIEVEMENTS, LEAGUES, RELICS } from "@/game/data";
 import { LEGACY_TREE, LEGACY_BRANCHES, calcLegacyPoints, calcSpentLegacy, canUnlockLegacy, hasLegacy, COACHES, COACH_ABILITIES, CURSES } from "@/game/data/progression.js";
 import { AchIcon } from "@/game/data/chibiAssets";
 import { SFX } from "@/game/audio";
 import { Haptics } from "@/game/haptics";
 import { TACTICAL_CARDS, CARD_RARITIES, getCollectionCards } from "@/game/data/cards.js";
+import { computeRecords, computeArchetypeAnalytics } from "@/game/data/runTracker.js";
+import { MANAGER_ARCHETYPES } from "@/game/data/archetypes.js";
 import useGameStore from "@/game/store";
 
 export default function StatsScreen() {
@@ -15,11 +17,14 @@ export default function StatsScreen() {
   const [tab, setTab] = useState('stats');
 
   const tabs = [
-    { k: 'stats', l: '📊', label: 'Stats' },
-    { k: 'legacy', l: '🌳', label: 'Legado' },
-    { k: 'cards', l: '🎴', label: 'Cartas' },
-    { k: 'fame', l: '🌟', label: 'Fama' },
-    { k: 'achieve', l: '🏆', label: 'Logros' },
+    { k: 'stats',      l: '📊', label: 'General' },
+    { k: 'runs',       l: '📜', label: 'Runs' },
+    { k: 'records',    l: '🏅', label: 'Records' },
+    { k: 'arquetipos', l: '🎭', label: 'Arquetipos' },
+    { k: 'legacy',     l: '🌳', label: 'Legado' },
+    { k: 'cards',      l: '🎴', label: 'Cartas' },
+    { k: 'fame',       l: '🌟', label: 'Fama' },
+    { k: 'achieve',    l: '🏆', label: 'Logros' },
   ];
 
   return (
@@ -32,11 +37,11 @@ export default function StatsScreen() {
         <div className="text-gradient-gold" style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 24, textTransform: 'uppercase', letterSpacing: 2 }}>Compendio</div>
       </div>
 
-      {/* Tab Bar - Premium underline tabs */}
-      <div style={{ display: 'flex', width: '100%', maxWidth: 440, position: 'relative', zIndex: 1, borderBottom: `1px solid ${T.border}` }}>
+      {/* Tab Bar - Horizontally scrollable */}
+      <div style={{ display: 'flex', width: '100%', maxWidth: 440, position: 'relative', zIndex: 1, borderBottom: `1px solid ${T.border}`, overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
         {tabs.map(t => (
           <div key={t.k} onClick={() => setTab(t.k)} style={{
-            flex: 1, padding: '10px 4px 8px', textAlign: 'center', cursor: 'pointer',
+            flex: '0 0 auto', minWidth: 55, padding: '10px 6px 8px', textAlign: 'center', cursor: 'pointer',
             borderBottom: tab === t.k ? `2px solid ${T.gold}` : '2px solid transparent',
             transition: 'all 0.2s ease',
           }}>
@@ -56,6 +61,9 @@ export default function StatsScreen() {
                   { l: 'Runs', v: gs.totalRuns || 0, c: T.tx },
                   { l: 'Victorias', v: gs.totalWins || 0, c: T.win },
                   { l: 'Goles', v: gs.totalGoals || 0, c: T.info },
+                  { l: 'Partidos', v: gs.totalMatches || 0, c: T.tx2 },
+                  { l: 'Win Rate', v: ((gs.totalWins || 0) / Math.max(1, gs.totalMatches || 0) * 100).toFixed(1) + '%', c: T.win },
+                  { l: 'Gol/Partido', v: ((gs.totalGoals || 0) / Math.max(1, gs.totalMatches || 0)).toFixed(1), c: T.info },
                   { l: 'Mejor liga', v: gs.bestLeagueName || '—', c: T.purple },
                   { l: 'Racha', v: (gs.bestStreak || 0) + '🔥', c: T.draw },
                   { l: 'Ascensión', v: (gs.ascensionLevel || 0) + '/7', c: T.gold },
@@ -80,6 +88,38 @@ export default function StatsScreen() {
                 ))}
               </div>
             )}
+
+            {/* Top Assisters */}
+            {(() => {
+              const topAssisters = Object.entries(gs.allTimeAssisters || {}).sort((a, b) => b[1] - a[1]).slice(0, 5);
+              return topAssisters.length > 0 && (
+                <div className="glass" style={{ borderRadius: 12, padding: 12 }}>
+                  <div style={{ fontFamily: T.fontHeading, fontSize: 12, textTransform: 'uppercase', marginBottom: 8, textAlign: 'center', letterSpacing: 1, color: T.info }}>Asistidores Historicos</div>
+                  {topAssisters.map(([name, assists], i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 6px', fontFamily: T.fontBody, fontSize: 12, borderBottom: `1px solid ${T.border}` }}>
+                      <span style={{ color: i === 0 ? T.info : T.tx }}>{i === 0 ? '🎯 ' : `${i + 1}. `}{name}</span>
+                      <span style={{ fontFamily: T.fontHeading, fontWeight: 700, color: i === 0 ? T.info : T.tx2 }}>{assists}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* Top Clean Sheets */}
+            {(() => {
+              const topClean = Object.entries(gs.allTimeCleanSheets || {}).sort((a, b) => b[1] - a[1]).slice(0, 5);
+              return topClean.length > 0 && (
+                <div className="glass" style={{ borderRadius: 12, padding: 12 }}>
+                  <div style={{ fontFamily: T.fontHeading, fontSize: 12, textTransform: 'uppercase', marginBottom: 8, textAlign: 'center', letterSpacing: 1, color: T.win }}>Porteros Imbatidos</div>
+                  {topClean.map(([name, sheets], i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 6px', fontFamily: T.fontBody, fontSize: 12, borderBottom: `1px solid ${T.border}` }}>
+                      <span style={{ color: i === 0 ? T.win : T.tx }}>{i === 0 ? '🧤 ' : `${i + 1}. `}{name}</span>
+                      <span style={{ fontFamily: T.fontHeading, fontWeight: 700, color: i === 0 ? T.win : T.tx2 }}>{sheets}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
 
