@@ -8,6 +8,15 @@ export const NK='El Tanque,Flash,El Mago,Chuletón,Pared,Máquina,Fantasma,El Je
 
 export const _usedNames = new Set();
 
+// ── Easter egg: rare special player names (0.5% chance) ──
+const SPECIAL_PLAYERS = [
+  { name: 'Hugo Sánchez Jr.', forPos: 'FWD', bonus: { atk: 3 } },
+  { name: 'El Niño del 94', forPos: null, bonus: { atk: 1, def: 1, spd: 1 } },
+  { name: 'Fantasma Reyes', forPos: null, bonus: { spd: 3 } },
+  { name: 'Memo Ochoa III', forPos: 'GK', bonus: { sav: 4 } },
+  { name: 'Rafa Márquez Jr.', forPos: 'DEF', bonus: { def: 3 } },
+];
+
 export function genPlayer(pos, minLv, maxLv) {
   const lv = rnd(minLv, maxLv);
   let name;
@@ -18,7 +27,7 @@ export function genPlayer(pos, minLv, maxLv) {
   const personality = pick(PERSONALITIES);
   const base = lv * 3 + rnd(2, 6);
   const isGK = pos === 'GK';
-  return {
+  const player = {
     id: Math.random().toString(36).slice(2),
     name, pos, lv,
     atk: isGK ? rnd(1, 3) : base + rnd(-2, 4),
@@ -30,4 +39,18 @@ export function genPlayer(pos, minLv, maxLv) {
     personality, fatigue: 0, injuredFor: 0,
     consecutiveGames: 0, consecutiveBench: 0, gamesPlayed: 0,
   };
+  // 0.5% chance of special easter egg player
+  if (Math.random() < 0.005) {
+    const candidates = SPECIAL_PLAYERS.filter(s => !s.forPos || s.forPos === pos);
+    if (candidates.length > 0) {
+      const sp = pick(candidates);
+      player.name = sp.name;
+      if (sp.bonus.atk) player.atk += sp.bonus.atk;
+      if (sp.bonus.def) player.def += sp.bonus.def;
+      if (sp.bonus.spd) player.spd += sp.bonus.spd;
+      if (sp.bonus.sav) player.sav += sp.bonus.sav;
+      player.special = true;
+    }
+  }
+  return player;
 }

@@ -1,192 +1,231 @@
-# Handoff: Remaining Work on Branch `claude/modern-football-ui-design-s42Z7`
+# Rabona — Estado del Proyecto y Roadmap
 
-## PR: https://github.com/jorgenunez0728/rabona_dev/pull/22
+## Branch activo: `claude/modern-football-ui-design-pHfwV`
+## Save version: 3.5
 
 ---
 
-## What's Done (committed & pushed)
+## COMPLETADO
 
-### UI Redesign (complete)
+### UI Redesign
 - Premium FIFA-like design system (theme.css, T.* tokens, glass-morphism)
 - All screens and overlays restyled
 - Loading screen with 4-stage progress bars
-- Metallic shine CSS backgrounds (`bg-metallic-shine`)
-- Button repositioning ("Siguiente" in first third of screen)
-- Accordion/collapsible sections throughout
+- Metallic shine CSS backgrounds, accordion sections
 
-### Match Screen Overhaul (complete)
-- Canvas reduced to 45vh, match info bar below
-- Live matchday results (2-3 simultaneous matches)
-- Projected mini table with position arrows (green up/red down)
-- Social feed expanded to 170px default
+### Match Screen Overhaul
+- Canvas 45vh, match info bar, live matchday results
+- Projected mini table with position arrows
+- Social feed expanded to 170px
 
-### TableScreen Enhancements (complete)
-- Matchday results section
-- Tabbed stats: Goals / Assists / Clean Sheets
-- Tournament social feed (league-tier accounts: memes in low leagues, real media in high)
-- "Abandonar Carrera" button with confirmation modal
+### TableScreen Enhancements
+- Matchday results, tabbed stats (Goals/Assists/CleanSheets)
+- Tournament social feed (league-tier accounts)
+- "Abandonar Carrera" button with confirmation
 
-### Pre-match Reminder System (complete)
-- `betweenMatchVisits` tracking in store
-- Visit indicators (green/orange dots) on hub buttons
-- Hard block modal when <7 starters
-- Soft reminder overlay when screens not visited
+### Pre-match Reminder System
+- Visit indicators (green/orange dots), hard block <7 starters, soft reminder overlay
 
-### Run Tracker Data Layer (complete)
-- `src/game/data/runTracker.js` — `buildRunSnapshot()`, `addRunToHistory()`, `computeRecords()`, `computeArchetypeAnalytics()`
-- `store.js` — `runsHistory[]`, `allTimeAssisters{}`, `allTimeCleanSheets{}` in globalStats
-- `store.js` — `runLog[]`, `cursesEncountered[]`, `mapChoices[]` in game state
-- `store.js` — `saveRunSnapshot()` and `abandonRun()` actions
-- `Rabona.jsx` — runLog entry accumulated after each match
-- `DeathScreen.jsx` — saves run snapshot + all-time assisters/cleanSheets
-- `ChampionScreen.jsx` — saves run snapshot (result='champion')
-- `save.js` — migration 3.3 to 3.4, version bumped to 3.4
+### Run Tracker Data Layer
+- `runTracker.js` — snapshot, history, records, archetype analytics
+- `store.js` — runsHistory[], allTimeAssisters/CleanSheets, runLog[], mapChoices[]
+- DeathScreen + ChampionScreen save snapshots
 
----
+### StatsScreen — 8-Tab Overhaul
+- Scrollable 8-tab bar (General, Runs, Records, Arquetipos, Legado, Cartas, Fama, Logros)
+- General: 9 metrics + top scorers/assisters/clean sheets leaderboards
+- Runs: Hades-style expandable run history with W/D/L dot strips
+- Records: 8 gold-bordered all-time record cards
+- Arquetipos: per-archetype analytics with win rate bars
 
-## What's NOT Done (needs implementation)
+### TutorialScreen — Enhanced
+- Gold progress bar at top
+- TipBox per slide (7 contextual tips)
+- 7 mini-preview mockups (table, roster, match, relics, legacy, cards, flow)
 
-### 1. StatsScreen.jsx — Massive Overhaul (HIGHEST PRIORITY)
+### MapScreen — mapChoices tracking + Easter Egg Nodes
+- mapChoices tracked on node selection for run history
+- El Fantasma del 94 (rare, weight 0.3, league 2+): Don Miguel flashback + free rare relic
+- El Coleccionista (rare, weight 0.4, 3+ relics): Trade 2 cheapest relics for 1 rare/uncommon
 
-The current `src/game/screens/StatsScreen.jsx` has 5 tabs. It needs 8 tabs with a horizontally scrollable tab bar. The data layer (runTracker.js) is already built — this is purely UI work.
+### Achievements Expansion (17 → 52)
+- 35 new achievements across 6 categories
+- **Gameplay positivo** (8): goleada, invicto, remontada, clean5, gol_90, hat_trick, runs20, goals500
+- **Gameplay negativo** (8): racha_negra, humillacion, sin_gol_3, final_perdida, descenso_epico, bancarrota, lesion_masiva, abandono
+- **Economía** (2): tacano, comerciante
+- **Secretos/Meta** (7): el_94, maldito_triple, maestro_oscuro, no_mercado, one_man_army, mutador_total, speedrun
+- **Maestría arquetipos** (7): filosofo + 6 archetype-specific champion wins
+- **Colección** (3): hall_full, arbol_completo, todas_cartas
+- In-run tracking in Rabona.jsx (goleada, remontada, clean streak, lose streak, hat trick, etc.)
+- Flag merging at run-end in DeathScreen, ChampionScreen, and abandonRun
+- maxSimultaneousCurses tracked in addCurse action
+- playersBought tracked in MarketScreen
+- chibiAssets fallbacks for all 36 new entries
+- Save migration 3.4 → 3.5
 
-**New tab structure:**
-```js
-const tabs = [
-  { k: 'stats',      l: '📊', label: 'General' },    // Enhanced with win rate, avg goals, assisters/cleanSheets leaderboards
-  { k: 'runs',       l: '📜', label: 'Runs' },        // NEW — Hades-style run history list
-  { k: 'records',    l: '🏅', label: 'Records' },     // NEW — all-time bests from computeRecords()
-  { k: 'arquetipos', l: '🎭', label: 'Arquetipos' },  // NEW — per-archetype analytics
-  { k: 'legacy',     l: '🌳', label: 'Legado' },      // Keep existing
-  { k: 'cards',      l: '🎴', label: 'Cartas' },      // Keep existing
-  { k: 'fame',       l: '🌟', label: 'Fama' },        // Keep existing
-  { k: 'achieve',    l: '🏆', label: 'Logros' },      // Keep existing
-];
-```
+### Secret Narrations
+- 3 categories in narration.js: claseMagistral, remontadaEpica, ultimoSuspiro (9 templates)
 
-**Tab bar must be horizontally scrollable** (8 tabs won't fit at 420px):
-- `overflow-x: auto`, `scrollbar-width: none`, `WebkitOverflowScrolling: 'touch'`
-- Each tab `min-width: 55px`, `flex: 0 0 auto`
-
-#### 1a. Enhanced "General" tab
-Add to existing 6-metric grid:
-- Win Rate %: `((gs.totalWins || 0) / Math.max(1, gs.totalMatches || 0) * 100).toFixed(1) + '%'`
-- Avg Goals/Match: `((gs.totalGoals || 0) / Math.max(1, gs.totalMatches || 0)).toFixed(1)`
-- Total Matches (gs.totalMatches — currently tracked but not displayed)
-
-Add leaderboard sections below grid:
-- **Top Assisters**: `Object.entries(gs.allTimeAssisters || {}).sort((a,b) => b[1]-a[1]).slice(0,5)` — same format as existing Top Scorers
-- **Top Clean Sheets**: `Object.entries(gs.allTimeCleanSheets || {}).sort((a,b) => b[1]-a[1]).slice(0,5)`
-
-#### 1b. "Runs" tab (NEW — Hades-style run history)
-**Imports needed:**
-```js
-import { computeRecords, computeArchetypeAnalytics } from '@/game/data/runTracker.js';
-import { MANAGER_ARCHETYPES } from '@/game/data/archetypes.js';
-import { LEAGUES } from '@/game/data';
-```
-
-**Data:** `(gs.runsHistory || []).slice().reverse()` (most recent first)
-
-**Each run = expandable glass card:**
-- Header row: `#${run.runNumber}` + archetype icon (from `MANAGER_ARCHETYPES.find(a => a.id === run.archetypeId)?.i`) + league icon (`LEAGUES[run.leagueReached]?.i`) + league name
-- Stats row: `${run.careerStats.wins}W ${run.careerStats.draws}D ${run.careerStats.losses}L` + `⚽ ${run.careerStats.goalsFor}` + end type badge
-- End type badges: 💀 death (color: T.lose), 🏆 champion (T.gold), 🚪 abandoned (T.draw)
-- Top scorer: `run.topScorer?.name (${run.topScorer?.goals} goles)` if exists
-- W/D/L dot strip from `run.runLog`: tiny colored circles — green=W, amber=D, red=L, in sequence
-- **Tap to expand:** coach name, mutators, relics (IDs — look up from RELICS), curses, blessings, cards, coins earned
-- Use `useState` with `expandedRun` ID to toggle expand
-
-If no runs: show empty state "Completa tu primera carrera para ver el historial"
-
-#### 1c. "Records" tab (NEW)
-Call `computeRecords(gs.runsHistory || [])` and display gold-bordered cards:
-
-```js
-const RECORD_DEFS = [
-  { key: 'mostGoals', label: 'Mas Goles en una Carrera', icon: '⚽', valueFn: r => r?.careerStats?.goalsFor },
-  { key: 'highestLeague', label: 'Liga Mas Alta', icon: '🏟', valueFn: r => r?.leagueName },
-  { key: 'longestStreak', label: 'Mejor Racha', icon: '🔥', valueFn: r => r?.careerStats?.bestStreak },
-  { key: 'bestWinRate', label: 'Mejor Win Rate', icon: '📈', valueFn: r => r ? `${(r.careerStats.wins/r.careerStats.matchesPlayed*100).toFixed(0)}%` : null },
-  { key: 'mostRelics', label: 'Mas Reliquias', icon: '💎', valueFn: r => r?.relicsCollected?.length },
-  { key: 'longestRun', label: 'Carrera Mas Larga', icon: '📅', valueFn: r => r ? `${r.careerStats.matchesPlayed} partidos` : null },
-  { key: 'fastestAscension', label: 'Ascension Rapida', icon: '⚡', valueFn: r => r ? `${r.careerStats.matchesPlayed} partidos` : null },
-  { key: 'bestDefense', label: 'Mejor Defensa', icon: '🛡', valueFn: r => r ? `${(r.careerStats.goalsAgainst/r.careerStats.matchesPlayed).toFixed(1)} rec/P` : null },
-];
-```
-
-Each record as `card-gold` style card showing: icon + label + value + "Run #X"
-If record is null (no qualifying runs), show grayed out with "—"
-
-#### 1d. "Arquetipos" tab (NEW)
-Call `computeArchetypeAnalytics(gs.runsHistory || [])` and for each `MANAGER_ARCHETYPES`:
-
-```
-┌─────────────────────────────────────────┐
-│ 🦅 El Caudillo                          │
-│ 5 runs · Win Rate: ███████░░░ 62%       │
-│ Avg Liga: 2.4 · 🏆 1 · 💀 4            │
-└─────────────────────────────────────────┘
-```
-
-- Win rate as horizontal fill bar (width = percentage, background T.win)
-- If no runs for archetype: grayed out, opacity 0.4, "Sin datos"
+### Hidden Easter Egg Players
+- 0.5% chance to generate special named players with stat bonuses
+- Hugo Sánchez Jr. (FWD +3 ATK), El Niño del 94 (+1 all), Fantasma Reyes (+3 SPD), Memo Ochoa III (GK +4 SAV), Rafa Márquez Jr. (DEF +3 DEF)
 
 ---
 
-### 2. TutorialScreen.jsx — Enhanced with Mini-Previews
+## INVENTARIO ACTUAL DEL JUEGO
 
-**File:** `src/game/screens/TutorialScreen.jsx`
-
-The tutorial agent timed out. Read the current file first. The screen needs mini-preview mockup components that look like miniature screenshots of actual game screens.
-
-**For each of the 7 tutorial slides, add a visual mini-preview:**
-
-1. **Welcome slide**: Mini mockup of TableScreen (tiny league table with 4-5 rows, gold highlight on player row)
-2. **Roster slide**: Mini mockup showing 3-4 PlayerCard-style boxes (colored position border, name, OVR number)
-3. **Match slide**: Mini mockup of match view (tiny green rectangle "pitch", scoreboard "HAL 2-1 RIV", 2-3 event lines)
-4. **Relics slide**: Mini mockup showing 3 relic choice cards (icon + name, one highlighted gold)
-5. **Legacy Tree slide**: Mini mockup showing 3 branch rows with circle nodes (green=owned, gray=locked)
-6. **Cards slide**: Mini mockup showing 3 tactical cards with category color pills
-7. **Final slide**: Flow diagram: "Table -> Map -> Prematch -> Match -> Rewards -> Table"
-
-**Mini-preview container:** ~200px wide, ~140px tall, borderRadius 12, border `1px solid ${T.glassBorder}`, background T.bg1, overflow hidden, subtle box-shadow
-
-**Add tip boxes per slide:**
-- Gold-bordered glass card: "💡 Consejo: [tip text]"
-
-**Animation improvements:**
-- Progress bar at top (thin gold bar filling left to right based on step/totalSteps)
-- Smoother slide transitions (CSS translateX)
+| Sistema | Cantidad | Estado |
+|---------|----------|--------|
+| Ligas | 7 (Barrio → Intergaláctica) | Completo |
+| Formaciones | 6 (Muro, Clásica, Diamante, Blitz, Tridente, Cadena) | Completo |
+| Coaches | 8 (Don Miguel + 7 desbloqueables) | Completo |
+| Arquetipos | 6 (Caudillo, Arquitecto, Mercenario, Místico, Cantera, Apostador) | Completo |
+| Reliquias | 24 (8 common, 7 uncommon, 6 rare, 3 cursed) | Completo |
+| Cartas Tácticas | 28 (8 off, 8 def, 6 eco, 6 chaos) | Completo |
+| Maldiciones | 6 (con sistema mastery → bendiciones) | Completo |
+| Mutadores | 10 (ascension-gated) | Completo |
+| Legacy Tree | 18 nodos (6 ramas × 3 tiers) | Completo |
+| Achievements | 52 (17 base + 35 new) | Completo |
+| Easter Eggs | 2 map nodes + 5 hidden players + 3 secret narrations | Completo |
+| Cutscenes | 6 (promoción entre ligas) | Completo |
+| Board Events | 10 | Completo |
+| Map Nodes | 8 tipos | Completo |
+| Rival AI Strategies | 5 | Completo |
+| Pantallas | 19 | Completo |
 
 ---
 
-### 3. MapScreen — Track mapChoices (small change)
+## LO QUE FALTA — Roadmap por Prioridad
 
-**File:** `src/game/screens/MapScreen.jsx`
+### PRIORIDAD ALTA — Core Roguelike Depth
 
-Find the node selection handler (where `setGame` is called after choosing a node). Add `mapChoices` tracking:
-```js
-mapChoices: [...(g.mapChoices || []), { matchNum: g.matchNum, nodeType: chosenNode.type }]
-```
+#### 1. ~~MÁS ACHIEVEMENTS~~ ✅ COMPLETADO (52 achievements)
 
-This is ~1 line but needed for run history to show map decisions.
+#### ~~2. SECRETOS Y EASTER EGGS~~ ✅ COMPLETADO (map nodes + hidden players + narrations)
+
+#### 3. MODO HISTORIA / NARRATIVA EXPANDIDA (SIGUIENTE PRIORIDAD)
+Los roguelikes top tienen 50-100 achievements. Solo tenemos 17, la mayoría son "alcanza X número".
+Faltan achievements de:
+
+**Estilo de juego:**
+- `goleada` — Ganar 5-0 o más
+- `invicto` — Completar una liga sin perder
+- `remontada_epica` — Ganar un partido después de ir 0-3 abajo
+- `portero_imbatible` — 5 clean sheets consecutivos
+- `empate_maestro` — 3 empates seguidos (irónico)
+- `sin_gol` — Perder 0-1 en 3 partidos seguidos de un run
+
+**Económicos:**
+- `tacano` — Terminar un run con 100+ monedas sin gastar
+- `bancarrota` — Llegar a 0 monedas y ganar el siguiente partido
+- `comerciante` — Comprar y vender 10 jugadores en un run
+
+**Secretos / Easter Eggs:**
+- `el_94` — Ganar la final con el coach Don Miguel en Intergaláctica (callback a la historia)
+- `maldito` — Tener 3 maldiciones activas simultáneamente
+- `maestro_oscuro` — Dominar las 6 maldiciones (todas las bendiciones)
+- `speedrun` — Ascender con menos de X partidos jugados
+- `no_mercado` — Ganar una liga sin comprar jugadores (no siendo La Cantera)
+- `one_man_army` — Tu goleador anota el 80%+ de goles del equipo
+
+**Arquetipos:**
+- Un achievement secreto por cada arquetipo (ganar intergaláctica con cada uno)
+- `coleccionista` — Jugar al menos 1 run con cada arquetipo
+
+**Meta:**
+- `hall_full` — Llenar el Hall of Fame (20 legendarios)
+- `arbol_completo` — Desbloquear todo el Legacy Tree
+- `todas_las_cartas` — Coleccionar las 28 cartas tácticas
+
+#### 2. SECRETOS Y EASTER EGGS
+Los roguelikes viven de descubrimientos ocultos. Rabona tiene CERO easter eggs. Necesita:
+
+- **Encuentros raros en el Mapa** (~5% chance): Un nodo "???" especial con outcomes únicos
+  - "El fantasma del 94" — aparece Don Miguel joven, te regala reliquia legendaria
+  - "Portal dimensional" — un partido amistoso vs tu propio equipo de un run anterior
+  - "El coleccionista" — te ofrece intercambiar 2 reliquias por 1 legendaria
+- **Combinaciones secretas**: Si equipas ciertas reliquias + cartas juntas, efecto hidden bonus
+  - Ej: Botines del 94 + La Maldición del 94 + Don Miguel = "El Run del 94" (achievement + bonus)
+- **Rival secreto**: En Liga Intergaláctica, 5% chance de enfrentar "Los Inmortales" (equipo de tu Hall of Fame)
+- **Nombres de jugadores**: Rarísimamente (~0.5%) generar un jugador con nombre legendario real (referencia)
+- **Diálogos ocultos de Don Miguel** según combinaciones específicas de arquetipo + coach
+
+#### 3. MODO HISTORIA / NARRATIVA EXPANDIDA
+Las cutscenes existen (6) pero la narrativa es mínima. Falta:
+
+- **Narrativa de Don Miguel**: Un arco que se revela poco a poco entre runs
+  - Flashbacks del torneo del 94 (desbloquean con achievements)
+  - Cada liga nueva revela un capítulo (qué pasó en ese torneo)
+  - El twist: el rival final de Intergaláctica tiene conexión con el 94
+- **Rival Nemesis narrativo**: No solo stats boost, sino diálogos pre/post match
+- **Eventos de vestuario con consecuencias a largo plazo** (actualmente son one-shot)
+
+### PRIORIDAD MEDIA — Modos y Rejugabilidad
+
+#### 4. MODOS DE JUEGO ADICIONALES
+Solo hay 1 modo (run estándar). Los roguelikes exitosos tienen:
+
+- **Daily Challenge**: Seed fijo del día, todos juegan el mismo run, compare results
+  - Mismo roster inicial, mismas reliquias disponibles, mismos rivales
+  - Leaderboard local (no necesita backend — score basado en liga alcanzada + goles + monedas)
+- **Modo Desafío Semanal**: Restricciones rotativas
+  - "Solo defensores pueden anotar"
+  - "Sin portero"
+  - "Presupuesto 0 — solo jugadores gratis"
+  - "Speedrun — 3 minutos por partido"
+- **Modo Endless / Ascensión Infinita**: Después de ganar Intergaláctica, sigue subiendo dificultad
+  - Liga ??? con rivales cada vez más fuertes
+  - Cuántas jornadas sobrevives
+  - Leaderboard: "mayor cantidad de jornadas en endless"
+
+#### 5. MASCOTA / COMPANION SYSTEM
+Idea muy roguelike (como el perro de Hades):
+
+- **El Perro del Barrio** 🐕 — Mascota que encuentras en tu primer run
+  - Aparece en pantallas (title, table, death)
+  - Sube de nivel entre runs (como Cerbero en Hades)
+  - Le puedes dar monedas para alimentarlo → desbloquea micro-bonos
+  - Diferentes reacciones según resultado (celebra victorias, te consuela en derrotas)
+  - Skins desbloqueables: bandana del equipo, corona, gafas de sol
+- **Evolución**: Con suficientes runs → el perro "evoluciona" visualmente
+- **Easter egg**: Si lo nombras "Pelé" o "Maradona", efecto especial
+
+#### 6. SISTEMA DE SINERGIAS VISIBLES
+Las sinergias entre reliquias/cartas/arquetipos existen en data pero NO se muestran al jugador:
+
+- Mostrar "Sinergia activa!" cuando combinas relic + archetype que hacen match
+- Tooltip en reliquias mostrando "Combina con: El Caudillo, carta Presión Final"
+- Panel de sinergias descubiertas en StatsScreen (como un codex)
+
+### PRIORIDAD BAJA — Polish y Social
+
+#### 7. COMPARTIR / SOCIAL REAL
+- **Share run summary** como imagen (canvas → PNG)
+  - "#RabonaRun42 | 🦅 Caudillo | Liga Mundial | 24W 3D 5L | 👑 Martínez (18 goles)"
+- **Export/Import save** para backup/transferir dispositivos
+- **Códigos de seed**: "Juega mi mismo run" — compartir la seed de generación
+
+#### 8. SONIDO Y AMBIENTACIÓN
+- Más SFX para eventos (actualmente básico con Tone.js)
+- Música de ambiente por liga (8-bit barrio → épica intergaláctica)
+- Crowd noise durante partidos
+
+#### 9. PERSONALIZACIÓN
+- **Nombre del equipo** personalizable
+- **Kit colors** elegibles
+- **Escudo** generador simple (forma + color + símbolo)
+- **Celebración de gol** personalizable
 
 ---
 
-## Key Imports Reference
-
-```js
-// Run tracker (already created)
-import { buildRunSnapshot, addRunToHistory, computeRecords, computeArchetypeAnalytics } from '@/game/data/runTracker.js';
-
-// Archetypes (for display)
-import { MANAGER_ARCHETYPES } from '@/game/data/archetypes.js';
-
-// Theme + data
-import { T, LEAGUES, PN, POS_COLORS, ACHIEVEMENTS, RELICS } from '@/game/data';
+## ESTADO DE TESTS
+```bash
+npm test  # 116 tests (helpers, save, careerLogic, engine)
 ```
+Todos los cambios recientes son UI/persistencia — no deberían romper tests.
 
-## Current save version: 3.4
-## Branch: `claude/modern-football-ui-design-s42Z7`
-## Tests: `npm test` (should pass — all changes are UI/persistence, no logic changes)
+## ARQUITECTURA CLAVE
+- Client-side only, localStorage saves
+- Zustand store, generator-based match engine
+- Canvas rendering con steering behaviors
+- PWA standalone portrait

@@ -93,7 +93,7 @@ export default function MarketScreen() {
                   if (!canBuy) return;
                   SFX.play('reward');
                   const bought = { ...p, role: 'rs' };
-                  setGame(g => ({ ...g, roster: [...g.roster, bought], coins: g.coins - p.price }));
+                  setGame(g => ({ ...g, roster: [...g.roster, bought], coins: g.coins - p.price, playersBought: (g.playersBought || 0) + 1 }));
                   setMarket(m => ({ ...m, players: m.players.filter(mp => mp.id !== p.id) }));
                 }} style={{
                   fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12,
