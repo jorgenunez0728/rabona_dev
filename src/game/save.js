@@ -112,6 +112,38 @@ function validateGameState(game) {
   return true;
 }
 
+// ── Career Global Stats (Mi Leyenda metaprogression) ──
+
+const CAREER_STATS_KEY = 'rabona-career-stats';
+
+export function saveCareerGlobalStats(cgs) {
+  try {
+    localStorage.setItem(CAREER_STATS_KEY, JSON.stringify(cgs));
+  } catch(e) { console.warn('Career stats save failed:', e); }
+}
+
+export function loadCareerGlobalStats() {
+  try {
+    const raw = localStorage.getItem(CAREER_STATS_KEY);
+    if (raw) {
+      const cgs = JSON.parse(raw);
+      // Ensure new fields have defaults
+      cgs.totalCareers = cgs.totalCareers || 0;
+      cgs.hallOfLegends = cgs.hallOfLegends || [];
+      cgs.legendPoints = cgs.legendPoints || 0;
+      cgs.careerUnlocks = cgs.careerUnlocks || [];
+      cgs.bestTeamReached = cgs.bestTeamReached || 0;
+      cgs.totalGoals = cgs.totalGoals || 0;
+      cgs.traitsDiscovered = cgs.traitsDiscovered || [];
+      cgs.momentsWitnessed = cgs.momentsWitnessed || [];
+      cgs.npcArcsCompleted = cgs.npcArcsCompleted || [];
+      cgs.dynastyBonus = cgs.dynastyBonus || {};
+      return cgs;
+    }
+  } catch(e) {}
+  return null;
+}
+
 // ── Public API ──
 
 export function saveGlobalStats(gs) {
