@@ -58,6 +58,22 @@ function AnimBar({ pct, color, label, delay = 0 }) {
   );
 }
 
+// ── Tip box ──
+function TipBox({ text }) {
+  return (
+    <div style={{
+      display: 'flex', gap: 8, alignItems: 'flex-start', padding: '10px 14px',
+      background: `${T.gold}08`, border: `1.5px solid ${T.gold}25`,
+      borderRadius: 10, maxWidth: 340, width: '100%', marginTop: 6,
+    }}>
+      <span style={{ fontSize: 16, flexShrink: 0 }}>💡</span>
+      <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.gold, lineHeight: 1.4 }}>
+        <span style={{ fontWeight: 700 }}>Consejo: </span>{text}
+      </div>
+    </div>
+  );
+}
+
 // ── Slot visualization ──
 function SlotRow({ slots, delay = 0 }) {
   const [visible, setVisible] = useState(false);
@@ -113,6 +129,11 @@ export default function TutorialScreen() {
       display: 'flex', flexDirection: 'column', height: '100%',
       background: bg, position: 'relative', overflow: 'hidden',
     }}>
+      {/* Progress bar */}
+      <div style={{ width: '100%', height: 3, background: T.bg2, flexShrink: 0, zIndex: 10 }}>
+        <div style={{ height: '100%', width: `${((step + 1) / TOTAL) * 100}%`, background: T.gold, borderRadius: '0 2px 2px 0', transition: 'width 0.4s ease' }} />
+      </div>
+
       {/* Top section: Navigation + CTA in the first third */}
       <div style={{ flexShrink: 0, padding: '12px 20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
         {step > 0 ? (
@@ -195,6 +216,7 @@ export default function TutorialScreen() {
           }}>{e}</div>
         ))}
       </div>
+      <TipBox text="Tu filosofía de juego define todo el run. Elige sabiamente." />
     </>
   );
 
@@ -234,6 +256,7 @@ export default function TutorialScreen() {
           </div>
         ))}
       </div>
+      <TipBox text="Cada derrota es una lección. Los desbloqueos permanentes hacen tu siguiente run más fuerte." />
     </>
   );
 
@@ -258,6 +281,7 @@ export default function TutorialScreen() {
       <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, marginTop: 4 }}>
         + La Cantera 🌱 y El Apostador 🎲 (desbloqueables)
       </div>
+      <TipBox text="El Caudillo es agresivo pero arriesgado. El Arquitecto da control. Prueba todos." />
     </>
   );
 
@@ -285,6 +309,7 @@ export default function TutorialScreen() {
         <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, marginBottom: 6 }}>Tu filosofía define los slots disponibles:</div>
         <SlotRow slots={{ offensive: 3, defensive: 1, economic: 1, chaotic: 1 }} delay={700} />
       </div>
+      <TipBox text="Las cartas se activan solas durante el partido. Busca sinergias con tu arquetipo." />
     </>
   );
 
@@ -326,6 +351,7 @@ export default function TutorialScreen() {
       <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx2, maxWidth: 320, lineHeight: 1.4, marginTop: 4 }}>
         En el <span style={{ color: T.lose }}>Curandero</span> puedes curar la maldición... pero pierdes el progreso de maestría. <span style={{ color: T.gold }}>¿Curar o aguantar?</span>
       </div>
+      <TipBox text="El Místico gana maestría 50% más rápido. Las bendiciones valen la pena." />
     </>
   );
 
@@ -356,6 +382,7 @@ export default function TutorialScreen() {
           Los puntos de legado desbloquean mejoras <strong>permanentes</strong> en el Árbol de Legado.
         </div>
       </div>
+      <TipBox text="No actives mutadores en tu primer run. Cuando domines el juego, sube la dificultad." />
     </>
   );
 
@@ -412,6 +439,7 @@ export default function TutorialScreen() {
       }}>
         Cada combinación crea una experiencia <span style={{ color: T.gold, fontWeight: 700 }}>completamente distinta</span>. No hay dos runs iguales.
       </div>
+      <TipBox text="Revisa tu roster y entrena jugadores entre partidos. No vayas directo al partido." />
     </>
   );
 
