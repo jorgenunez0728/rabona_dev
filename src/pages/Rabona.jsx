@@ -593,6 +593,39 @@ export default function Rabona() {
         cs.scorers = scorers;
         cs.assisters = assisters;
         cs.cleanSheets = cleanSheets;
+        // ── In-run achievement tracking ──
+        // Goleada: win 5-0+
+        if (ps >= 5 && rs === 0) cs.hadGoleada = true;
+        // Humillación: lose 0-5+
+        if (ps === 0 && rs >= 5) cs.hadHumillacion = true;
+        // Clean sheet streak
+        if (rs === 0) { cs.currentCleanStreak = (cs.currentCleanStreak || 0) + 1; cs.bestCleanStreak = Math.max(cs.bestCleanStreak || 0, cs.currentCleanStreak); } else { cs.currentCleanStreak = 0; }
+        // Worst losing streak (newStreak goes negative on losses)
+        cs.worstLoseStreak = Math.max(cs.worstLoseStreak || 0, Math.abs(Math.min(0, newStreak)));
+        // Narrow losses (0-1)
+        if (rs === 1 && ps === 0) cs.narrowLosses = (cs.narrowLosses || 0) + 1;
+        // Bancarrota (reached 0 coins at any point)
+        if ((g.coins || 0) <= 0) cs.hadBancarrota = true;
+        // Mass injury: 3+ injured starters
+        const injuredCount = roster.filter(p => p.role === 'st' && (p.injuredFor || 0) > 0).length;
+        if (injuredCount >= 3) cs.hadMassInjury = true;
+        // Hat trick: any player scored 3+ in this match
+        const matchScorerCounts = {};
+        homeGoals.forEach(hg => { if (hg.scorer) matchScorerCounts[hg.scorer] = (matchScorerCounts[hg.scorer] || 0) + 1; });
+        if (Object.values(matchScorerCounts).some(c => c >= 3)) cs.hadHatTrick = true;
+        // Last minute winner: winning goal after minute 85
+        if (won && homeGoals.length > 0) {
+          const lastHomeGoal = homeGoals[homeGoals.length - 1];
+          if (lastHomeGoal.minute >= 85 && ps - rs === 1) cs.hadLastMinuteWinner = true;
+        }
+        // Remontada: won after being 2+ goals behind at any point
+        // Track worst deficit from engine goal timeline
+        let worstDeficit = 0, runH = 0, runA = 0;
+        for (const eg of engineGoals) {
+          if (eg.team === 'home') runH++; else runA++;
+          worstDeficit = Math.max(worstDeficit, runA - runH);
+        }
+        if (won && worstDeficit >= 2) cs.hadRemontada = true;
         // Update league-wide top scorers + assisters + clean sheets
         const prevScorers = [...(g.topScorers || [])];
         const prevAssisters = [...(g.topAssisters || [])];
