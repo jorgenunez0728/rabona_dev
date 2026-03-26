@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SFX } from '@/game/audio';
-import { T } from '@/game/data';
+import { T, RELICS } from '@/game/data';
 import useGameStore from '@/game/store';
 import { pick, rnd } from '@/game/data/helpers.js';
 import { CURSES } from '@/game/data/progression.js';
@@ -50,12 +50,25 @@ const MAP_NODES = [
     d: 'Encuentra una carta táctica temporal para este run.',
     weight: 1,
   },
+  // ── Easter Egg Nodes (rare) ──
+  {
+    id: 'fantasma94', n: 'El Fantasma del 94', i: '👻', color: '#9c27b0',
+    d: '"Mijo... hay algo que nunca te conté del 94."',
+    weight: 0.3, requiresLeague: 2,
+  },
+  {
+    id: 'coleccionista', n: 'El Coleccionista', i: '🎩', color: '#ffd600',
+    d: 'Un extraño ofrece intercambiar reliquias.',
+    weight: 0.4, requiresRelics: 3,
+  },
 ];
 
 function pickNodes(game, globalStats) {
   const hasCurses = (game.curses || []).length > 0;
   const pool = MAP_NODES.filter(n => {
     if (n.requiresCurse && !hasCurses) return false;
+    if (n.requiresLeague && (game.league || 0) < n.requiresLeague) return false;
+    if (n.requiresRelics && (game.relics || []).length < n.requiresRelics) return false;
     return true;
   });
   // Weighted pick of 2-3 unique nodes
@@ -201,6 +214,38 @@ function resolveNode(nodeId, game, setGame, go, addCurse, removeCurse, globalSta
       const outcome = pick(outcomes);
       outcome.fx();
       return { text: outcome.text, icon: '❓' };
+    }
+
+    case 'fantasma94': {
+      // Easter egg: Don Miguel flashback — free coins + rare relic
+      const rareRelics = RELICS.filter(r => r.rarity === 'rare' && !(game.relics || []).includes(r.id));
+      const bonusRelic = rareRelics.length > 0 ? pick(rareRelics) : null;
+      const relicIds = bonusRelic ? [...(game.relics || []), bonusRelic.id] : (game.relics || []);
+      setGame(g => ({ ...g, coins: g.coins + 20, relics: relicIds }));
+      return { text: bonusRelic
+        ? `Don Miguel cierra los ojos: "Ese torneo nos cambió la vida..." Te entrega ${bonusRelic.i} ${bonusRelic.n}. +20 monedas.`
+        : '"Algún día te contaré todo, mijo." +20 monedas.',
+        icon: '👻' };
+    }
+
+    case 'coleccionista': {
+      // Easter egg: Trade 2 cheapest relics for 1 random rare
+      const myRelics = (game.relics || []);
+      if (myRelics.length < 2) return { text: 'El Coleccionista te mira... "Vuelve cuando tengas más."', icon: '🎩' };
+      // Remove 2 cheapest (by rarity: common < uncommon < rare)
+      const rarityOrder = { common: 0, uncommon: 1, rare: 2, cursed: 3 };
+      const sorted = [...myRelics].map(id => RELICS.find(r => r.id === id)).filter(Boolean).sort((a, b) => (rarityOrder[a.rarity] || 0) - (rarityOrder[b.rarity] || 0));
+      const removed = sorted.slice(0, 2).map(r => r.id);
+      const remaining = myRelics.filter(id => !removed.includes(id));
+      const available = RELICS.filter(r => (r.rarity === 'rare' || r.rarity === 'uncommon') && !remaining.includes(r.id));
+      const reward = available.length > 0 ? pick(available) : null;
+      if (reward) remaining.push(reward.id);
+      setGame(g => ({ ...g, relics: remaining }));
+      const removedNames = removed.map(id => RELICS.find(r => r.id === id)).filter(Boolean).map(r => `${r.i} ${r.n}`).join(' y ');
+      return { text: reward
+        ? `El Coleccionista toma ${removedNames} y te entrega ${reward.i} ${reward.n}. "Trato hecho."`
+        : `El Coleccionista toma ${removedNames}. "No tengo nada para ti... por ahora."`,
+        icon: '🎩' };
     }
 
     default:
