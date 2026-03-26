@@ -15,6 +15,7 @@ export default function StatsScreen() {
   const gs = globalStats;
   const topScorers = Object.entries(gs.allTimeScorers || {}).sort((a, b) => b[1] - a[1]).slice(0, 8);
   const [tab, setTab] = useState('stats');
+  const [expandedRun, setExpandedRun] = useState(null);
 
   const tabs = [
     { k: 'stats',      l: '📊', label: 'General' },
@@ -122,6 +123,109 @@ export default function StatsScreen() {
             })()}
           </div>
         )}
+
+        {tab === 'runs' && (() => {
+          const runs = (gs.runsHistory || []).slice().reverse();
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {runs.length === 0 ? (
+                <div className="glass" style={{ textAlign: 'center', padding: 28, borderRadius: 12 }}>
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>📜</div>
+                  <div style={{ color: T.tx2, fontSize: 13, lineHeight: 1.6, fontFamily: T.fontBody }}>
+                    Completa tu primera carrera para ver el historial
+                  </div>
+                </div>
+              ) : runs.map((run, idx) => {
+                const arch = MANAGER_ARCHETYPES.find(a => a.id === run.archetypeId);
+                const league = LEAGUES[run.leagueReached];
+                const isExpanded = expandedRun === idx;
+                const endBadge = run.endType === 'champion' ? { icon: '🏆', color: T.gold }
+                  : run.endType === 'abandoned' ? { icon: '🚪', color: T.draw }
+                  : { icon: '💀', color: T.lose };
+                return (
+                  <div key={idx} onClick={() => setExpandedRun(isExpanded ? null : idx)}
+                    className="glass" style={{ borderRadius: 10, padding: '10px 12px', cursor: 'pointer', transition: 'all 0.2s', border: `1px solid ${isExpanded ? T.gold + '40' : T.glassBorder}` }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 13, color: T.tx3 }}>#{run.runNumber}</span>
+                      {arch && <span style={{ fontSize: 16 }}>{arch.i}</span>}
+                      {league && <span style={{ fontSize: 14 }}>{league.i}</span>}
+                      <span style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.tx2, flex: 1 }}>{league?.n || 'Liga ' + run.leagueReached}</span>
+                      <span style={{ fontSize: 14, color: endBadge.color }}>{endBadge.icon}</span>
+                    </div>
+                    {/* Stats row */}
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.tx2 }}>
+                        {run.careerStats.wins}W {run.careerStats.draws}D {run.careerStats.losses}L
+                      </span>
+                      <span style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.info }}>⚽ {run.careerStats.goalsFor}</span>
+                      {run.topScorer && (
+                        <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>
+                          👑 {run.topScorer.name} ({run.topScorer.goals})
+                        </span>
+                      )}
+                    </div>
+                    {/* W/D/L dot strip */}
+                    {run.runLog && run.runLog.length > 0 && (
+                      <div style={{ display: 'flex', gap: 3, marginTop: 6, flexWrap: 'wrap' }}>
+                        {run.runLog.map((m, mi) => (
+                          <div key={mi} style={{
+                            width: 8, height: 8, borderRadius: '50%',
+                            background: m.result === 'W' ? T.win : m.result === 'D' ? T.draw : T.lose,
+                          }} />
+                        ))}
+                      </div>
+                    )}
+                    {/* Expanded details */}
+                    {isExpanded && (
+                      <div style={{ marginTop: 10, paddingTop: 8, borderTop: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {run.coachName && (
+                          <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>
+                            {run.coachIcon} Coach: {run.coachName}
+                          </div>
+                        )}
+                        {run.activeMutators?.length > 0 && (
+                          <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.draw }}>
+                            Mutadores: {run.activeMutators.join(', ')}
+                          </div>
+                        )}
+                        {run.relicsCollected?.length > 0 && (
+                          <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.purple }}>
+                            Reliquias: {run.relicsCollected.map(rid => {
+                              const r = RELICS.find(rl => rl.id === rid);
+                              return r ? `${r.i} ${r.n}` : rid;
+                            }).join(', ')}
+                          </div>
+                        )}
+                        {run.cursesEncountered?.length > 0 && (
+                          <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.lose }}>
+                            Maldiciones: {run.cursesEncountered.join(', ')}
+                          </div>
+                        )}
+                        {run.blessingsMastered?.length > 0 && (
+                          <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.gold }}>
+                            Bendiciones: {run.blessingsMastered.join(', ')}
+                          </div>
+                        )}
+                        {run.cardLoadout?.length > 0 && (
+                          <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.purple }}>
+                            Cartas: {run.cardLoadout.map(cid => {
+                              const c = TACTICAL_CARDS.find(tc => tc.id === cid);
+                              return c ? `${c.i} ${c.n}` : cid;
+                            }).join(', ')}
+                          </div>
+                        )}
+                        <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.gold }}>
+                          💰 {run.coinsEarned || 0} monedas
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
 
         {tab === 'legacy' && (() => {
           const totalPts = calcLegacyPoints(gs);
