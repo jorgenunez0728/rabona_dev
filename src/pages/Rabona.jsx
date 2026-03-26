@@ -17,9 +17,9 @@ import { TACTICAL_CARDS } from "@/game/data/cards.js";
 import { ASCENSION_MUTATORS } from "@/game/data/mutators.js";
 
 import { PlayerDetailModal, ParticleSystem } from "@/game/components";
-import { CareerCreateScreen, CareerCardScreen, CareerMatchScreen, CareerSeasonEnd, CareerEndScreen } from "@/game/CareerScreens";
+import { CareerCreateScreen, CareerCardScreen, CareerMatchScreen, CareerSeasonEnd, CareerEndScreen, CareerTimelineScreen, CareerLegacyScreen } from "@/game/CareerScreens";
 import useGameStore from "@/game/store";
-import { initCareer, getCareerCards, getMatchCards, applyBarEffects, checkCareerEnd, applyAging } from "@/game/careerLogic";
+import { initCareer, getCareerCards, getMatchCards, applyBarEffects, checkCareerEnd, applyAging, applyCardChoice, calcCareerLegacyPoints, resetSeasonCards } from "@/game/careerLogic";
 
 // ─── Extracted screens ───
 import LoadingScreen from "@/game/screens/LoadingScreen";
@@ -1300,12 +1300,14 @@ export default function Rabona() {
 
 
   // ─── CAREER SCREENS (imported — see game/CareerScreens.jsx) ───
-  const careerHelpers = { setCareer, setCareerScreen, go, initCareer, getCareerCards, applyBarEffects, checkCareerEnd, applyAging, getMatchCards };
+  const careerHelpers = { setCareer, setCareerScreen, go, initCareer, getCareerCards, applyBarEffects, checkCareerEnd, applyAging, getMatchCards, applyCardChoice, calcCareerLegacyPoints, resetSeasonCards };
   const CareerCreateScreenLocal = () => <CareerCreateScreen {...careerHelpers} />;
   const CareerCardScreenLocal = () => career ? <CareerCardScreen career={career} {...careerHelpers} /> : null;
   const CareerMatchScreenLocal = () => career ? <CareerMatchScreen career={career} {...careerHelpers} /> : null;
   const CareerSeasonEndLocal = () => career ? <CareerSeasonEnd career={career} {...careerHelpers} /> : null;
   const CareerEndScreenLocal = () => career ? <CareerEndScreen career={career} {...careerHelpers} /> : null;
+  const CareerTimelineLocal = () => career ? <CareerTimelineScreen career={career} {...careerHelpers} /> : null;
+  const CareerLegacyLocal = () => <CareerLegacyScreen {...careerHelpers} />;
 
   // ─── SWIPE NAVIGATION for hub screens ───
   const HUB_SCREENS = ['table', 'roster', 'training', 'market', 'stats'];
@@ -1392,7 +1394,9 @@ export default function Rabona() {
               careerScreen === 'match' ? <CareerMatchScreenLocal /> :
                 careerScreen === 'seasonEnd' ? <CareerSeasonEndLocal /> :
                   careerScreen === 'careerEnd' ? <CareerEndScreenLocal /> :
-                    <CareerCreateScreenLocal />
+                    careerScreen === 'timeline' ? <CareerTimelineLocal /> :
+                      careerScreen === 'legacy' ? <CareerLegacyLocal /> :
+                        <CareerCreateScreenLocal />
         )}
 
         <RelicDraftOverlay />
