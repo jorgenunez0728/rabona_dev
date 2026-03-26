@@ -241,7 +241,10 @@ const useGameStore = create((set, get) => ({
     curses.push({ ...curse, remaining: curse.duration, masteryProgress: Math.floor(globalProgress * 0.3) });
     const encountered = [...(game.cursesEncountered || [])];
     if (!encountered.includes(curseId)) encountered.push(curseId);
-    set({ game: { ...game, curses, cursesEncountered: encountered } });
+    // Track max simultaneous curses for achievement
+    const cs = { ...(game.careerStats || {}) };
+    cs.maxSimultaneousCurses = Math.max(cs.maxSimultaneousCurses || 0, curses.length);
+    set({ game: { ...game, curses, cursesEncountered: encountered, careerStats: cs } });
   },
   tickCurses: () => {
     const { game } = get();
