@@ -37,6 +37,27 @@ export default function DeathScreen() {
     Object.entries(cs.assisters || {}).forEach(([name, assists]) => { newGS.allTimeAssisters[name] = (newGS.allTimeAssisters[name] || 0) + assists; });
     newGS.allTimeCleanSheets = { ...(newGS.allTimeCleanSheets || {}) };
     Object.entries(cs.cleanSheets || {}).forEach(([name, sheets]) => { newGS.allTimeCleanSheets[name] = (newGS.allTimeCleanSheets[name] || 0) + sheets; });
+    // ── Merge in-run achievement flags ──
+    if (cs.hadGoleada) newGS.hadGoleada = true;
+    if (cs.hadRemontada) newGS.hadRemontada = true;
+    if (cs.hadHumillacion) newGS.hadHumillacion = true;
+    if (cs.hadHatTrick) newGS.hadHatTrick = true;
+    if (cs.hadLastMinuteWinner) newGS.hadLastMinuteWinner = true;
+    if (cs.hadMassInjury) newGS.hadMassInjury = true;
+    if (cs.hadBancarrota) newGS.hadBancarrota = true;
+    if ((cs.bestCleanStreak || 0) >= 5) newGS.hadCleanStreak5 = true;
+    if ((cs.narrowLosses || 0) >= 3) newGS.hadNarrowLosses3 = true;
+    if ((cs.worstLoseStreak || 0) >= 3) newGS.hadLoseStreak3 = true;
+    newGS.maxSimultaneousCurses = Math.max(newGS.maxSimultaneousCurses || 0, cs.maxSimultaneousCurses || 0);
+    if (cs.losses === 0 && cs.matchesPlayed >= 8) newGS.hadUndefeatedLeague = true;
+    const topGoals = Math.max(...Object.values(cs.scorers || {}), 0);
+    if (topGoals > 0 && cs.goalsFor > 0 && topGoals / cs.goalsFor >= 0.8) newGS.hadOneManArmy = true;
+    if ((game.playersBought || 0) === 0 && game.archetype !== 'cantera' && cs.matchesPlayed >= 8) newGS.hadNoMarketWin = true;
+    if ((game.coins || 0) >= 100) newGS.hadTacano = true;
+    if ((game.playersBought || 0) + (game.playersSold || 0) >= 10) newGS.hadComerciante = true;
+    if ((game.league || 0) === 0) newGS.hadDiedInBarrio = true;
+    if (game.league >= 6) newGS.hadLostFinal = true;
+    if (cs.matchesPlayed <= 8 && game.league > 0) newGS.hadSpeedrun = true;
     const finalGS = checkAchievements(newGS);
     setGlobalStats(finalGS); saveGlobalStats(finalGS);
     // Save run to history
