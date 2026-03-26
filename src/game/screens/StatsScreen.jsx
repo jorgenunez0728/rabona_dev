@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { T, PN, POS_COLORS, ACHIEVEMENTS } from "@/game/data";
+import { T, PN, POS_COLORS, ACHIEVEMENTS, LEAGUES, RELICS } from "@/game/data";
 import { LEGACY_TREE, LEGACY_BRANCHES, calcLegacyPoints, calcSpentLegacy, canUnlockLegacy, hasLegacy, COACHES, COACH_ABILITIES, CURSES } from "@/game/data/progression.js";
 import { AchIcon } from "@/game/data/chibiAssets";
 import { SFX } from "@/game/audio";
 import { Haptics } from "@/game/haptics";
 import { TACTICAL_CARDS, CARD_RARITIES, getCollectionCards } from "@/game/data/cards.js";
+import { computeRecords, computeArchetypeAnalytics } from "@/game/data/runTracker.js";
+import { MANAGER_ARCHETYPES } from "@/game/data/archetypes.js";
 import useGameStore from "@/game/store";
 
 export default function StatsScreen() {
@@ -13,13 +15,17 @@ export default function StatsScreen() {
   const gs = globalStats;
   const topScorers = Object.entries(gs.allTimeScorers || {}).sort((a, b) => b[1] - a[1]).slice(0, 8);
   const [tab, setTab] = useState('stats');
+  const [expandedRun, setExpandedRun] = useState(null);
 
   const tabs = [
-    { k: 'stats', l: '📊', label: 'Stats' },
-    { k: 'legacy', l: '🌳', label: 'Legado' },
-    { k: 'cards', l: '🎴', label: 'Cartas' },
-    { k: 'fame', l: '🌟', label: 'Fama' },
-    { k: 'achieve', l: '🏆', label: 'Logros' },
+    { k: 'stats',      l: '📊', label: 'General' },
+    { k: 'runs',       l: '📜', label: 'Runs' },
+    { k: 'records',    l: '🏅', label: 'Records' },
+    { k: 'arquetipos', l: '🎭', label: 'Arquetipos' },
+    { k: 'legacy',     l: '🌳', label: 'Legado' },
+    { k: 'cards',      l: '🎴', label: 'Cartas' },
+    { k: 'fame',       l: '🌟', label: 'Fama' },
+    { k: 'achieve',    l: '🏆', label: 'Logros' },
   ];
 
   return (
@@ -32,11 +38,11 @@ export default function StatsScreen() {
         <div className="text-gradient-gold" style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 24, textTransform: 'uppercase', letterSpacing: 2 }}>Compendio</div>
       </div>
 
-      {/* Tab Bar - Premium underline tabs */}
-      <div style={{ display: 'flex', width: '100%', maxWidth: 440, position: 'relative', zIndex: 1, borderBottom: `1px solid ${T.border}` }}>
+      {/* Tab Bar - Horizontally scrollable */}
+      <div style={{ display: 'flex', width: '100%', maxWidth: 440, position: 'relative', zIndex: 1, borderBottom: `1px solid ${T.border}`, overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
         {tabs.map(t => (
           <div key={t.k} onClick={() => setTab(t.k)} style={{
-            flex: 1, padding: '10px 4px 8px', textAlign: 'center', cursor: 'pointer',
+            flex: '0 0 auto', minWidth: 55, padding: '10px 6px 8px', textAlign: 'center', cursor: 'pointer',
             borderBottom: tab === t.k ? `2px solid ${T.gold}` : '2px solid transparent',
             transition: 'all 0.2s ease',
           }}>
@@ -56,6 +62,9 @@ export default function StatsScreen() {
                   { l: 'Runs', v: gs.totalRuns || 0, c: T.tx },
                   { l: 'Victorias', v: gs.totalWins || 0, c: T.win },
                   { l: 'Goles', v: gs.totalGoals || 0, c: T.info },
+                  { l: 'Partidos', v: gs.totalMatches || 0, c: T.tx2 },
+                  { l: 'Win Rate', v: ((gs.totalWins || 0) / Math.max(1, gs.totalMatches || 0) * 100).toFixed(1) + '%', c: T.win },
+                  { l: 'Gol/Partido', v: ((gs.totalGoals || 0) / Math.max(1, gs.totalMatches || 0)).toFixed(1), c: T.info },
                   { l: 'Mejor liga', v: gs.bestLeagueName || '—', c: T.purple },
                   { l: 'Racha', v: (gs.bestStreak || 0) + '🔥', c: T.draw },
                   { l: 'Ascensión', v: (gs.ascensionLevel || 0) + '/7', c: T.gold },
@@ -80,8 +89,226 @@ export default function StatsScreen() {
                 ))}
               </div>
             )}
+
+            {/* Top Assisters */}
+            {(() => {
+              const topAssisters = Object.entries(gs.allTimeAssisters || {}).sort((a, b) => b[1] - a[1]).slice(0, 5);
+              return topAssisters.length > 0 && (
+                <div className="glass" style={{ borderRadius: 12, padding: 12 }}>
+                  <div style={{ fontFamily: T.fontHeading, fontSize: 12, textTransform: 'uppercase', marginBottom: 8, textAlign: 'center', letterSpacing: 1, color: T.info }}>Asistidores Historicos</div>
+                  {topAssisters.map(([name, assists], i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 6px', fontFamily: T.fontBody, fontSize: 12, borderBottom: `1px solid ${T.border}` }}>
+                      <span style={{ color: i === 0 ? T.info : T.tx }}>{i === 0 ? '🎯 ' : `${i + 1}. `}{name}</span>
+                      <span style={{ fontFamily: T.fontHeading, fontWeight: 700, color: i === 0 ? T.info : T.tx2 }}>{assists}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* Top Clean Sheets */}
+            {(() => {
+              const topClean = Object.entries(gs.allTimeCleanSheets || {}).sort((a, b) => b[1] - a[1]).slice(0, 5);
+              return topClean.length > 0 && (
+                <div className="glass" style={{ borderRadius: 12, padding: 12 }}>
+                  <div style={{ fontFamily: T.fontHeading, fontSize: 12, textTransform: 'uppercase', marginBottom: 8, textAlign: 'center', letterSpacing: 1, color: T.win }}>Porteros Imbatidos</div>
+                  {topClean.map(([name, sheets], i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 6px', fontFamily: T.fontBody, fontSize: 12, borderBottom: `1px solid ${T.border}` }}>
+                      <span style={{ color: i === 0 ? T.win : T.tx }}>{i === 0 ? '🧤 ' : `${i + 1}. `}{name}</span>
+                      <span style={{ fontFamily: T.fontHeading, fontWeight: 700, color: i === 0 ? T.win : T.tx2 }}>{sheets}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
+
+        {tab === 'runs' && (() => {
+          const runs = (gs.runsHistory || []).slice().reverse();
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {runs.length === 0 ? (
+                <div className="glass" style={{ textAlign: 'center', padding: 28, borderRadius: 12 }}>
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>📜</div>
+                  <div style={{ color: T.tx2, fontSize: 13, lineHeight: 1.6, fontFamily: T.fontBody }}>
+                    Completa tu primera carrera para ver el historial
+                  </div>
+                </div>
+              ) : runs.map((run, idx) => {
+                const arch = MANAGER_ARCHETYPES.find(a => a.id === run.archetypeId);
+                const league = LEAGUES[run.leagueReached];
+                const isExpanded = expandedRun === idx;
+                const endBadge = run.endType === 'champion' ? { icon: '🏆', color: T.gold }
+                  : run.endType === 'abandoned' ? { icon: '🚪', color: T.draw }
+                  : { icon: '💀', color: T.lose };
+                return (
+                  <div key={idx} onClick={() => setExpandedRun(isExpanded ? null : idx)}
+                    className="glass" style={{ borderRadius: 10, padding: '10px 12px', cursor: 'pointer', transition: 'all 0.2s', border: `1px solid ${isExpanded ? T.gold + '40' : T.glassBorder}` }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 13, color: T.tx3 }}>#{run.runNumber}</span>
+                      {arch && <span style={{ fontSize: 16 }}>{arch.i}</span>}
+                      {league && <span style={{ fontSize: 14 }}>{league.i}</span>}
+                      <span style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.tx2, flex: 1 }}>{league?.n || 'Liga ' + run.leagueReached}</span>
+                      <span style={{ fontSize: 14, color: endBadge.color }}>{endBadge.icon}</span>
+                    </div>
+                    {/* Stats row */}
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.tx2 }}>
+                        {run.careerStats.wins}W {run.careerStats.draws}D {run.careerStats.losses}L
+                      </span>
+                      <span style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.info }}>⚽ {run.careerStats.goalsFor}</span>
+                      {run.topScorer && (
+                        <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>
+                          👑 {run.topScorer.name} ({run.topScorer.goals})
+                        </span>
+                      )}
+                    </div>
+                    {/* W/D/L dot strip */}
+                    {run.runLog && run.runLog.length > 0 && (
+                      <div style={{ display: 'flex', gap: 3, marginTop: 6, flexWrap: 'wrap' }}>
+                        {run.runLog.map((m, mi) => (
+                          <div key={mi} style={{
+                            width: 8, height: 8, borderRadius: '50%',
+                            background: m.result === 'W' ? T.win : m.result === 'D' ? T.draw : T.lose,
+                          }} />
+                        ))}
+                      </div>
+                    )}
+                    {/* Expanded details */}
+                    {isExpanded && (
+                      <div style={{ marginTop: 10, paddingTop: 8, borderTop: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {run.coachName && (
+                          <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>
+                            {run.coachIcon} Coach: {run.coachName}
+                          </div>
+                        )}
+                        {run.activeMutators?.length > 0 && (
+                          <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.draw }}>
+                            Mutadores: {run.activeMutators.join(', ')}
+                          </div>
+                        )}
+                        {run.relicsCollected?.length > 0 && (
+                          <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.purple }}>
+                            Reliquias: {run.relicsCollected.map(rid => {
+                              const r = RELICS.find(rl => rl.id === rid);
+                              return r ? `${r.i} ${r.n}` : rid;
+                            }).join(', ')}
+                          </div>
+                        )}
+                        {run.cursesEncountered?.length > 0 && (
+                          <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.lose }}>
+                            Maldiciones: {run.cursesEncountered.join(', ')}
+                          </div>
+                        )}
+                        {run.blessingsMastered?.length > 0 && (
+                          <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.gold }}>
+                            Bendiciones: {run.blessingsMastered.join(', ')}
+                          </div>
+                        )}
+                        {run.cardLoadout?.length > 0 && (
+                          <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.purple }}>
+                            Cartas: {run.cardLoadout.map(cid => {
+                              const c = TACTICAL_CARDS.find(tc => tc.id === cid);
+                              return c ? `${c.i} ${c.n}` : cid;
+                            }).join(', ')}
+                          </div>
+                        )}
+                        <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.gold }}>
+                          💰 {run.coinsEarned || 0} monedas
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
+        {tab === 'records' && (() => {
+          const records = computeRecords(gs.runsHistory || []);
+          const RECORD_DEFS = [
+            { key: 'mostGoals', label: 'Mas Goles en una Carrera', icon: '⚽', valueFn: r => r?.careerStats?.goalsFor },
+            { key: 'highestLeague', label: 'Liga Mas Alta', icon: '🏟', valueFn: r => r?.leagueName || (r ? LEAGUES[r.leagueReached]?.n : null) },
+            { key: 'longestStreak', label: 'Mejor Racha', icon: '🔥', valueFn: r => r?.careerStats?.bestStreak },
+            { key: 'bestWinRate', label: 'Mejor Win Rate', icon: '📈', valueFn: r => r ? `${(r.careerStats.wins / r.careerStats.matchesPlayed * 100).toFixed(0)}%` : null },
+            { key: 'mostRelics', label: 'Mas Reliquias', icon: '💎', valueFn: r => r?.relicsCollected?.length },
+            { key: 'longestRun', label: 'Carrera Mas Larga', icon: '📅', valueFn: r => r ? `${r.careerStats.matchesPlayed} partidos` : null },
+            { key: 'fastestAscension', label: 'Ascension Rapida', icon: '⚡', valueFn: r => r ? `${r.careerStats.matchesPlayed} partidos` : null },
+            { key: 'bestDefense', label: 'Mejor Defensa', icon: '🛡', valueFn: r => r ? `${(r.careerStats.goalsAgainst / r.careerStats.matchesPlayed).toFixed(1)} rec/P` : null },
+          ];
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {RECORD_DEFS.map(def => {
+                const run = records[def.key];
+                const val = def.valueFn(run);
+                const hasData = run && val != null;
+                return (
+                  <div key={def.key} className={hasData ? 'card-gold' : 'glass'} style={{
+                    borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12,
+                    opacity: hasData ? 1 : 0.4,
+                  }}>
+                    <div style={{ fontSize: 24, minWidth: 36, textAlign: 'center' }}>{def.icon}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12, color: hasData ? T.gold : T.tx3, textTransform: 'uppercase', letterSpacing: 0.5 }}>{def.label}</div>
+                      <div style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 20, color: hasData ? T.tx : T.tx4, marginTop: 2 }}>
+                        {hasData ? val : '—'}
+                      </div>
+                    </div>
+                    {hasData && (
+                      <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, textAlign: 'right' }}>
+                        Run #{run.runNumber}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
+        {tab === 'arquetipos' && (() => {
+          const analytics = computeArchetypeAnalytics(gs.runsHistory || []);
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {MANAGER_ARCHETYPES.map(arch => {
+                const data = analytics[arch.id];
+                const hasData = data && data.runs > 0;
+                const winRate = hasData ? Math.round(data.wins / Math.max(1, data.matches) * 100) : 0;
+                const avgLeague = hasData ? (data.totalLeague / data.runs).toFixed(1) : 0;
+                return (
+                  <div key={arch.id} className="glass" style={{
+                    borderRadius: 10, padding: '12px 14px', opacity: hasData ? 1 : 0.4,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: hasData ? 8 : 0 }}>
+                      <span style={{ fontSize: 24 }}>{arch.i}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14, color: T.tx }}>{arch.n}</div>
+                        {hasData ? (
+                          <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>
+                            {data.runs} runs · Avg Liga: {avgLeague} · 🏆 {data.champions} · 💀 {data.deaths}
+                          </div>
+                        ) : (
+                          <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx4 }}>Sin datos</div>
+                        )}
+                      </div>
+                    </div>
+                    {hasData && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.win, minWidth: 32 }}>{winRate}%</div>
+                        <div style={{ flex: 1, height: 8, background: T.bg2, borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${winRate}%`, background: T.win, borderRadius: 4, transition: 'width 0.5s ease' }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
 
         {tab === 'legacy' && (() => {
           const totalPts = calcLegacyPoints(gs);
