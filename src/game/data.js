@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════
-// GAME DATA — Barrel re-export v4
+// GAME DATA — Barrel re-export v5 (cache-bust)
 // All game data is now organized in src/game/data/
 // This file re-exports everything so existing imports don't break.
 // ═══════════════════════════════════════
