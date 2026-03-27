@@ -1,7 +1,7 @@
 import {
   CAREER_CAST, CAREER_CAST_UNLOCKABLE, ALL_CAREER_CARDS, CAREER_CARDS_MIGUEL,
   MATCH_CARDS, CAREER_TRAITS, SIGNATURE_MOMENTS, BAR_GAME_OVER,
-} from '@/game/data';
+} from '@/game/data/career.js';
 
 // ── Initialize career with all new systems ──
 
