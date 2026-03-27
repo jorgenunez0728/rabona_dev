@@ -10,7 +10,7 @@ export { STADIUMS, LEAGUES, CUP_STAGES, CUP_RIVAL_NAMES, initCupState, RIVAL_NAM
 export { EVENTS, TACTICS, PERSONALITIES, MATCH_OBJECTIVES, BOARD_EVENTS } from './data/events.js';
 export { FN, LN, NK, _usedNames, genPlayer } from './data/players.js';
 export { rnd, pick, calcOvr, effectiveStats, effectiveStatsWithFormation, effectiveOvr, avgStat, getRelicDraftOptions, generateNodeChoice, applyRelicEffects, teamGKRating, teamPower, getLevelUpChoices, getBoardEvents, applyBoardEffect, narrate, randomizeEvent } from './data/helpers.js';
-export { CAREER_CAST, CAREER_TEAMS, ALL_CAREER_CARDS, CAREER_CARDS_MIGUEL, MATCH_CARDS, BAR_NAMES, BAR_ICONS, BAR_COLORS } from './data/career.js';
+export { CAREER_CAST, CAREER_CAST_UNLOCKABLE, CAREER_TEAMS, CAREER_TRAITS, SIGNATURE_MOMENTS, CAREER_LEGACY_TREE, ALL_CAREER_CARDS, CAREER_CARDS_MIGUEL, MATCH_CARDS, BAR_GAME_OVER, BAR_NAMES, BAR_ICONS, BAR_COLORS } from './data/career.js';
 export { MANAGER_ARCHETYPES, getAvailableManagerArchetypes, isArchetypeUnlocked, getArchetypeCardSlots, hasArchetypeSynergy } from './data/archetypes.js';
 export { CARD_CATEGORIES, CARD_RARITIES, TACTICAL_CARDS, getUnlockableCards, getCollectionCards, generateCardReward, validateCardLoadout, getTotalSlots } from './data/cards.js';
 export { ASCENSION_MUTATORS, MAX_ACTIVE_MUTATORS, getAvailableMutators, calcMutatorLegacyBonus, getMutatorEngineEffects } from './data/mutators.js';

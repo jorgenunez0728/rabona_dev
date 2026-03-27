@@ -8,15 +8,16 @@ import {
   FORMATIONS, RELICS, STARTING_RELIC_PAIRS, CURSES, COACH_ABILITIES,
   LEGACY_TREE, hasLegacy, calcLegacyPoints, calcSpentLegacy, canUnlockLegacy,
   _usedNames, genPlayer, rnd, pick, calcOvr,
-  CAREER_CAST,
+  CAREER_CAST, CAREER_CAST_UNLOCKABLE, CAREER_LEGACY_TREE,
 } from '@/game/data';
 import { MANAGER_ARCHETYPES } from '@/game/data/archetypes.js';
 import { TACTICAL_CARDS } from '@/game/data/cards.js';
 import { calcMutatorLegacyBonus } from '@/game/data/mutators.js';
-import { getCareerCards } from '@/game/careerLogic';
+import { getCareerCards, calcCareerLegacyPoints, initCareer } from '@/game/careerLogic';
 import { buildRunSnapshot, addRunToHistory } from '@/game/data/runTracker.js';
 import {
   saveGame, loadGame, saveGlobalStats, loadGlobalStats, deleteSave,
+  saveCareerGlobalStats, loadCareerGlobalStats,
 } from '@/game/save';
 
 // ── Initial state shapes ──
@@ -68,6 +69,19 @@ const INITIAL_GLOBAL_STATS = {
   allTimeCleanSheets: {},     // {name: totalCleanSheets}
 };
 
+const INITIAL_CAREER_GLOBAL_STATS = {
+  totalCareers: 0,
+  hallOfLegends: [],          // best completed careers [{name, pos, seasons, goals, avgRating, maxTeam, traits, legendLevel}]
+  legendPoints: 0,            // currency for career legacy tree
+  careerUnlocks: [],          // unlocked node ids from CAREER_LEGACY_TREE
+  bestTeamReached: 0,
+  totalGoals: 0,
+  traitsDiscovered: [],       // trait ids found across all careers
+  momentsWitnessed: [],       // signature moment ids seen across all careers
+  npcArcsCompleted: [],       // [{npcId, arc}] arcs completed across careers
+  dynastyBonus: {},           // inherited bonuses (reserved for future)
+};
+
 // ── Store ──
 
 const useGameStore = create((set, get) => ({
@@ -91,6 +105,7 @@ const useGameStore = create((set, get) => ({
   pendingLeague: null,
   career: null,
   careerScreen: 'create',
+  careerGlobalStats: { ...INITIAL_CAREER_GLOBAL_STATS },
   transState: 'in',
   pendingRelicDraft: null,
   pendingLevelUp: null,
@@ -198,6 +213,84 @@ const useGameStore = create((set, get) => ({
     }
   },
   setCareerScreen: (screen) => set({ careerScreen: screen }),
+
+  // ─── Career Metaprogression ───
+  endCareerRun: () => {
+    const { career, careerGlobalStats } = get();
+    if (!career) return;
+
+    const cgs = { ...careerGlobalStats };
+    cgs.totalCareers = (cgs.totalCareers || 0) + 1;
+    cgs.totalGoals = (cgs.totalGoals || 0) + (career.goals || 0);
+    cgs.bestTeamReached = Math.max(cgs.bestTeamReached || 0, career.team || 0);
+
+    // Legacy points
+    const earned = calcCareerLegacyPoints(career);
+    cgs.legendPoints = (cgs.legendPoints || 0) + earned;
+
+    // Traits discovered (collect across careers)
+    const traits = new Set(cgs.traitsDiscovered || []);
+    for (const t of (career.traits || [])) traits.add(t);
+    cgs.traitsDiscovered = [...traits];
+
+    // Moments witnessed
+    const moments = new Set(cgs.momentsWitnessed || []);
+    for (const m of (career.momentsTriggered || [])) moments.add(m);
+    cgs.momentsWitnessed = [...moments];
+
+    // NPC arcs completed
+    const arcs = [...(cgs.npcArcsCompleted || [])];
+    for (const npc of (career.cast || [])) {
+      if (npc.arc !== 'neutral') {
+        const exists = arcs.find(a => a.npcId === npc.id && a.arc === npc.arc);
+        if (!exists) arcs.push({ npcId: npc.id, arc: npc.arc });
+      }
+    }
+    cgs.npcArcsCompleted = arcs;
+
+    // Hall of Legends
+    const avgRating = career.history.length
+      ? Math.round(career.history.reduce((a, h) => a + h.rating, 0) / career.history.length * 10) / 10
+      : 5.0;
+    const entry = {
+      name: career.name, pos: career.pos,
+      seasons: career.season - 1, goals: career.goals,
+      avgRating, maxTeam: career.team,
+      traits: [...(career.traits || [])],
+      momentsCount: (career.momentsTriggered || []).length,
+      legendPoints: earned,
+    };
+    cgs.hallOfLegends = [...(cgs.hallOfLegends || []), entry].slice(-20); // keep last 20
+
+    set({ careerGlobalStats: cgs });
+    saveCareerGlobalStats(cgs);
+  },
+
+  unlockCareerLegacy: (nodeId) => {
+    const { careerGlobalStats } = get();
+    const cgs = { ...careerGlobalStats };
+    const unlocks = [...(cgs.careerUnlocks || [])];
+    if (unlocks.includes(nodeId)) return false;
+
+    // Find the node and check cost
+    let cost = 0;
+    for (const branch of CAREER_LEGACY_TREE) {
+      const node = branch.nodes.find(n => n.id === nodeId);
+      if (node) { cost = node.cost; break; }
+    }
+    if ((cgs.legendPoints || 0) < cost) return false;
+
+    cgs.legendPoints -= cost;
+    cgs.careerUnlocks = [...unlocks, nodeId];
+    set({ careerGlobalStats: cgs });
+    saveCareerGlobalStats(cgs);
+    return true;
+  },
+
+  loadCareerGlobalStats: () => {
+    const loaded = loadCareerGlobalStats();
+    if (loaded) set({ careerGlobalStats: loaded });
+  },
   setTransState: (state) => set({ transState: state }),
   setPendingRelicDraft: (draft) => set({ pendingRelicDraft: draft }),
   setPendingLevelUp: (levelUp) => set({ pendingLevelUp: levelUp }),
@@ -427,6 +520,8 @@ const useGameStore = create((set, get) => ({
     const data = loadGame();
     const gs = loadGlobalStats();
     if (gs) set({ globalStats: gs });
+    const cgs = loadCareerGlobalStats();
+    if (cgs) set({ careerGlobalStats: cgs });
     if (data) set({ game: data.game, hasSave: true });
     set({ storageReady: true });
   },
@@ -485,22 +580,24 @@ const useGameStore = create((set, get) => ({
     set((state) => ({ debugAutoPlay: !state.debugAutoPlay }));
   },
   debugStartCareer: (pos, startAge = 16, startTeam = 0, startBars = null) => {
-    const name = `Debug ${pos}`;
-    const bars = startBars || { rend: 50, fis: 55, rel: 50, fam: 20, men: 55 };
-    const career = {
-      name, pos, age: startAge, season: Math.max(1, startAge - 15),
-      bars: { ...bars },
-      team: Math.min(startTeam, 6), matchNum: 0, matchesThisSeason: 0, totalMatches: 0,
-      goals: 0, ratings: [], cardQueue: [], seasonGoals: 0,
-      cast: JSON.parse(JSON.stringify(CAREER_CAST)),
-      history: [], retired: false, retireReason: '',
-    };
+    const { careerGlobalStats } = get();
+    const legacyUnlocks = careerGlobalStats?.careerUnlocks || [];
+    const unlockedNpcs = [];
+    // Check which NPCs are unlocked via legacy (cc1 = +1 NPC)
+    if (legacyUnlocks.includes('cc1')) {
+      const available = CAREER_CAST_UNLOCKABLE.filter(n => !unlockedNpcs.includes(n.id));
+      if (available.length) unlockedNpcs.push(available[0].id);
+    }
+    const career = initCareer(`Debug ${pos}`, pos, legacyUnlocks, unlockedNpcs);
+    if (startAge !== 16) { career.age = startAge; career.season = Math.max(1, startAge - 15); }
+    if (startTeam) career.team = Math.min(startTeam, 6);
+    if (startBars) career.bars = { ...startBars };
     career.cardQueue = getCareerCards(career);
     set({ career, careerScreen: 'cards', screen: 'career' });
   },
   debugExportState: () => {
-    const { game, globalStats, career, careerScreen, screen } = get();
-    return JSON.stringify({ game, globalStats, career, careerScreen, screen, _v: 1 });
+    const { game, globalStats, career, careerScreen, careerGlobalStats, screen } = get();
+    return JSON.stringify({ game, globalStats, career, careerScreen, careerGlobalStats, screen, _v: 2 });
   },
   debugImportState: (json) => {
     try {
@@ -510,6 +607,7 @@ const useGameStore = create((set, get) => ({
       if (data.globalStats) { updates.globalStats = data.globalStats; saveGlobalStats(data.globalStats); }
       if (data.career !== undefined) updates.career = data.career;
       if (data.careerScreen) updates.careerScreen = data.careerScreen;
+      if (data.careerGlobalStats) { updates.careerGlobalStats = data.careerGlobalStats; saveCareerGlobalStats(data.careerGlobalStats); }
       if (data.screen) updates.screen = data.screen;
       if (data.game?.coach) updates.hasSave = true;
       set(updates);

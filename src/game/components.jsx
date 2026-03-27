@@ -1,4 +1,4 @@
-import { COACHES, COACH_PORTRAIT_IDX, NEMESIS, PN, POS_COLORS, T, CARD_TIERS, TRAITS, PERSONALITIES, TRAINING_OPTIONS, ACHIEVEMENTS, CAREER_TEAMS, calcOvr, effectiveStats, effectiveOvr, pick, BAR_NAMES, BAR_ICONS, BAR_COLORS } from "./data";
+import { COACHES, COACH_PORTRAIT_IDX, NEMESIS, PN, POS_COLORS, T, CARD_TIERS, TRAITS, PERSONALITIES, TRAINING_OPTIONS, ACHIEVEMENTS, CAREER_TEAMS, calcOvr, effectiveStats, effectiveOvr, pick, BAR_NAMES, BAR_ICONS, BAR_COLORS, CAREER_TRAITS, CAREER_LEGACY_TREE } from "./data";
 import { CHIBI, ChibiImg } from "./data/chibiAssets.jsx";
 
 // ── Icon components ──
@@ -228,6 +228,68 @@ export function CareerBars({ bars }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ── NPC Relationship Bar ──
+export function RelationshipBar({ npc, rel }) {
+  const arcColor = npc.arc === 'ally' ? '#00e676' : npc.arc === 'rival' ? '#ff1744' : npc.arc === 'betrayer' ? '#9c27b0' : '#607d8b';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0' }}>
+      <div style={{ fontSize: 18, width: 24, textAlign: 'center' }}>{npc.i}</div>
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+          <span style={{ fontFamily: "'Oswald'", fontSize: 11, color: '#e8eaf6' }}>{npc.n}</span>
+          <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: arcColor, textTransform: 'uppercase' }}>{npc.arc}</span>
+        </div>
+        <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2 }}>
+          <div style={{ width: `${Math.max(0, Math.min(100, rel))}%`, height: '100%', background: arcColor, borderRadius: 2, transition: 'width 0.3s' }} />
+        </div>
+      </div>
+      <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: arcColor, width: 22, textAlign: 'right' }}>{rel}</div>
+    </div>
+  );
+}
+
+// ── Trait Badge ──
+export function TraitBadge({ traitId, size = 'normal' }) {
+  const trait = CAREER_TRAITS.find(t => t.id === traitId);
+  if (!trait) return null;
+  const s = size === 'small' ? { fontSize: 10, padding: '2px 6px', gap: 3 } : { fontSize: 12, padding: '4px 8px', gap: 4 };
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: s.gap, background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.2)', borderRadius: 12, padding: s.padding, fontFamily: "'Oswald'", fontSize: s.fontSize, color: '#a78bfa', whiteSpace: 'nowrap' }}>
+      <span>{trait.i}</span>
+      <span>{trait.n}</span>
+    </span>
+  );
+}
+
+// ── Moment Card (for signature moments in timeline) ──
+export function MomentCard({ moment, triggered }) {
+  return (
+    <div style={{ background: triggered ? 'rgba(240,192,64,0.06)' : 'rgba(255,255,255,0.02)', border: `1px solid ${triggered ? 'rgba(240,192,64,0.2)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 8, padding: '8px 10px', opacity: triggered ? 1 : 0.5 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ fontSize: 16 }}>{triggered ? '✨' : '🔒'}</span>
+        <span style={{ fontFamily: "'Oswald'", fontSize: 12, color: triggered ? '#f0c040' : '#607d8b', textTransform: 'uppercase' }}>{moment.id.replace(/_/g, ' ')}</span>
+      </div>
+      {triggered && <div style={{ fontFamily: "'Barlow'", fontSize: 11, color: '#e8eaf6', marginTop: 4, lineHeight: 1.4 }}>{moment.text}</div>}
+    </div>
+  );
+}
+
+// ── Career Legacy Node ──
+export function CareerLegacyNode({ node, unlocked, canAfford, onUnlock }) {
+  const bg = unlocked ? 'rgba(0,230,118,0.08)' : canAfford ? 'rgba(240,192,64,0.06)' : 'rgba(255,255,255,0.02)';
+  const border = unlocked ? 'rgba(0,230,118,0.25)' : canAfford ? 'rgba(240,192,64,0.2)' : 'rgba(255,255,255,0.06)';
+  const color = unlocked ? '#00e676' : canAfford ? '#f0c040' : '#607d8b';
+  return (
+    <div onClick={() => !unlocked && canAfford && onUnlock?.(node.id)} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 6, padding: '8px 10px', cursor: (!unlocked && canAfford) ? 'pointer' : 'default' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontFamily: "'Oswald'", fontSize: 12, color, fontWeight: 600 }}>{node.n}</span>
+        <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: unlocked ? '#00e676' : '#607d8b' }}>{unlocked ? '✓' : `${node.cost}LP`}</span>
+      </div>
+      <div style={{ fontFamily: "'Barlow'", fontSize: 11, color: '#9e9e9e', marginTop: 2 }}>{node.desc}</div>
     </div>
   );
 }

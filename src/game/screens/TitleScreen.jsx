@@ -39,12 +39,12 @@ export default function TitleScreen() {
       <div className="fw-anim-2 divider-gold" style={{ width: 60 }} />
       <div className="fw-anim-3" style={{ fontFamily: T.fontBody, fontSize: 'clamp(11px,2.5vw,14px)', color: T.tx3, maxWidth: 300, lineHeight: 1.5, padding: '0 20px' }}>Arma tu equipo en una cancha llanera. Llévalo hasta conquistar la galaxia.</div>
       <div className="fw-anim-4" style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center', marginTop: 4 }}>
-        {hasSave && <button className="fw-btn fw-btn-green" onClick={() => { SFX.play('click'); go('table'); }}>Continuar Carrera</button>}
-        <button className={`fw-btn ${hasSave ? 'fw-btn-glass' : 'fw-btn-primary'}`} onClick={() => { if (hasSave && !confirm('¿Borrar partida guardada?')) return; handleDeleteSave(); go('tutorial'); }} style={hasSave ? { fontSize: 12, padding: '8px 20px' } : {}}>Nueva Carrera</button>
+        {hasSave && <button className="fw-btn fw-btn-green" onClick={() => { SFX.play('click'); go('table'); }}>Continuar Mi Club</button>}
+        <button className={`fw-btn ${hasSave ? 'fw-btn-glass' : 'fw-btn-primary'}`} onClick={() => { if (hasSave && !confirm('¿Borrar partida guardada?')) return; handleDeleteSave(); go('tutorial'); }} style={hasSave ? { fontSize: 12, padding: '8px 20px' } : {}}>Mi Club</button>
       </div>
       <div className="fw-anim-5" style={{ display: 'flex', gap: 8, marginTop: 4 }}>
         {(globalStats.totalRuns || 0) > 0 && <button className="fw-btn fw-btn-glass" onClick={() => go('stats')} style={{ fontSize: 12, padding: '6px 16px' }}>Compendio</button>}
-        <button className="fw-btn fw-btn-glass" onClick={() => { setCareer(null); setCareerScreen('create'); go('career'); }} style={{ fontSize: 12, padding: '6px 16px' }}>Carrera Jugador</button>
+        <button className="fw-btn fw-btn-glass" onClick={() => { setCareer(null); setCareerScreen('create'); go('career'); }} style={{ fontSize: 12, padding: '6px 16px' }}>Mi Leyenda</button>
       </div>
       {/* Music controls */}
       {MUSIC_TRACKS.length > 0 && (
