@@ -5,7 +5,13 @@ import { CareerBars, RelationshipBar, TraitBadge, MomentCard, CareerLegacyNode }
 import useGameStore from "@/game/store";
 
 const GoldBtn = ({ onClick, children, disabled }) => (
-  <button onClick={disabled ? undefined : onClick} style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 14, padding: '10px 28px', border: 'none', background: disabled ? '#333' : 'linear-gradient(135deg,#d4a017,#f0c040)', color: disabled ? '#666' : '#1a1a2e', clipPath: 'polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)', cursor: disabled ? 'not-allowed' : 'pointer', textTransform: 'uppercase', width: '100%' }}>{children}</button>
+  <button onClick={disabled ? undefined : onClick} className={`fw-btn ${disabled ? '' : 'fw-btn-primary'}`} style={{
+    width: '100%', fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14,
+    padding: '12px 28px', borderRadius: T.r2, letterSpacing: 1,
+    background: disabled ? T.bg3 : undefined, color: disabled ? T.tx4 : undefined,
+    cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
+    boxShadow: disabled ? 'none' : '0 4px 16px rgba(240,192,64,0.25)',
+  }}>{children}</button>
 );
 
 function AutoPlayBanner() {
@@ -46,38 +52,37 @@ export function CareerCreateScreen({ setCareer, setCareerScreen, go, initCareer,
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, background: 'radial-gradient(ellipse at 50% 60%,#1a2a10 0%,#0b1120 70%)', padding: 16, textAlign: 'center' }}>
-      <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 32, color: '#fff', textTransform: 'uppercase' }}>Mi Leyenda</div>
-      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 14, color: '#607d8b' }}>Crea tu jugador. De chamaco a leyenda.</div>
-      {totalCareers > 0 && <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#a78bfa' }}>Carreras completadas: {totalCareers} · LP: {cgs?.legendPoints || 0}</div>}
-      <div style={{ width: '100%', maxWidth: 340 }}>
-        <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: '#f0c040', textTransform: 'uppercase', marginBottom: 4 }}>Nombre</div>
+    <div className="bg-stadium-ambient" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 14, background: `radial-gradient(ellipse at 50% 60%, ${T.pitch}20 0%, ${T.bg} 70%)`, padding: 16, textAlign: 'center' }}>
+      <div className="fw-anim-1" style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 32, color: T.tx, textTransform: 'uppercase', letterSpacing: 3 }}>Mi Leyenda</div>
+      <div className="fw-anim-2" style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx3 }}>Crea tu jugador. De chamaco a leyenda.</div>
+      {totalCareers > 0 && <div className="fw-anim-2" style={{ fontFamily: T.fontBody, fontSize: 11, color: T.purple }}>Carreras: {totalCareers} · LP: {cgs?.legendPoints || 0}</div>}
+      <div className="fw-anim-3" style={{ width: '100%', maxWidth: 340 }}>
+        <div style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.gold, textTransform: 'uppercase', marginBottom: 4, letterSpacing: 1 }}>Nombre</div>
         <div style={{ display: 'flex', gap: 4 }}>
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre..." style={{ flex: 1, padding: '8px 12px', background: '#141e3a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, color: '#fff', fontFamily: "'Barlow'", fontSize: 14, outline: 'none' }} />
-          <button onClick={() => setName(`${pick(FN)} ${pick(LN)}`)} style={{ padding: '8px 12px', background: 'rgba(240,192,64,0.1)', border: '1px solid rgba(240,192,64,0.2)', borderRadius: 4, color: '#f0c040', cursor: 'pointer', fontSize: 12 }}>🎲</button>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre..." style={{ flex: 1, padding: '10px 12px', background: T.bg1, border: `1px solid ${T.border}`, borderRadius: T.r2, color: T.tx, fontFamily: T.fontBody, fontSize: 14, outline: 'none' }} />
+          <button onClick={() => setName(`${pick(FN)} ${pick(LN)}`)} style={{ padding: '10px 12px', background: `${T.gold}10`, border: `1px solid ${T.gold}25`, borderRadius: T.r2, color: T.gold, cursor: 'pointer', fontSize: 14, touchAction: 'manipulation' }}>🎲</button>
         </div>
       </div>
-      <div style={{ width: '100%', maxWidth: 340 }}>
-        <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: '#f0c040', textTransform: 'uppercase', marginBottom: 4 }}>Posición</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+      <div className="fw-anim-4" style={{ width: '100%', maxWidth: 340 }}>
+        <div style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.gold, textTransform: 'uppercase', marginBottom: 6, letterSpacing: 1 }}>Posición</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {[{ p: 'GK', n: 'Portero', i: '🧤' }, { p: 'DEF', n: 'Defensa', i: '🛡' }, { p: 'MID', n: 'Medio', i: '⚙️' }, { p: 'FWD', n: 'Delantero', i: '⚽' }].map(p => (
-            <div key={p.p} onClick={() => setPos(p.p)} style={{ background: pos === p.p ? 'rgba(240,192,64,0.08)' : '#141e3a', border: `1px solid ${pos === p.p ? 'rgba(240,192,64,0.3)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 6, padding: 10, cursor: 'pointer', textAlign: 'center' }}>
-              <div style={{ fontSize: 24 }}>{p.i}</div>
-              <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, color: pos === p.p ? '#f0c040' : '#fff' }}>{p.n}</div>
+            <div key={p.p} onClick={() => setPos(p.p)} style={{ background: pos === p.p ? `${T.gold}10` : T.bg1, border: `1.5px solid ${pos === p.p ? `${T.gold}40` : T.border}`, borderRadius: T.r3, padding: 12, cursor: 'pointer', textAlign: 'center', transition: `all ${T.transBase}`, boxShadow: pos === p.p ? T.glowGold : 'none', touchAction: 'manipulation' }}>
+              <div style={{ fontSize: 28 }}>{p.i}</div>
+              <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 13, color: pos === p.p ? T.gold : T.tx, marginTop: 4 }}>{p.n}</div>
             </div>
           ))}
         </div>
       </div>
       {legacyUnlocks.length > 0 && (
-        <div style={{ width: '100%', maxWidth: 340, background: 'rgba(167,139,250,0.05)', border: '1px solid rgba(167,139,250,0.15)', borderRadius: 6, padding: 8 }}>
-          <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: '#a78bfa', textTransform: 'uppercase', marginBottom: 4 }}>Bonos de Legado Activos</div>
-          <div style={{ fontFamily: "'Barlow'", fontSize: 11, color: '#9e9e9e' }}>{legacyUnlocks.length} desbloqueos activos</div>
+        <div className="fw-anim-5" style={{ width: '100%', maxWidth: 340, background: `${T.purple}08`, border: `1px solid ${T.purple}20`, borderRadius: T.r2, padding: '8px 12px' }}>
+          <div style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.purple, textTransform: 'uppercase', letterSpacing: 0.8 }}>Bonos de Legado: {legacyUnlocks.length} activos</div>
         </div>
       )}
-      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-        <button onClick={() => { setCareer(null); go('title'); }} style={{ fontFamily: "'Oswald'", fontSize: 12, padding: '8px 16px', border: '1px solid #607d8b', background: 'transparent', color: '#e8eaf6', borderRadius: 4, cursor: 'pointer' }}>Volver</button>
-        {totalCareers > 0 && <button onClick={() => setCareerScreen('legacy')} style={{ fontFamily: "'Oswald'", fontSize: 12, padding: '8px 16px', border: '1px solid #a78bfa40', background: 'rgba(167,139,250,0.06)', color: '#a78bfa', borderRadius: 4, cursor: 'pointer' }}>Legado</button>}
-        <GoldBtn onClick={handleStart} disabled={!name || !pos}>Comenzar</GoldBtn>
+      <div className="fw-anim-5" style={{ display: 'flex', gap: 8, marginTop: 4, width: '100%', maxWidth: 340 }}>
+        <button className="fw-btn fw-btn-outline" onClick={() => { setCareer(null); go('title'); }} style={{ fontFamily: T.fontHeading, fontSize: 12, padding: '8px 16px' }}>Volver</button>
+        {totalCareers > 0 && <button className="fw-btn fw-btn-glass" onClick={() => setCareerScreen('legacy')} style={{ fontFamily: T.fontHeading, fontSize: 12, padding: '8px 16px', color: T.purple, borderColor: `${T.purple}30` }}>Legado</button>}
+        <div style={{ flex: 1 }}><GoldBtn onClick={handleStart} disabled={!name || !pos}>Comenzar</GoldBtn></div>
       </div>
     </div>
   );
@@ -146,7 +151,7 @@ export function CareerCardScreen({ career, setCareer, setCareerScreen, applyCard
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, position: 'relative' }}>
       <AutoPlayBanner />
       <CareerBars bars={c.bars} />
-      <div style={{ padding: '4px 12px', display: 'flex', justifyContent: 'space-between', fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#607d8b' }}>
+      <div style={{ padding: '4px 12px', display: 'flex', justifyContent: 'space-between', fontFamily: T.fontBody, fontSize: 11, color: T.tx3 }}>
         <span>{c.name} · {c.age} años · {PN[c.pos]}</span>
         <span>{CAREER_TEAMS[Math.min(c.team, CAREER_TEAMS.length - 1)]} · Temp {c.season}</span>
       </div>
@@ -157,29 +162,29 @@ export function CareerCardScreen({ career, setCareer, setCareerScreen, applyCard
         </div>
       )}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, overflow: 'hidden' }}>
-        <div style={{ width: '100%', maxWidth: 340, background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: 12, padding: 20, textAlign: 'center', transform: slideDir === 'left' ? 'translateX(-120%) rotate(-8deg)' : slideDir === 'right' ? 'translateX(120%) rotate(8deg)' : 'translateX(0)', opacity: slideDir ? 0 : 1, transition: 'transform 0.35s ease, opacity 0.3s ease' }}>
-          {isMoment && <div style={{ fontFamily: "'Oswald'", fontSize: 10, color: '#f0c040', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6 }}>Momento Estelar</div>}
+        <div style={{ width: '100%', maxWidth: 340, background: cardBg, border: `1px solid ${cardBorder}`, borderRadius: T.r3, padding: 20, textAlign: 'center', transform: slideDir === 'left' ? 'translateX(-120%) rotate(-8deg)' : slideDir === 'right' ? 'translateX(120%) rotate(8deg)' : 'translateX(0)', opacity: slideDir ? 0 : 1, transition: 'transform 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease', boxShadow: isMoment ? `0 0 24px ${T.gold}15` : T.elev3 }}>
+          {isMoment && <div style={{ fontFamily: T.fontHeading, fontSize: 10, color: T.gold, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6 }}>✨ Momento Estelar</div>}
           <div style={{ fontSize: 36, marginBottom: 8 }}>{currentCard.who?.split(' ')[0]}</div>
-          <div style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, color: isMoment ? '#f0c040' : '#e8eaf6', textTransform: 'uppercase' }}>{currentCard.who}</div>
-          {npc && <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: npc.arc === 'ally' ? '#00e676' : npc.arc === 'rival' ? '#ff1744' : '#607d8b', marginTop: 2 }}>{npc.role} · {npc.arc}</div>}
-          <div style={{ fontFamily: "'Barlow'", fontSize: 16, color: '#e8eaf6', lineHeight: 1.5, margin: '12px 0', minHeight: 60 }}>{currentCard.text}</div>
+          <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 13, color: isMoment ? T.gold : T.tx, textTransform: 'uppercase' }}>{currentCard.who}</div>
+          {npc && <div style={{ fontFamily: T.fontBody, fontSize: 10, color: npc.arc === 'ally' ? T.win : npc.arc === 'rival' ? T.lose : T.tx3, marginTop: 2 }}>{npc.role} · {npc.arc}</div>}
+          <div style={{ fontFamily: T.fontBody, fontSize: 16, color: T.tx, lineHeight: 1.6, margin: '14px 0', minHeight: 60 }}>{currentCard.text}</div>
           <div style={{ display: 'flex', flexDirection: !currentCard.b ? 'column' : 'row', gap: 8, marginTop: 12 }}>
-            <button onClick={() => chooseOption('a')} style={{ flex: 1, padding: '12px 8px', background: 'rgba(0,230,118,0.06)', border: '1px solid rgba(0,230,118,0.2)', borderRadius: 6, cursor: 'pointer', fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, color: '#00e676', textTransform: 'uppercase' }}>
+            <button onClick={() => chooseOption('a')} style={{ flex: 1, padding: '12px 10px', background: `${T.win}08`, border: `1px solid ${T.win}25`, borderRadius: T.r2, cursor: 'pointer', fontFamily: T.fontHeading, fontWeight: 600, fontSize: 13, color: T.win, textTransform: 'uppercase', touchAction: 'manipulation', transition: `all ${T.transQuick}` }}>
               {currentCard.a?.l || 'OK'}
               {renderEffects(currentCard.a?.e)}
             </button>
-            {currentCard.b && (<button onClick={() => chooseOption('b')} style={{ flex: 1, padding: '12px 8px', background: 'rgba(255,23,68,0.06)', border: '1px solid rgba(255,23,68,0.2)', borderRadius: 6, cursor: 'pointer', fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, color: '#ff1744', textTransform: 'uppercase' }}>
+            {currentCard.b && (<button onClick={() => chooseOption('b')} style={{ flex: 1, padding: '12px 10px', background: `${T.lose}08`, border: `1px solid ${T.lose}25`, borderRadius: T.r2, cursor: 'pointer', fontFamily: T.fontHeading, fontWeight: 600, fontSize: 13, color: T.lose, textTransform: 'uppercase', touchAction: 'manipulation', transition: `all ${T.transQuick}` }}>
               {currentCard.b?.l || 'No'}
               {renderEffects(currentCard.b?.e)}
             </button>)}
           </div>
         </div>
       </div>
-      <div style={{ textAlign: 'center', padding: 6, fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#455a64' }}>{c.cardQueue.length - 1} decisiones restantes</div>
+      <div style={{ textAlign: 'center', padding: 6, fontFamily: T.fontBody, fontSize: 11, color: T.tx4 }}>{c.cardQueue.length - 1} decisiones restantes</div>
       {/* Trait unlock toast */}
       {lastTraitUnlock && (
-        <div onClick={() => setLastTraitUnlock(null)} style={{ position: 'absolute', bottom: 30, left: '50%', transform: 'translateX(-50%)', background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.3)', borderRadius: 8, padding: '8px 16px', zIndex: 100, cursor: 'pointer' }}>
-          <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: '#a78bfa', textTransform: 'uppercase' }}>Nuevo Trait Desbloqueado</div>
+        <div onClick={() => setLastTraitUnlock(null)} className="fw-bounceIn" style={{ position: 'absolute', bottom: 30, left: '50%', transform: 'translateX(-50%)', background: `${T.purple}18`, border: `1px solid ${T.purple}35`, borderRadius: T.r3, padding: '10px 18px', zIndex: T.zToast, cursor: 'pointer', boxShadow: `0 8px 24px ${T.purple}20`, backdropFilter: 'blur(12px)' }}>
+          <div style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.purple, textTransform: 'uppercase', letterSpacing: 1 }}>✦ Nuevo Trait</div>
           <div style={{ marginTop: 4 }}><TraitBadge traitId={lastTraitUnlock} /></div>
         </div>
       )}
@@ -271,35 +276,38 @@ export function CareerMatchScreen({ career, setCareer, setCareerScreen, applyBar
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10, background: T.bg, padding: 16, textAlign: 'center', overflow: 'auto' }}>
         <CareerBars bars={career.bars} />
-        <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 26, color: won ? '#00e676' : drew ? '#ffd600' : '#ff1744' }}>{won ? 'VICTORIA' : drew ? 'EMPATE' : 'DERROTA'}</div>
-        <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 48, color: '#fff' }}>{matchScore.yours} - {matchScore.rival}</div>
-        <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 28, color: finalRating >= 7 ? '#00e676' : finalRating >= 5 ? '#ffd600' : '#ff1744' }}>Rating: {finalRating}</div>
-        {matchScore.events.map((e, i) => (<div key={i} style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: '#e8eaf6' }}>{e}</div>))}
-        <GoldBtn onClick={handleContinue}>Continuar</GoldBtn>
+        <div className="fw-bounceIn" style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 28, color: won ? T.win : drew ? T.draw : T.lose, textTransform: 'uppercase', letterSpacing: 2 }}>{won ? 'VICTORIA' : drew ? 'EMPATE' : 'DERROTA'}</div>
+        <div className="anim-number-roll" style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 52, color: T.tx, lineHeight: 1 }}>{matchScore.yours} - {matchScore.rival}</div>
+        <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 24, color: finalRating >= 7 ? T.win : finalRating >= 5 ? T.draw : T.lose }}>Rating: {finalRating}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {matchScore.events.map((e, i) => (<div key={i} style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx }}>{e}</div>))}
+        </div>
+        <div style={{ width: '100%', maxWidth: 300, marginTop: 4 }}><GoldBtn onClick={handleContinue}>Continuar</GoldBtn></div>
       </div>
     );
   }
   if (!currentCard) return null;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'linear-gradient(180deg,#132010 0%,#0b1120 40%)', position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: `linear-gradient(180deg, ${T.pitch}15 0%, ${T.bg} 40%)`, position: 'relative' }}>
       <AutoPlayBanner />
       <CareerBars bars={career.bars} />
-      <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'space-between', fontFamily: "'Barlow Condensed'", fontSize: 11 }}>
-        <span style={{ color: '#42a5f5' }}>{teamName} {matchScore.yours}</span>
-        <span style={{ color: '#607d8b' }}>Min {15 + cardIdx * 15}'</span>
-        <span style={{ color: '#ef5350' }}>{matchScore.rival} {rivalName}</span>
+      {/* Scoreline */}
+      <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: T.fontHeading, fontSize: 12 }}>
+        <span style={{ color: T.info, fontWeight: 600 }}>{teamName} {matchScore.yours}</span>
+        <span style={{ color: T.tx4, fontFamily: T.fontBody, fontSize: 11 }}>Min {15 + cardIdx * 15}'</span>
+        <span style={{ color: T.lose, fontWeight: 600 }}>{matchScore.rival} {rivalName}</span>
       </div>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, overflow: 'hidden' }}>
-        <div style={{ width: '100%', maxWidth: 340, background: 'linear-gradient(135deg,#141e3a,#1a2744)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 20, textAlign: 'center', transform: slideDir === 'left' ? 'translateX(-120%) rotate(-8deg)' : slideDir === 'right' ? 'translateX(120%) rotate(8deg)' : 'translateX(0)', opacity: slideDir ? 0 : 1, transition: 'transform 0.35s ease, opacity 0.3s ease' }}>
-          <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 12, color: '#00e676', textTransform: 'uppercase', letterSpacing: 2 }}>⚽ En la cancha</div>
-          <div style={{ fontFamily: "'Barlow'", fontSize: 16, color: '#e8eaf6', lineHeight: 1.5, margin: '12px 0' }}>{currentCard.text}</div>
+        <div style={{ width: '100%', maxWidth: 340, background: T.gradientDark, border: `1px solid ${T.border}`, borderRadius: T.r3, padding: 20, textAlign: 'center', transform: slideDir === 'left' ? 'translateX(-120%) rotate(-8deg)' : slideDir === 'right' ? 'translateX(120%) rotate(8deg)' : 'translateX(0)', opacity: slideDir ? 0 : 1, transition: 'transform 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease', boxShadow: T.elev3 }}>
+          <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: T.win, textTransform: 'uppercase', letterSpacing: 2 }}>⚽ En la cancha</div>
+          <div style={{ fontFamily: T.fontBody, fontSize: 16, color: T.tx, lineHeight: 1.6, margin: '14px 0' }}>{currentCard.text}</div>
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <button onClick={() => chooseMatchOption('a')} style={{ flex: 1, padding: '12px 8px', background: 'rgba(0,230,118,0.06)', border: '1px solid rgba(0,230,118,0.2)', borderRadius: 6, cursor: 'pointer', fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, color: '#00e676', textTransform: 'uppercase' }}>{currentCard.a?.l}</button>
-            {currentCard.b && <button onClick={() => chooseMatchOption('b')} style={{ flex: 1, padding: '12px 8px', background: 'rgba(66,165,245,0.06)', border: '1px solid rgba(66,165,245,0.2)', borderRadius: 6, cursor: 'pointer', fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, color: '#42a5f5', textTransform: 'uppercase' }}>{currentCard.b?.l}</button>}
+            <button onClick={() => chooseMatchOption('a')} style={{ flex: 1, padding: '12px 10px', background: `${T.win}08`, border: `1px solid ${T.win}25`, borderRadius: T.r2, cursor: 'pointer', fontFamily: T.fontHeading, fontWeight: 600, fontSize: 13, color: T.win, textTransform: 'uppercase', touchAction: 'manipulation' }}>{currentCard.a?.l}</button>
+            {currentCard.b && <button onClick={() => chooseMatchOption('b')} style={{ flex: 1, padding: '12px 10px', background: `${T.info}08`, border: `1px solid ${T.info}25`, borderRadius: T.r2, cursor: 'pointer', fontFamily: T.fontHeading, fontWeight: 600, fontSize: 13, color: T.info, textTransform: 'uppercase', touchAction: 'manipulation' }}>{currentCard.b?.l}</button>}
           </div>
         </div>
       </div>
-      <div style={{ textAlign: 'center', padding: 6, fontFamily: "'Barlow Condensed'", fontSize: 11, color: '#455a64' }}>Decisión {cardIdx + 1}/{matchCards.length} · Rating: {Math.round(matchScore.rating * 10) / 10}</div>
+      <div style={{ textAlign: 'center', padding: 6, fontFamily: T.fontBody, fontSize: 11, color: T.tx4 }}>Decisión {cardIdx + 1}/{matchCards.length} · Rating: {Math.round(matchScore.rating * 10) / 10}</div>
     </div>
   );
 }
@@ -344,22 +352,22 @@ export function CareerSeasonEnd({ career, setCareer, setCareerScreen, applyAging
   }, [autoPlay]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', gap: 8, background: T.bg, padding: 16, textAlign: 'center', overflow: 'auto' }}>
-      <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 28, color: '#f0c040', textTransform: 'uppercase' }}>Fin de Temporada {c.season}</div>
-      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 14, color: '#607d8b' }}>{c.name} · {c.age} años · {teamName}</div>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', gap: 10, background: T.bg, padding: 16, textAlign: 'center', overflow: 'auto' }}>
+      <div className="fw-anim-1" style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 28, color: T.gold, textTransform: 'uppercase', letterSpacing: 2 }}>Fin de Temporada {c.season}</div>
+      <div className="fw-anim-2" style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx3 }}>{c.name} · {c.age} años · {teamName}</div>
       <CareerBars bars={c.bars} />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, maxWidth: 300, width: '100%' }}>
-        {[{ l: 'Rating', v: avgRating, c: avgRating >= 7 ? '#00e676' : '#ffd600' }, { l: 'Goles', v: c.seasonGoals, c: '#42a5f5' }, { l: 'Partidos', v: c.matchesThisSeason, c: '#fff' }].map((s, i) => (
-          <div key={i} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 4, padding: '6px', textAlign: 'center' }}>
-            <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 20, color: s.c }}>{s.v}</div>
-            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: '#607d8b', letterSpacing: 0.5 }}>{s.l}</div>
+      <div className="fw-anim-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, maxWidth: 300, width: '100%' }}>
+        {[{ l: 'Rating', v: avgRating, c: avgRating >= 7 ? T.win : T.draw }, { l: 'Goles', v: c.seasonGoals, c: T.info }, { l: 'Partidos', v: c.matchesThisSeason, c: T.tx }].map((s, i) => (
+          <div key={i} className="glass-light" style={{ borderRadius: T.r2, padding: '8px', textAlign: 'center' }}>
+            <div className="anim-number-roll" style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 22, color: s.c }}>{s.v}</div>
+            <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, letterSpacing: 0.5, textTransform: 'uppercase' }}>{s.l}</div>
           </div>
         ))}
       </div>
       {/* NPC relationship summary */}
       {activeNpcs.length > 0 && (
-        <div style={{ width: '100%', maxWidth: 320 }}>
-          <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: '#607d8b', textTransform: 'uppercase', marginBottom: 4 }}>Relaciones</div>
+        <div className="fw-anim-4" style={{ width: '100%', maxWidth: 320 }}>
+          <div className="section-header" style={{ padding: '4px 0 6px' }}><span>Relaciones</span></div>
           {activeNpcs.slice(0, 3).map(npc => (
             <RelationshipBar key={npc.id} npc={npc} rel={c.npcRelations?.[npc.id] ?? npc.rel} />
           ))}
@@ -367,12 +375,12 @@ export function CareerSeasonEnd({ career, setCareer, setCareerScreen, applyAging
       )}
       {/* Traits */}
       {(c.traits || []).length > 0 && (
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div className="fw-anim-4" style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
           {(c.traits || []).map(t => <TraitBadge key={t} traitId={t} size="small" />)}
         </div>
       )}
-      {canAscend && <div style={{ background: 'rgba(0,230,118,0.06)', border: '1px solid rgba(0,230,118,0.15)', borderRadius: 6, padding: 8, maxWidth: 320 }}><div style={{ fontFamily: "'Oswald'", fontSize: 13, color: '#00e676' }}>🎉 ¡{CAREER_TEAMS[c.team + 1]} te quiere fichar!</div></div>}
-      {mustDescend && <div style={{ background: 'rgba(255,23,68,0.06)', border: '1px solid rgba(255,23,68,0.15)', borderRadius: 6, padding: 8, maxWidth: 320 }}><div style={{ fontFamily: "'Oswald'", fontSize: 13, color: '#ff1744' }}>💀 Rating bajo. Te bajan.</div></div>}
+      {canAscend && <div className="fw-bounceIn" style={{ background: `${T.win}08`, border: `1px solid ${T.win}20`, borderRadius: T.r2, padding: '10px 14px', maxWidth: 320 }}><div style={{ fontFamily: T.fontHeading, fontSize: 13, color: T.win }}>🎉 ¡{CAREER_TEAMS[c.team + 1]} te quiere fichar!</div></div>}
+      {mustDescend && <div style={{ background: `${T.lose}08`, border: `1px solid ${T.lose}20`, borderRadius: T.r2, padding: '10px 14px', maxWidth: 320 }}><div style={{ fontFamily: T.fontHeading, fontSize: 13, color: T.lose }}>💀 Rating bajo. Te bajan.</div></div>}
       <div style={{ maxWidth: 320, width: '100%', marginTop: 4 }}>
         <GoldBtn onClick={handleNextSeason}>{canAscend ? `Fichar por ${CAREER_TEAMS[c.team + 1]}` : 'Siguiente Temporada'}</GoldBtn>
       </div>
@@ -398,37 +406,37 @@ export function CareerEndScreen({ career, setCareer, setCareerScreen, go, calcCa
   }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', overflow: 'auto', background: 'linear-gradient(180deg,#1a0a0a 0%,#0b1120 30%)', padding: '0 0 24px' }}>
-      <div style={{ width: '100%', padding: '16px', textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 28, color: '#ff1744', textTransform: 'uppercase' }}>Fin de la Carrera</div>
-        <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 20, color: legendColor, marginTop: 4 }}>"{legendLevel}"</div>
-        <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 13, color: '#607d8b', marginTop: 4 }}>{c.name} · Retirado a los {c.age} · {c.retireReason}</div>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', overflow: 'auto', background: `linear-gradient(180deg, ${T.lose}08 0%, ${T.bg} 30%)`, padding: '0 0 24px' }}>
+      <div className="fw-anim-1" style={{ width: '100%', padding: '16px', textAlign: 'center' }}>
+        <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 28, color: T.lose, textTransform: 'uppercase', letterSpacing: 2 }}>Fin de la Carrera</div>
+        <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 20, color: legendColor, marginTop: 6 }}>"{legendLevel}"</div>
+        <div style={{ fontFamily: T.fontBody, fontSize: 13, color: T.tx3, marginTop: 4 }}>{c.name} · Retirado a los {c.age} · {c.retireReason}</div>
       </div>
       {/* Don Miguel's words */}
-      <div style={{ padding: '4px 20px', maxWidth: 340, textAlign: 'center' }}>
+      <div className="fw-anim-2 glass-light" style={{ padding: '12px 20px', maxWidth: 340, textAlign: 'center', borderRadius: T.r3, margin: '0 16px' }}>
         <div style={{ fontSize: 28 }}>👴</div>
-        <div style={{ fontFamily: "'Barlow'", fontSize: 13, color: '#e8eaf6', lineHeight: 1.5, fontStyle: 'italic', marginTop: 4 }}>
+        <div style={{ fontFamily: T.fontBody, fontSize: 13, color: T.tx, lineHeight: 1.6, fontStyle: 'italic', marginTop: 4 }}>
           {maxTeam >= 5 ? '"Lo lograste, mijo. Desde El Potrero hasta el mundo."' : '"Llegaste lejos, mijo. Más lejos de lo que cualquiera esperaba."'}
         </div>
       </div>
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, maxWidth: 320, width: '100%', padding: '0 16px', margin: '6px 0' }}>
-        {[{ l: 'Temporadas', v: c.season - 1, c: '#fff' }, { l: 'Goles', v: c.goals, c: '#42a5f5' }, { l: 'Rating', v: avgRating, c: '#f0c040' }].map((s, i) => (
-          <div key={i} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 4, padding: '5px', textAlign: 'center' }}>
-            <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 16, color: s.c }}>{s.v}</div>
-            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: '#607d8b', textTransform: 'uppercase' }}>{s.l}</div>
+      <div className="fw-anim-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, maxWidth: 320, width: '100%', padding: '0 16px', margin: '8px 0' }}>
+        {[{ l: 'Temporadas', v: c.season - 1, c: T.tx }, { l: 'Goles', v: c.goals, c: T.info }, { l: 'Rating', v: avgRating, c: T.gold }].map((s, i) => (
+          <div key={i} className="glass-light" style={{ borderRadius: T.r2, padding: '8px', textAlign: 'center' }}>
+            <div className="anim-number-roll" style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 18, color: s.c }}>{s.v}</div>
+            <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, textTransform: 'uppercase' }}>{s.l}</div>
           </div>
         ))}
       </div>
       {/* Legacy Points earned */}
-      <div style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)', borderRadius: 6, padding: '8px 16px', marginTop: 4, textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: '#a78bfa', textTransform: 'uppercase' }}>Puntos de Leyenda Ganados</div>
-        <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 24, color: '#a78bfa' }}>+{earnedLP} LP</div>
+      <div className="fw-anim-4 card-purple" style={{ padding: '12px 18px', marginTop: 4, textAlign: 'center' }}>
+        <div style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.purple, textTransform: 'uppercase', letterSpacing: 1 }}>Puntos de Leyenda Ganados</div>
+        <div className="anim-number-roll" style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 28, color: T.purple, marginTop: 4 }}>+{earnedLP} LP</div>
       </div>
       {/* Traits */}
       {(c.traits || []).length > 0 && (
-        <div style={{ width: '100%', maxWidth: 320, padding: '0 16px', marginTop: 6 }}>
-          <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: '#607d8b', textTransform: 'uppercase', marginBottom: 4 }}>Rasgos Desarrollados</div>
+        <div className="fw-anim-5" style={{ width: '100%', maxWidth: 320, padding: '0 16px', marginTop: 6 }}>
+          <div className="section-header" style={{ padding: '4px 0 6px' }}><span>Rasgos Desarrollados</span></div>
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             {(c.traits || []).map(t => <TraitBadge key={t} traitId={t} size="small" />)}
           </div>
@@ -437,23 +445,26 @@ export function CareerEndScreen({ career, setCareer, setCareerScreen, go, calcCa
       {/* NPC Arcs */}
       {completedArcs.length > 0 && (
         <div style={{ width: '100%', maxWidth: 320, padding: '0 16px', marginTop: 6 }}>
-          <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: '#607d8b', textTransform: 'uppercase', marginBottom: 4 }}>Arcos Narrativos</div>
-          {completedArcs.map(npc => (
-            <div key={npc.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0' }}>
-              <span style={{ fontSize: 14 }}>{npc.i}</span>
-              <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: '#e8eaf6' }}>{npc.n}</span>
-              <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: npc.arc === 'ally' ? '#00e676' : npc.arc === 'rival' ? '#ff1744' : '#9c27b0', textTransform: 'uppercase' }}>{npc.arc}</span>
-            </div>
-          ))}
+          <div className="section-header" style={{ padding: '4px 0 6px' }}><span>Arcos Narrativos</span></div>
+          {completedArcs.map(npc => {
+            const arcColor = npc.arc === 'ally' ? T.win : npc.arc === 'rival' ? T.lose : T.purple;
+            return (
+              <div key={npc.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+                <div style={{ fontSize: 16, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${arcColor}10`, borderRadius: T.r1, border: `1px solid ${arcColor}20` }}>{npc.i}</div>
+                <span style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.tx, fontWeight: 600, flex: 1 }}>{npc.n}</span>
+                <span style={{ fontFamily: T.fontHeading, fontSize: 10, color: arcColor, textTransform: 'uppercase', fontWeight: 600, background: `${arcColor}10`, padding: '2px 6px', borderRadius: T.r1 }}>{npc.arc}</span>
+              </div>
+            );
+          })}
         </div>
       )}
       {/* Moments */}
       {(c.momentsTriggered || []).length > 0 && (
         <div style={{ width: '100%', maxWidth: 320, padding: '0 16px', marginTop: 6 }}>
-          <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: '#607d8b', textTransform: 'uppercase', marginBottom: 4 }}>Momentos Estelares ({(c.momentsTriggered || []).length})</div>
+          <div className="section-header" style={{ padding: '4px 0 6px' }}><span>Momentos Estelares ({(c.momentsTriggered || []).length})</span></div>
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             {(c.momentsTriggered || []).map(id => (
-              <span key={id} style={{ fontSize: 10, background: 'rgba(240,192,64,0.08)', border: '1px solid rgba(240,192,64,0.15)', borderRadius: 4, padding: '2px 6px', color: '#f0c040', fontFamily: "'Barlow Condensed'" }}>{id.replace(/_/g, ' ')}</span>
+              <span key={id} style={{ fontSize: 10, background: `${T.gold}10`, border: `1px solid ${T.gold}20`, borderRadius: T.r1, padding: '2px 8px', color: T.gold, fontFamily: T.fontBody, fontWeight: 500 }}>✨ {id.replace(/_/g, ' ')}</span>
             ))}
           </div>
         </div>
@@ -472,35 +483,37 @@ export function CareerTimelineScreen({ career, setCareerScreen }) {
   if (!c) return null;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, overflow: 'auto', padding: 16 }}>
-      <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 22, color: '#f0c040', textTransform: 'uppercase', textAlign: 'center', marginBottom: 8 }}>Timeline</div>
-      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: '#607d8b', textAlign: 'center', marginBottom: 12 }}>{c.name} · {c.pos}</div>
+      <div className="fw-anim-1" style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 22, color: T.gold, textTransform: 'uppercase', textAlign: 'center', marginBottom: 4, letterSpacing: 2 }}>Timeline</div>
+      <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx3, textAlign: 'center', marginBottom: 12 }}>{c.name} · {c.pos}</div>
       {/* NPC relationships */}
-      <div style={{ marginBottom: 12 }}>
-        <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: '#607d8b', textTransform: 'uppercase', marginBottom: 6 }}>Relaciones</div>
+      <div className="fw-anim-2" style={{ marginBottom: 12 }}>
+        <div className="section-header"><span>Relaciones</span></div>
         {(c.cast || []).map(npc => (
           <RelationshipBar key={npc.id} npc={npc} rel={c.npcRelations?.[npc.id] ?? npc.rel} />
         ))}
       </div>
       {/* Season history */}
-      <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: '#607d8b', textTransform: 'uppercase', marginBottom: 6 }}>Historial</div>
-      {(c.history || []).length === 0 && <div style={{ fontFamily: "'Barlow'", fontSize: 12, color: '#455a64' }}>Aún no hay temporadas completadas.</div>}
-      {(c.history || []).map((h, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-          <div style={{ fontFamily: "'Oswald'", fontSize: 14, color: '#f0c040', width: 28 }}>T{h.season}</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: '#e8eaf6' }}>{h.team}</div>
-            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: '#607d8b' }}>{h.age} años · {h.goals} goles · Rating {h.rating}</div>
+      <div className="fw-anim-3">
+        <div className="section-header"><span>Historial</span></div>
+        {(c.history || []).length === 0 && <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx4 }}>Aún no hay temporadas completadas.</div>}
+        {(c.history || []).map((h, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${T.border}` }}>
+            <div style={{ fontFamily: T.fontHeading, fontSize: 14, fontWeight: 700, color: T.gold, minWidth: 28 }}>T{h.season}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.tx, fontWeight: 600 }}>{h.team}</div>
+              <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>{h.age} años · {h.goals} goles · Rating {h.rating}</div>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
       {/* Traits */}
       {(c.traits || []).length > 0 && (
-        <div style={{ marginTop: 12 }}>
-          <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: '#607d8b', textTransform: 'uppercase', marginBottom: 4 }}>Rasgos</div>
+        <div className="fw-anim-4" style={{ marginTop: 12 }}>
+          <div className="section-header"><span>Rasgos</span></div>
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>{(c.traits || []).map(t => <TraitBadge key={t} traitId={t} />)}</div>
         </div>
       )}
-      <button onClick={() => setCareerScreen('cards')} style={{ fontFamily: "'Oswald'", fontSize: 12, padding: '8px 16px', border: '1px solid #607d8b', background: 'transparent', color: '#e8eaf6', borderRadius: 4, cursor: 'pointer', marginTop: 12, alignSelf: 'center' }}>Volver</button>
+      <button className="fw-btn fw-btn-outline" onClick={() => setCareerScreen('cards')} style={{ fontFamily: T.fontHeading, fontSize: 12, padding: '8px 16px', marginTop: 12, alignSelf: 'center' }}>Volver</button>
     </div>
   );
 }
@@ -513,16 +526,19 @@ export function CareerLegacyScreen({ setCareerScreen }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, overflow: 'auto', padding: 16 }}>
-      <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 22, color: '#a78bfa', textTransform: 'uppercase', textAlign: 'center' }}>Legado de Leyenda</div>
-      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 12, color: '#607d8b', textAlign: 'center', marginBottom: 4 }}>Desbloquea bonos permanentes entre carreras</div>
-      <div style={{ fontFamily: "'Oswald'", fontSize: 16, color: '#a78bfa', textAlign: 'center', marginBottom: 12 }}>{points} LP disponibles</div>
+      <div className="fw-anim-1" style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 22, color: T.purple, textTransform: 'uppercase', textAlign: 'center', letterSpacing: 2 }}>Legado de Leyenda</div>
+      <div className="fw-anim-1" style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx3, textAlign: 'center', marginBottom: 4 }}>Desbloquea bonos permanentes entre carreras</div>
+      <div className="fw-anim-2 card-purple" style={{ textAlign: 'center', padding: '10px 16px', marginBottom: 12, borderRadius: T.r2 }}>
+        <div style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.purple, textTransform: 'uppercase', letterSpacing: 1 }}>LP Disponibles</div>
+        <div className="anim-number-roll" style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 28, color: T.purple }}>{points}</div>
+      </div>
 
       {/* Stats summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 12 }}>
+      <div className="fw-anim-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
         {[{ l: 'Carreras', v: cgs?.totalCareers || 0 }, { l: 'Goles', v: cgs?.totalGoals || 0 }, { l: 'Traits', v: (cgs?.traitsDiscovered || []).length }].map((s, i) => (
-          <div key={i} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 4, padding: '5px', textAlign: 'center' }}>
-            <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 14, color: '#fff' }}>{s.v}</div>
-            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: '#607d8b' }}>{s.l}</div>
+          <div key={i} className="glass-light" style={{ borderRadius: T.r2, padding: '8px', textAlign: 'center' }}>
+            <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 16, color: T.tx }}>{s.v}</div>
+            <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, textTransform: 'uppercase' }}>{s.l}</div>
           </div>
         ))}
       </div>
@@ -535,8 +551,8 @@ export function CareerLegacyScreen({ setCareerScreen }) {
           return unlocks.includes(branch.nodes[nodeIdx - 1].id);
         };
         return (
-          <div key={branch.branch} style={{ marginBottom: 10 }}>
-            <div style={{ fontFamily: "'Oswald'", fontSize: 13, color: '#f0c040', textTransform: 'uppercase', marginBottom: 4 }}>{branch.i} {branch.branch}</div>
+          <div key={branch.branch} style={{ marginBottom: 12 }}>
+            <div className="section-header" style={{ padding: '4px 0 6px' }}><span>{branch.i} {branch.branch}</span></div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {branch.nodes.map((node, idx) => (
                 <CareerLegacyNode
@@ -555,17 +571,20 @@ export function CareerLegacyScreen({ setCareerScreen }) {
       {/* Hall of Legends */}
       {(cgs?.hallOfLegends || []).length > 0 && (
         <div style={{ marginTop: 8 }}>
-          <div style={{ fontFamily: "'Oswald'", fontSize: 13, color: '#f0c040', textTransform: 'uppercase', marginBottom: 4 }}>Salón de Leyendas</div>
+          <div className="section-header"><span>🏛 Salón de Leyendas</span></div>
           {(cgs.hallOfLegends || []).slice(-5).reverse().map((h, i) => (
-            <div key={i} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 4, padding: '6px 8px', marginBottom: 4 }}>
-              <div style={{ fontFamily: "'Oswald'", fontSize: 12, color: '#e8eaf6' }}>{h.name} ({h.pos})</div>
-              <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: '#607d8b' }}>{h.seasons} temp · {h.goals} goles · Rating {h.avgRating} · +{h.legendPoints}LP</div>
+            <div key={i} className="glass-light" style={{ borderRadius: T.r2, padding: '8px 10px', marginBottom: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.tx, fontWeight: 600 }}>{h.name} ({h.pos})</span>
+                <span style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.purple, fontWeight: 600 }}>+{h.legendPoints}LP</span>
+              </div>
+              <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, marginTop: 2 }}>{h.seasons} temp · {h.goals} goles · Rating {h.avgRating}</div>
             </div>
           ))}
         </div>
       )}
 
-      <button onClick={() => setCareerScreen('create')} style={{ fontFamily: "'Oswald'", fontSize: 12, padding: '8px 16px', border: '1px solid #607d8b', background: 'transparent', color: '#e8eaf6', borderRadius: 4, cursor: 'pointer', marginTop: 12, alignSelf: 'center' }}>Volver</button>
+      <button className="fw-btn fw-btn-outline" onClick={() => setCareerScreen('create')} style={{ fontFamily: T.fontHeading, fontSize: 12, padding: '8px 16px', marginTop: 12, alignSelf: 'center' }}>Volver</button>
     </div>
   );
 }

@@ -303,21 +303,40 @@ export function PlayerDetailModal({ player, onClose, captainId }) {
   );
 }
 
-// ── Career Bars ──
+// ── Career Bars — Reigns-style with danger zones at 0 and 100 ──
 export function CareerBars({ bars }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', gap: 2, padding: '6px 8px', background: '#0a0e1a', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', gap: 3, padding: '8px 10px', background: T.bg1, borderBottom: `1px solid ${T.border}` }}>
       {BAR_NAMES.map((name, i) => {
         const key = ['rend', 'fis', 'rel', 'fam', 'men'][i];
         const val = bars[key] || 0;
-        const danger = val < 20 || val > 90;
+        const dangerLow = val < 15;
+        const dangerHigh = val > 85;
+        const danger = dangerLow || dangerHigh;
+        const critical = val < 8 || val > 92;
         return (
           <div key={i} style={{ flex: 1, textAlign: 'center', maxWidth: 60 }}>
-            <div style={{ fontSize: 14 }}>{BAR_ICONS[i]}</div>
-            <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, marginTop: 2 }}>
-              <div style={{ width: `${val}%`, height: '100%', background: danger ? '#ff1744' : BAR_COLORS[i], borderRadius: 2, transition: 'width 0.3s' }} />
+            <div style={{ fontSize: 14, filter: danger ? 'none' : 'grayscale(0.3)', transition: `filter ${T.transQuick}` }}>{BAR_ICONS[i]}</div>
+            {/* Bar with danger zones */}
+            <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, marginTop: 3, position: 'relative', overflow: 'hidden' }}>
+              {/* Low danger zone indicator */}
+              <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '15%', background: 'rgba(239,68,68,0.15)', borderRadius: '3px 0 0 3px' }} />
+              {/* High danger zone indicator */}
+              <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '15%', background: 'rgba(239,68,68,0.15)', borderRadius: '0 3px 3px 0' }} />
+              {/* Fill */}
+              <div style={{
+                width: `${val}%`, height: '100%',
+                background: danger ? (critical ? T.gradientDanger : 'linear-gradient(90deg, #EF4444, #F59E0B)') : BAR_COLORS[i],
+                borderRadius: 3, transition: 'width 0.4s cubic-bezier(0.16,1,0.3,1)',
+                boxShadow: critical ? '0 0 8px rgba(239,68,68,0.4)' : 'none',
+              }} />
             </div>
-            <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: danger ? '#ff1744' : '#607d8b', letterSpacing: 0.5, marginTop: 1 }}>{val}</div>
+            <div style={{
+              fontFamily: T.fontHeading, fontSize: 11, letterSpacing: 0.5, marginTop: 2,
+              color: critical ? T.lose : danger ? T.draw : T.tx3,
+              fontWeight: danger ? 700 : 500,
+              animation: critical ? 'fw-pulse 1s ease infinite' : 'none',
+            }}>{val}</div>
           </div>
         );
       })}
@@ -327,20 +346,33 @@ export function CareerBars({ bars }) {
 
 // ── NPC Relationship Bar ──
 export function RelationshipBar({ npc, rel }) {
-  const arcColor = npc.arc === 'ally' ? '#00e676' : npc.arc === 'rival' ? '#ff1744' : npc.arc === 'betrayer' ? '#9c27b0' : '#607d8b';
+  const arcColors = { ally: T.win, rival: T.lose, betrayer: T.purple, neutral: T.tx3 };
+  const arcColor = arcColors[npc.arc] || T.tx3;
+  const arcLabels = { ally: '🤝 Aliado', rival: '⚔️ Rival', betrayer: '🗡 Traidor', neutral: 'Neutral' };
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0' }}>
-      <div style={{ fontSize: 18, width: 24, textAlign: 'center' }}>{npc.i}</div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0' }}>
+      <div style={{
+        fontSize: 18, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: `${arcColor}10`, borderRadius: T.r2, border: `1px solid ${arcColor}20`,
+        flexShrink: 0,
+      }}>{npc.i}</div>
       <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-          <span style={{ fontFamily: "'Oswald'", fontSize: 11, color: '#e8eaf6' }}>{npc.n}</span>
-          <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: arcColor, textTransform: 'uppercase' }}>{npc.arc}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+          <span style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.tx, fontWeight: 600 }}>{npc.n}</span>
+          <span style={{
+            fontFamily: T.fontHeading, fontSize: 9, color: arcColor, textTransform: 'uppercase',
+            letterSpacing: 0.5, fontWeight: 600,
+            background: `${arcColor}10`, padding: '1px 6px', borderRadius: T.r1,
+          }}>{arcLabels[npc.arc] || npc.arc}</span>
         </div>
-        <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2 }}>
-          <div style={{ width: `${Math.max(0, Math.min(100, rel))}%`, height: '100%', background: arcColor, borderRadius: 2, transition: 'width 0.3s' }} />
+        <div className="stat-bar" style={{ height: 4 }}>
+          <div className="stat-bar-fill" style={{
+            width: `${Math.max(0, Math.min(100, rel))}%`, background: arcColor,
+            transition: 'width 0.4s cubic-bezier(0.16,1,0.3,1)',
+          }} />
         </div>
       </div>
-      <div style={{ fontFamily: "'Oswald'", fontSize: 11, color: arcColor, width: 22, textAlign: 'right' }}>{rel}</div>
+      <div style={{ fontFamily: T.fontHeading, fontSize: 12, fontWeight: 700, color: arcColor, minWidth: 24, textAlign: 'right' }}>{rel}</div>
     </div>
   );
 }
@@ -351,7 +383,7 @@ export function TraitBadge({ traitId, size = 'normal' }) {
   if (!trait) return null;
   const s = size === 'small' ? { fontSize: 10, padding: '2px 6px', gap: 3 } : { fontSize: 12, padding: '4px 8px', gap: 4 };
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: s.gap, background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.2)', borderRadius: 12, padding: s.padding, fontFamily: "'Oswald'", fontSize: s.fontSize, color: '#a78bfa', whiteSpace: 'nowrap' }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: s.gap, background: `${T.purple}12`, border: `1px solid ${T.purple}25`, borderRadius: T.rFull, padding: s.padding, fontFamily: T.fontHeading, fontSize: s.fontSize, color: T.purple, whiteSpace: 'nowrap' }}>
       <span>{trait.i}</span>
       <span>{trait.n}</span>
     </span>
@@ -361,28 +393,39 @@ export function TraitBadge({ traitId, size = 'normal' }) {
 // ── Moment Card (for signature moments in timeline) ──
 export function MomentCard({ moment, triggered }) {
   return (
-    <div style={{ background: triggered ? 'rgba(240,192,64,0.06)' : 'rgba(255,255,255,0.02)', border: `1px solid ${triggered ? 'rgba(240,192,64,0.2)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 8, padding: '8px 10px', opacity: triggered ? 1 : 0.5 }}>
+    <div style={{ background: triggered ? `${T.gold}08` : 'rgba(255,255,255,0.02)', border: `1px solid ${triggered ? `${T.gold}25` : T.border}`, borderRadius: T.r2, padding: '8px 10px', opacity: triggered ? 1 : 0.45, transition: `all ${T.transBase}` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <span style={{ fontSize: 16 }}>{triggered ? '✨' : '🔒'}</span>
-        <span style={{ fontFamily: "'Oswald'", fontSize: 12, color: triggered ? '#f0c040' : '#607d8b', textTransform: 'uppercase' }}>{moment.id.replace(/_/g, ' ')}</span>
+        <span style={{ fontFamily: T.fontHeading, fontSize: 12, color: triggered ? T.gold : T.tx3, textTransform: 'uppercase', fontWeight: 600, letterSpacing: 0.5 }}>{moment.id.replace(/_/g, ' ')}</span>
       </div>
-      {triggered && <div style={{ fontFamily: "'Barlow'", fontSize: 11, color: '#e8eaf6', marginTop: 4, lineHeight: 1.4 }}>{moment.text}</div>}
+      {triggered && <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx, marginTop: 4, lineHeight: 1.4 }}>{moment.text}</div>}
     </div>
   );
 }
 
 // ── Career Legacy Node ──
 export function CareerLegacyNode({ node, unlocked, canAfford, onUnlock }) {
-  const bg = unlocked ? 'rgba(0,230,118,0.08)' : canAfford ? 'rgba(240,192,64,0.06)' : 'rgba(255,255,255,0.02)';
-  const border = unlocked ? 'rgba(0,230,118,0.25)' : canAfford ? 'rgba(240,192,64,0.2)' : 'rgba(255,255,255,0.06)';
-  const color = unlocked ? '#00e676' : canAfford ? '#f0c040' : '#607d8b';
+  const bg = unlocked ? `${T.win}10` : canAfford ? `${T.gold}08` : T.bg2;
+  const border = unlocked ? `${T.win}40` : canAfford ? `${T.gold}30` : T.border;
+  const color = unlocked ? T.win : canAfford ? T.gold : T.tx3;
   return (
-    <div onClick={() => !unlocked && canAfford && onUnlock?.(node.id)} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 6, padding: '8px 10px', cursor: (!unlocked && canAfford) ? 'pointer' : 'default' }}>
+    <div onClick={() => !unlocked && canAfford && onUnlock?.(node.id)} style={{
+      background: bg, border: `1px solid ${border}`, borderRadius: T.r2,
+      padding: '10px 12px', cursor: (!unlocked && canAfford) ? 'pointer' : 'default',
+      boxShadow: canAfford ? T.glowGold : 'none',
+      transition: `all ${T.transBase}`, touchAction: 'manipulation',
+    }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontFamily: "'Oswald'", fontSize: 12, color, fontWeight: 600 }}>{node.n}</span>
-        <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 10, color: unlocked ? '#00e676' : '#607d8b' }}>{unlocked ? '✓' : `${node.cost}LP`}</span>
+        <span style={{ fontFamily: T.fontHeading, fontSize: 13, color, fontWeight: 600 }}>{node.n}</span>
+        {unlocked
+          ? <span style={{ color: T.win, fontFamily: T.fontHeading, fontSize: 14, fontWeight: 700 }}>✓</span>
+          : <span style={{
+              fontFamily: T.fontHeading, fontSize: 11, color: canAfford ? T.gold : T.tx4, fontWeight: 600,
+              background: canAfford ? `${T.gold}15` : 'transparent', padding: '2px 8px', borderRadius: T.r1,
+            }}>{node.cost}LP</span>
+        }
       </div>
-      <div style={{ fontFamily: "'Barlow'", fontSize: 11, color: '#9e9e9e', marginTop: 2 }}>{node.desc}</div>
+      <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, marginTop: 3, lineHeight: 1.3 }}>{node.desc}</div>
     </div>
   );
 }
