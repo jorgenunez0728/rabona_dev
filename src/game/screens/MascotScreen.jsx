@@ -42,64 +42,247 @@ function RufusDisplay({ equipped, mood, size = 100, onTap }) {
   );
 }
 
-// ── Ball Fetch Mini-Game ──
-function FetchMiniGame({ onClose, onScore, bestStreak }) {
-  const [playing, setPlaying] = useState(false);
-  const [score, setScore] = useState(0);
-  const [gameOver, setGameOver] = useState(false);
-  const ballRef = useRef({ x: 150, y: 50, vx: 3, vy: 0 });
+// ── Breakout Mini-Game "Rufus Rompe Huesos" ──
+function BreakoutGame({ onClose, onScore, bestScore }) {
+  const W = 300, H = 400, PADDLE_W = 60, PADDLE_H = 14, BALL_R = 7;
+  const COLS = 7, ROWS = 5, BRICK_W = W / COLS, BRICK_H = 16, BRICK_Y0 = 40;
+  const POWERUP_CHANCE = 0.25;
+
+  const stateRef = useRef(null);
   const frameRef = useRef(null);
-  const areaRef = useRef(null);
-  const [ballPos, setBallPos] = useState({ x: 150, y: 50 });
+  const canvasRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(3);
+  const [level, setLevel] = useState(1);
+  const [msg, setMsg] = useState(null);
+  const paddleXRef = useRef(W / 2);
 
-  const W = 300, H = 350, R = 20, GRAVITY = 0.35;
+  const BRICK_EMOJIS = ['🦴', '⚽', '🏆', '🎾', '🥎', '🧱', '💎'];
+  const POWERUP_TYPES = [
+    { id: 'multiball', i: '⚽⚽', label: 'Multi-Balón!', color: '#3b82f6' },
+    { id: 'wide', i: '↔️', label: 'Rufus Grande!', color: '#22c55e' },
+    { id: 'speed', i: '⚡', label: 'Velocidad!', color: '#f59e0b' },
+    { id: 'slow', i: '🐢', label: 'Cámara Lenta!', color: '#8b5cf6' },
+  ];
 
-  const loop = useCallback(() => {
-    const b = ballRef.current;
-    b.vy += GRAVITY;
-    b.x += b.vx;
-    b.y += b.vy;
-    if (b.x < R || b.x > W - R) { b.vx *= -0.9; b.x = Math.max(R, Math.min(W - R, b.x)); }
-    if (b.y > H - R) {
-      setGameOver(true);
-      setPlaying(false);
-      SFX.play('bark');
-      return;
+  function makeBricks(lvl) {
+    const rows = Math.min(ROWS + Math.floor(lvl / 2), 8);
+    const bricks = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const hp = r < 2 && lvl > 2 ? 2 : 1;
+        bricks.push({ x: c * BRICK_W, y: BRICK_Y0 + r * BRICK_H, w: BRICK_W - 2, h: BRICK_H - 2, hp, emoji: BRICK_EMOJIS[(r + c) % BRICK_EMOJIS.length] });
+      }
     }
-    setBallPos({ x: b.x, y: b.y });
-    frameRef.current = requestAnimationFrame(loop);
-  }, []);
+    return bricks;
+  }
+
+  function initState(lvl) {
+    const speed = 3 + lvl * 0.4;
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.8;
+    return {
+      balls: [{ x: W / 2, y: H - 40, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed }],
+      bricks: makeBricks(lvl),
+      powerups: [],
+      paddleW: PADDLE_W,
+      paddleX: W / 2,
+      baseSpeed: speed,
+      speedMult: 1,
+      wideTimer: 0,
+      slowTimer: 0,
+    };
+  }
 
   function startGame() {
-    ballRef.current = { x: 150, y: 80, vx: (Math.random() - 0.5) * 6, vy: -6 };
+    const s = initState(1);
+    stateRef.current = s;
+    paddleXRef.current = W / 2;
     setScore(0);
+    setLives(3);
+    setLevel(1);
     setGameOver(false);
+    setMsg(null);
     setPlaying(true);
   }
 
+  function nextLevel(prevScore) {
+    const nl = level + 1;
+    setLevel(nl);
+    setMsg(`Nivel ${nl}!`);
+    setTimeout(() => setMsg(null), 1000);
+    const s = initState(nl);
+    stateRef.current = s;
+    SFX.play('bark_happy');
+  }
+
+  function handlePointer(e) {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = ((e.clientX || e.touches?.[0]?.clientX) - rect.left) * (W / rect.width);
+    paddleXRef.current = Math.max(0, Math.min(W, x));
+  }
+
+  const loop = useCallback(() => {
+    const s = stateRef.current;
+    if (!s) return;
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+
+    const pw = s.wideTimer > 0 ? PADDLE_W * 1.6 : PADDLE_W;
+    s.paddleX = paddleXRef.current;
+    const sm = s.slowTimer > 0 ? 0.6 : s.speedMult;
+
+    // Update powerup timers
+    if (s.wideTimer > 0) s.wideTimer--;
+    if (s.slowTimer > 0) s.slowTimer--;
+
+    // Update balls
+    const deadBalls = [];
+    for (const ball of s.balls) {
+      ball.x += ball.vx * sm;
+      ball.y += ball.vy * sm;
+      // Wall bounces
+      if (ball.x < BALL_R) { ball.x = BALL_R; ball.vx = Math.abs(ball.vx); }
+      if (ball.x > W - BALL_R) { ball.x = W - BALL_R; ball.vx = -Math.abs(ball.vx); }
+      if (ball.y < BALL_R) { ball.y = BALL_R; ball.vy = Math.abs(ball.vy); }
+      // Paddle bounce
+      const py = H - 28;
+      if (ball.vy > 0 && ball.y + BALL_R >= py && ball.y + BALL_R <= py + PADDLE_H + 4) {
+        const left = s.paddleX - pw / 2, right = s.paddleX + pw / 2;
+        if (ball.x >= left - BALL_R && ball.x <= right + BALL_R) {
+          ball.y = py - BALL_R;
+          const hitPos = (ball.x - s.paddleX) / (pw / 2); // -1 to 1
+          const angle = -Math.PI / 2 + hitPos * 0.7;
+          const spd = Math.sqrt(ball.vx ** 2 + ball.vy ** 2);
+          ball.vx = Math.cos(angle) * spd;
+          ball.vy = Math.sin(angle) * spd;
+          SFX.play('kick');
+        }
+      }
+      // Bottom — lose ball
+      if (ball.y > H + 10) deadBalls.push(ball);
+      // Brick collision
+      for (let i = s.bricks.length - 1; i >= 0; i--) {
+        const br = s.bricks[i];
+        if (ball.x + BALL_R > br.x && ball.x - BALL_R < br.x + br.w && ball.y + BALL_R > br.y && ball.y - BALL_R < br.y + br.h) {
+          ball.vy *= -1;
+          br.hp--;
+          if (br.hp <= 0) {
+            // Spawn powerup
+            if (Math.random() < POWERUP_CHANCE) {
+              const pu = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)];
+              s.powerups.push({ ...pu, x: br.x + br.w / 2, y: br.y + br.h / 2, vy: 1.5 });
+            }
+            s.bricks.splice(i, 1);
+            setScore(prev => prev + (level * 10));
+            Haptics.light();
+          }
+          break;
+        }
+      }
+    }
+    // Remove dead balls
+    for (const db of deadBalls) { const idx = s.balls.indexOf(db); if (idx >= 0) s.balls.splice(idx, 1); }
+    if (s.balls.length === 0) {
+      setLives(prev => {
+        const nl = prev - 1;
+        if (nl <= 0) {
+          setGameOver(true);
+          setPlaying(false);
+          SFX.play('bark');
+          return 0;
+        }
+        // Respawn ball
+        const speed = s.baseSpeed;
+        const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.8;
+        s.balls.push({ x: W / 2, y: H - 40, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed });
+        Haptics.warning();
+        return nl;
+      });
+    }
+
+    // Update powerups
+    for (let i = s.powerups.length - 1; i >= 0; i--) {
+      const pu = s.powerups[i];
+      pu.y += pu.vy;
+      const py = H - 28;
+      if (pu.y >= py && pu.x >= s.paddleX - pw / 2 - 10 && pu.x <= s.paddleX + pw / 2 + 10) {
+        // Collected!
+        if (pu.id === 'multiball') {
+          const nb = { x: W / 2, y: H - 50, vx: (Math.random() - 0.5) * 6, vy: -s.baseSpeed };
+          s.balls.push(nb);
+          if (s.balls.length < 4) { s.balls.push({ ...nb, vx: -nb.vx }); }
+        } else if (pu.id === 'wide') { s.wideTimer = 300; }
+        else if (pu.id === 'speed') { s.speedMult = 1.5; setTimeout(() => { if (stateRef.current) stateRef.current.speedMult = 1; }, 4000); }
+        else if (pu.id === 'slow') { s.slowTimer = 240; }
+        SFX.play('bark_happy');
+        setMsg(pu.label);
+        setTimeout(() => setMsg(null), 800);
+        s.powerups.splice(i, 1);
+        continue;
+      }
+      if (pu.y > H + 20) { s.powerups.splice(i, 1); }
+    }
+
+    // Level complete
+    if (s.bricks.length === 0 && s.balls.length > 0) {
+      setScore(prev => { nextLevel(prev); return prev; });
+      return;
+    }
+
+    // ── Draw ──
+    ctx.clearRect(0, 0, W, H);
+    // Background
+    ctx.fillStyle = '#0f1729';
+    ctx.fillRect(0, 0, W, H);
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    for (let y = 0; y < H; y += 30) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+    // Bricks
+    for (const br of s.bricks) {
+      ctx.fillStyle = br.hp > 1 ? '#7c3aed' : '#1e3a5f';
+      ctx.fillRect(br.x + 1, br.y + 1, br.w, br.h);
+      ctx.strokeStyle = br.hp > 1 ? '#a78bfa' : '#2d5a8e';
+      ctx.strokeRect(br.x + 1, br.y + 1, br.w, br.h);
+      ctx.font = `${br.h - 2}px serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(br.emoji, br.x + br.w / 2 + 1, br.y + br.h - 2);
+    }
+    // Balls
+    ctx.font = `${BALL_R * 2.5}px serif`;
+    ctx.textAlign = 'center';
+    for (const ball of s.balls) {
+      ctx.fillText('⚽', ball.x, ball.y + BALL_R * 0.8);
+    }
+    // Powerups
+    ctx.font = '16px serif';
+    for (const pu of s.powerups) {
+      ctx.fillStyle = pu.color + '40';
+      ctx.beginPath(); ctx.arc(pu.x, pu.y, 12, 0, Math.PI * 2); ctx.fill();
+      ctx.fillText(pu.i, pu.x, pu.y + 5);
+    }
+    // Paddle (Rufus)
+    const py = H - 28;
+    ctx.font = `${PADDLE_H + 6}px serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('🐕', s.paddleX, py + PADDLE_H);
+    // Paddle bar
+    ctx.fillStyle = '#f0c040';
+    ctx.fillRect(s.paddleX - pw / 2, py + PADDLE_H + 2, pw, 3);
+
+    frameRef.current = requestAnimationFrame(loop);
+  }, [level]);
+
   useEffect(() => {
-    if (playing) frameRef.current = requestAnimationFrame(loop);
+    if (playing) {
+      const c = canvasRef.current;
+      if (c) { c.width = W; c.height = H; }
+      frameRef.current = requestAnimationFrame(loop);
+    }
     return () => { if (frameRef.current) cancelAnimationFrame(frameRef.current); };
   }, [playing, loop]);
-
-  function handleTap(e) {
-    if (!playing) return;
-    const rect = areaRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const tx = (e.clientX - rect.left) * (W / rect.width);
-    const ty = (e.clientY - rect.top) * (H / rect.height);
-    const b = ballRef.current;
-    const dist = Math.sqrt((tx - b.x) ** 2 + (ty - b.y) ** 2);
-    if (dist < 40) {
-      b.vy = -8 - Math.random() * 2;
-      b.vx = (Math.random() - 0.5) * 7;
-      const newScore = score + 1;
-      setScore(newScore);
-      SFX.play('bark_happy');
-      Haptics.light();
-      if (newScore % 5 === 0) onScore(newScore);
-    }
-  }
 
   useEffect(() => {
     if (gameOver && score > 0) onScore(score);
@@ -108,25 +291,28 @@ function FetchMiniGame({ onClose, onScore, bestStreak }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.93)', zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }}>
       <div className="fw-scaleIn" style={{ maxWidth: 340, width: '100%', padding: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 16, color: T.tx }}>Atrapa el Balon</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 16, color: T.tx }}>Rufus Rompe Huesos</div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.tx3, fontSize: 20, cursor: 'pointer' }}>X</button>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-          <span style={{ fontFamily: T.fontHeading, fontSize: 14, color: T.gold }}>{score}</span>
-          <span style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx4 }}>Mejor: {Math.max(bestStreak, score)}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <span style={{ fontFamily: T.fontHeading, fontSize: 14, color: T.gold }}>{score} pts</span>
+          <span style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx4 }}>Nv.{level}</span>
+          <span style={{ fontSize: 14 }}>{'❤️'.repeat(lives)}{'🖤'.repeat(Math.max(0, 3 - lives))}</span>
+          <span style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx4 }}>Mejor: {Math.max(bestScore, score)}</span>
         </div>
-        <div ref={areaRef} onClick={handleTap} style={{ width: W, height: H, maxWidth: '100%', background: 'linear-gradient(180deg, #1a2744 0%, #2d4a3e 60%, #3a5a3a 100%)', borderRadius: 12, position: 'relative', overflow: 'hidden', margin: '0 auto', cursor: 'pointer', touchAction: 'manipulation', border: `1px solid ${T.glassBorder}` }}>
-          {/* Ground line */}
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: R, background: 'rgba(139,90,43,0.4)', borderTop: '2px solid rgba(139,90,43,0.6)' }} />
-          {/* Rufus at bottom */}
-          <div style={{ position: 'absolute', bottom: R + 5, left: '50%', transform: 'translateX(-50%)', fontSize: 32, transition: 'left 0.15s' }}>🐕</div>
-          {/* Ball */}
-          {playing && <div style={{ position: 'absolute', left: ballPos.x - 14, top: ballPos.y - 14, fontSize: 28, transition: 'none', pointerEvents: 'none' }}>⚽</div>}
-          {/* Start / Game Over overlay */}
+        {msg && <div style={{ textAlign: 'center', fontFamily: T.fontHeading, fontSize: 14, color: T.gold, marginBottom: 4, animation: 'fw-fadeUp 0.5s' }}>{msg}</div>}
+        <div style={{ position: 'relative', margin: '0 auto', width: W, maxWidth: '100%' }}>
+          <canvas
+            ref={canvasRef}
+            onPointerMove={handlePointer}
+            onTouchMove={(e) => { e.preventDefault(); handlePointer(e.touches[0]); }}
+            style={{ width: '100%', height: 'auto', aspectRatio: `${W}/${H}`, display: 'block', borderRadius: 12, border: `1px solid ${T.glassBorder}`, touchAction: 'none', cursor: 'none' }}
+          />
           {!playing && (
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
-              {gameOver && <div style={{ fontFamily: T.fontHeading, fontSize: 20, color: T.gold, marginBottom: 8 }}>Racha: {score}</div>}
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', borderRadius: 12 }}>
+              {gameOver && <div style={{ fontFamily: T.fontHeading, fontSize: 22, color: T.gold, marginBottom: 4 }}>{score} pts</div>}
+              {gameOver && <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx3, marginBottom: 12 }}>Nivel alcanzado: {level}</div>}
               <button className="fw-btn fw-btn-primary" onClick={(e) => { e.stopPropagation(); startGame(); }} style={{ fontFamily: T.fontHeading, fontSize: 14, padding: '10px 24px' }}>{gameOver ? 'Otra vez' : 'Jugar'}</button>
             </div>
           )}
@@ -211,8 +397,8 @@ export default function MascotScreen() {
 
       {/* Mini-game button */}
       <div style={{ textAlign: 'center', marginBottom: 12, position: 'relative', zIndex: 1 }}>
-        <button className="fw-btn fw-btn-glass" onClick={() => setShowGame(true)} style={{ fontFamily: T.fontHeading, fontSize: 12, padding: '8px 20px' }}>⚽ Jugar con Rufus</button>
-        {(rufus.bestBallStreak || 0) > 0 && <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx4, marginTop: 4 }}>Mejor racha: {rufus.bestBallStreak}</div>}
+        <button className="fw-btn fw-btn-glass" onClick={() => setShowGame(true)} style={{ fontFamily: T.fontHeading, fontSize: 12, padding: '8px 20px' }}>🦴 Rufus Rompe Huesos</button>
+        {(rufus.bestBallStreak || 0) > 0 && <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx4, marginTop: 4 }}>Mejor: {rufus.bestBallStreak} pts</div>}
       </div>
 
       {/* Tabs */}
@@ -295,10 +481,10 @@ export default function MascotScreen() {
       </div>
 
       {showGame && (
-        <FetchMiniGame
+        <BreakoutGame
           onClose={() => setShowGame(false)}
           onScore={handleGameScore}
-          bestStreak={rufus.bestBallStreak || 0}
+          bestScore={rufus.bestBallStreak || 0}
         />
       )}
     </div>
