@@ -130,6 +130,99 @@ export function PlayerCard({ player, isCaptain, onAction, onDetail, compact = fa
   );
 }
 
+// ── PlayerCardCollectible — Vertical FIFA UT card for display contexts ──
+export function PlayerCardCollectible({ player, onClick, size = 'md', showStats = true, animate }) {
+  const ovr = effectiveOvr(player);
+  const posColor = POS_COLORS[player.pos];
+  const es = effectiveStats(player);
+  const isLegendary = player.legendary;
+  const isEvo = player.evo;
+  const tier = isLegendary ? CARD_TIERS.legendary : isEvo ? CARD_TIERS.rare : CARD_TIERS.normal;
+  const accentColor = isLegendary ? T.gold : isEvo ? T.purple : T.tx;
+  const rarityClass = isLegendary ? ' legendary' : isEvo ? ' rare' : '';
+  const animClass = animate ? ` ${animate}` : '';
+
+  const sizeMap = {
+    sm: { w: 100, ovrSize: 28, nameSize: 10, statSize: 8, pad: 8 },
+    md: { w: 130, ovrSize: 36, nameSize: 12, statSize: 9, pad: 10 },
+    lg: { w: 160, ovrSize: 44, nameSize: 14, statSize: 10, pad: 12 },
+  };
+  const s = sizeMap[size] || sizeMap.md;
+
+  return (
+    <div
+      className={`card-collectible${rarityClass}${animClass}`}
+      onClick={() => onClick?.(player)}
+      style={{ width: s.w, cursor: onClick ? 'pointer' : 'default' }}
+    >
+      {/* Header — Position + Level */}
+      <div style={{
+        width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: `${s.pad - 2}px ${s.pad}px 0`,
+      }}>
+        <span style={{
+          fontFamily: T.fontHeading, fontWeight: 700, fontSize: s.statSize + 1,
+          color: '#fff', background: posColor, padding: '1px 5px',
+          borderRadius: T.r1, letterSpacing: 0.5,
+        }}>{PN[player.pos]}</span>
+        <span style={{ fontFamily: T.fontBody, fontSize: s.statSize, color: T.tx3, fontWeight: 500 }}>
+          Nv.{player.lv}
+        </span>
+      </div>
+
+      {/* OVR — Large centered number */}
+      <div style={{
+        padding: `${s.pad}px 0`,
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+      }}>
+        <div style={{
+          fontFamily: T.fontHeading, fontWeight: 700, fontSize: s.ovrSize,
+          color: accentColor, lineHeight: 1, letterSpacing: -0.5,
+        }}>
+          {ovr}
+        </div>
+        {isLegendary && <span style={{ fontSize: s.statSize + 2, marginTop: 2 }}>★</span>}
+        {isEvo && <span style={{ fontSize: s.statSize + 2, marginTop: 2, color: T.purple }}>✦</span>}
+      </div>
+
+      {/* Divider */}
+      <div style={{
+        height: 1, margin: `0 ${s.pad}px`,
+        background: `linear-gradient(90deg, transparent, ${accentColor}30, transparent)`,
+      }} />
+
+      {/* Name */}
+      <div style={{
+        padding: `6px ${s.pad}px 4px`, textAlign: 'center',
+        fontFamily: T.fontHeading, fontWeight: 600, fontSize: s.nameSize,
+        color: T.tx, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+      }}>
+        {player.name}
+      </div>
+
+      {/* Stat Bars */}
+      {showStats && (
+        <div style={{ padding: `2px ${s.pad}px ${s.pad}px`, display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
+          {[
+            { v: es.atk, l: 'ATK', c: T.lose },
+            { v: es.def, l: 'DEF', c: T.info },
+            { v: es.spd, l: 'VEL', c: T.win },
+            ...(player.pos === 'GK' ? [{ v: es.sav, l: 'PAR', c: POS_COLORS.GK }] : []),
+          ].map(({ v, l, c }) => (
+            <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontFamily: T.fontHeading, fontSize: s.statSize, fontWeight: 600, color: c, minWidth: 22 }}>{l}</span>
+              <div className="stat-bar stat-bar-animated" style={{ flex: 1 }}>
+                <div className="stat-bar-fill" style={{ width: `${Math.min(100, v)}%`, background: c }} />
+              </div>
+              <span style={{ fontFamily: T.fontHeading, fontSize: s.statSize, fontWeight: 700, color: T.tx, minWidth: 16, textAlign: 'right' }}>{v}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Player Detail Modal — Premium FIFA card style ──
 export function PlayerDetailModal({ player, onClose, captainId }) {
   if (!player) return null;

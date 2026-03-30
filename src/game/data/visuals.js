@@ -95,6 +95,19 @@ export const T={
   gradientBlue:'linear-gradient(135deg,#3B82F6,#2563EB)', gradientPurple:'linear-gradient(135deg,#8B5CF6,#7C3AED)',
   gradientDanger:'linear-gradient(135deg,#EF4444,#DC2626)', gradientDark:'linear-gradient(145deg,#0F1923,#162030)',
   gradientStadium:'radial-gradient(ellipse at 50% 0%,rgba(59,130,246,0.08) 0%,transparent 60%)',
+  // v4.0 — Spacing scale (4px grid)
+  sp1:4, sp2:8, sp3:12, sp4:16, sp5:20, sp6:24, sp8:32, sp10:40, sp12:48,
+  // v4.0 — Border radius
+  r1:4, r2:8, r3:12, r4:16, rFull:9999,
+  // v4.0 — Z-index layers
+  zNav:40, zOverlay:80, zModal:100, zToast:120, zMax:200,
+  // v4.0 — Transition presets
+  transQuick:'0.15s ease', transBase:'0.25s cubic-bezier(0.16,1,0.3,1)', transSlow:'0.4s cubic-bezier(0.16,1,0.3,1)',
+  // v4.0 — Football accent colors
+  pitch:'#1B5E20', pitchLight:'#2E7D32', stadiumBlue:'#1565C0', fieldLine:'rgba(255,255,255,0.12)',
+  // v4.0 — Elevation shadows
+  elev1:'0 1px 3px rgba(0,0,0,0.4)', elev2:'0 4px 12px rgba(0,0,0,0.5)',
+  elev3:'0 8px 24px rgba(0,0,0,0.6)', elev4:'0 16px 48px rgba(0,0,0,0.7)',
 };
 
 export const CARD_TIERS = {

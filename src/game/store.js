@@ -114,23 +114,31 @@ const useGameStore = create((set, get) => ({
   careerScreen: 'create',
   careerGlobalStats: { ...INITIAL_CAREER_GLOBAL_STATS },
   transState: 'in',
+  transDirection: 'fade', // 'fade' | 'left' | 'right' | 'up' | 'down'
   pendingRelicDraft: null,
   pendingLevelUp: null,
   debugAutoPlay: false,
   hasCareerSave: false,
 
   // ─── Navigation ───
-  navigateTo: (newScreen) => {
+  navigateTo: (newScreen, direction = 'fade') => {
     SFX.play('click');
-    set({ transState: 'out' });
-    setTimeout(() => { set({ screen: newScreen, transState: 'in' }); }, 180);
+    set({ transState: 'out', transDirection: direction });
+    setTimeout(() => { set({ screen: newScreen, transState: 'in', transDirection: direction }); }, 180);
   },
   go: (s) => {
     if (s === 'match') {
       SFX.play('whistle');
       set({ screen: s });
     } else {
-      get().navigateTo(s);
+      // Determine direction based on navigation type
+      const HUB_SCREENS = ['table', 'roster', 'training', 'market', 'stats', 'mascot'];
+      const current = get().screen;
+      const isHubToHub = HUB_SCREENS.includes(current) && HUB_SCREENS.includes(s);
+      const isGoingDeeper = !HUB_SCREENS.includes(s) && HUB_SCREENS.includes(current);
+      const isGoingBack = HUB_SCREENS.includes(s) && !HUB_SCREENS.includes(current);
+      const dir = isHubToHub ? 'fade' : isGoingDeeper ? 'up' : isGoingBack ? 'down' : 'fade';
+      get().navigateTo(s, dir);
     }
   },
   setScreen: (screen) => set({ screen }),

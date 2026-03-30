@@ -52,7 +52,7 @@ export default function Rabona() {
     setRewards, setRewardsTab, matchType,
     detailPlayer, setDetailPlayer,
     career, setCareer, careerScreen, setCareerScreen,
-    transState, setScreen,
+    transState, transDirection, setScreen,
     autoSave, go, initFromStorage,
     setPendingLevelUp, setPendingRelicDraft,
   } = store;
@@ -1334,39 +1334,25 @@ export default function Rabona() {
   const isHubScreen = HUB_SCREENS.includes(screen);
 
   // ─── RENDER ───
-  const transStyle = { opacity: transState === 'out' ? 0 : 1, transform: transState === 'out' ? 'scale(0.97)' : 'scale(1)', transition: 'opacity 0.22s ease, transform 0.22s ease' };
+  // Directional screen transitions
+  const getTransTransform = () => {
+    if (transState !== 'out') return 'translate3d(0,0,0) scale(1)';
+    switch (transDirection) {
+      case 'up': return 'translate3d(0, -20px, 0)';
+      case 'down': return 'translate3d(0, 20px, 0)';
+      case 'left': return 'translate3d(-20px, 0, 0)';
+      case 'right': return 'translate3d(20px, 0, 0)';
+      default: return 'scale(0.97)';
+    }
+  };
+  const transStyle = {
+    opacity: transState === 'out' ? 0 : 1,
+    transform: getTransTransform(),
+    transition: 'opacity 0.22s cubic-bezier(0.16,1,0.3,1), transform 0.22s cubic-bezier(0.16,1,0.3,1)',
+  };
 
   return (
     <div className="fw-bg-pattern" style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative', background: T.bg }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500;600&display=swap');
-        @keyframes fw-fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes fw-pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
-        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-        @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes fw-shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-        @keyframes fw-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
-        @keyframes fw-slideIn { from{opacity:0;transform:translateX(24px)} to{opacity:1;transform:translateX(0)} }
-        @keyframes fw-scaleIn { from{opacity:0;transform:scale(0.92)} to{opacity:1;transform:scale(1)} }
-        @keyframes fw-bounceIn { 0%{opacity:0;transform:scale(0.3)} 50%{transform:scale(1.04)} 70%{transform:scale(0.97)} 100%{opacity:1;transform:scale(1)} }
-        @keyframes fw-countUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes fw-glowPulse { 0%,100%{box-shadow:0 0 16px rgba(240,192,64,0.12)} 50%{box-shadow:0 0 28px rgba(240,192,64,0.25)} }
-        .fw-anim-1{animation:fw-fadeUp .4s cubic-bezier(.16,1,.3,1) .05s both}.fw-anim-2{animation:fw-fadeUp .4s cubic-bezier(.16,1,.3,1) .12s both}.fw-anim-3{animation:fw-fadeUp .4s cubic-bezier(.16,1,.3,1) .2s both}.fw-anim-4{animation:fw-fadeUp .4s cubic-bezier(.16,1,.3,1) .28s both}.fw-anim-5{animation:fw-fadeUp .4s cubic-bezier(.16,1,.3,1) .36s both}
-        .fw-float{animation:fw-float 3s ease-in-out infinite}.fw-pulse{animation:fw-pulse 2s ease infinite}
-        .fw-slideIn{animation:fw-slideIn .3s cubic-bezier(.16,1,.3,1) both}.fw-scaleIn{animation:fw-scaleIn .25s cubic-bezier(.16,1,.3,1) both}.fw-bounceIn{animation:fw-bounceIn .5s cubic-bezier(.16,1,.3,1) both}
-        .fw-hover{transition:transform .2s ease,box-shadow .2s ease}.fw-hover:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.4)}.fw-hover:active{transform:translateY(0)}
-        .fw-shimmer{background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.04) 50%,transparent 100%);background-size:200% 100%;animation:fw-shimmer 2s linear infinite}
-        .fw-glow-pulse{animation:fw-glowPulse 2s ease-in-out infinite}
-        .fw-btn{font-family:'Oswald';font-weight:600;font-size:14px;padding:13px 32px;border:none;border-radius:8px;cursor:pointer;text-transform:uppercase;letter-spacing:1.2px;transition:transform .2s cubic-bezier(.16,1,.3,1),filter .2s ease,box-shadow .2s ease}
-        .fw-btn:hover{transform:translateY(-1px);filter:brightness(1.08);box-shadow:0 6px 20px rgba(0,0,0,0.4)}.fw-btn:active{transform:scale(.95)!important;filter:brightness(.92)}.fw-btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important;filter:none!important}
-        .fw-btn-primary{background:linear-gradient(135deg,#D4A017,#F0C040);color:#080C14;box-shadow:0 2px 12px rgba(240,192,64,0.2)}
-        .fw-btn-green{background:linear-gradient(135deg,#16A34A,#22C55E);color:#080C14;box-shadow:0 2px 12px rgba(34,197,94,0.2)}
-        .fw-btn-danger{background:linear-gradient(135deg,#DC2626,#EF4444);color:#fff;box-shadow:0 2px 12px rgba(239,68,68,0.2)}
-        .fw-btn-glass{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#F0F4F8;backdrop-filter:blur(8px)}
-        .fw-btn-outline{background:transparent;border:1.5px solid rgba(255,255,255,0.15);color:#94A3B8}
-        .fw-bg-pattern{background-image:radial-gradient(circle,rgba(255,255,255,0.02) 1px,transparent 1px);background-size:24px 24px}
-        *{box-sizing:border-box}
-      `}</style>
       <div
         onTouchStart={isHubScreen ? handleSwipeStart : undefined}
         onTouchEnd={isHubScreen ? handleSwipeEnd : undefined}
