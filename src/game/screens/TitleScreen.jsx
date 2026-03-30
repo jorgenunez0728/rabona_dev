@@ -5,7 +5,7 @@ import MUSIC_TRACKS from '@/game/data/musicTracks';
 import useGameStore from '@/game/store';
 
 export default function TitleScreen() {
-  const { hasSave, globalStats, go, handleDeleteSave, setCareer, setCareerScreen } = useGameStore();
+  const { hasSave, hasCareerSave, globalStats, go, handleDeleteSave, deleteCareerSave, setCareer, setCareerScreen, resumeCareer } = useGameStore();
   const [musicStarted, setMusicStarted] = useState(Music.isPlaying());
   const [musicEnabled, setMusicEnabled] = useState(Music._enabled);
   const [currentTrack, setCurrentTrack] = useState(Music.getCurrentTrack());
@@ -42,9 +42,12 @@ export default function TitleScreen() {
         {hasSave && <button className="fw-btn fw-btn-green" onClick={() => { SFX.play('click'); go('table'); }}>Continuar Mi Club</button>}
         <button className={`fw-btn ${hasSave ? 'fw-btn-glass' : 'fw-btn-primary'}`} onClick={() => { if (hasSave && !confirm('¿Borrar partida guardada?')) return; handleDeleteSave(); go('tutorial'); }} style={hasSave ? { fontSize: 12, padding: '8px 20px' } : {}}>Mi Club</button>
       </div>
-      <div className="fw-anim-5" style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-        {(globalStats.totalRuns || 0) > 0 && <button className="fw-btn fw-btn-glass" onClick={() => go('stats')} style={{ fontSize: 12, padding: '6px 16px' }}>Compendio</button>}
-        <button className="fw-btn fw-btn-glass" onClick={() => { setCareer(null); setCareerScreen('create'); go('career'); }} style={{ fontSize: 12, padding: '6px 16px' }}>Mi Leyenda</button>
+      <div className="fw-anim-5" style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', marginTop: 4 }}>
+        {hasCareerSave && <button className="fw-btn fw-btn-green" onClick={() => { SFX.play('click'); resumeCareer(); }} style={{ fontSize: 12, padding: '8px 20px' }}>Continuar Mi Leyenda</button>}
+        <div style={{ display: 'flex', gap: 8 }}>
+          {(globalStats.totalRuns || 0) > 0 && <button className="fw-btn fw-btn-glass" onClick={() => go('stats')} style={{ fontSize: 12, padding: '6px 16px' }}>Compendio</button>}
+          <button className="fw-btn fw-btn-glass" onClick={() => { if (hasCareerSave && !confirm('Tienes una carrera en progreso. ¿Empezar una nueva?')) return; deleteCareerSave(); setCareer(null); setCareerScreen('create'); go('career'); }} style={{ fontSize: 12, padding: '6px 16px' }}>Mi Leyenda</button>
+        </div>
       </div>
       {/* Music controls */}
       {MUSIC_TRACKS.length > 0 && (

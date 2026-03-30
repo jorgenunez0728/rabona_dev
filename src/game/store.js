@@ -18,6 +18,7 @@ import { buildRunSnapshot, addRunToHistory } from '@/game/data/runTracker.js';
 import {
   saveGame, loadGame, saveGlobalStats, loadGlobalStats, deleteSave,
   saveCareerGlobalStats, loadCareerGlobalStats,
+  saveCareerInProgress, loadCareerInProgress, deleteCareerInProgress, hasCareerInProgress,
 } from '@/game/save';
 
 // ── Initial state shapes ──
@@ -111,6 +112,7 @@ const useGameStore = create((set, get) => ({
   pendingRelicDraft: null,
   pendingLevelUp: null,
   debugAutoPlay: false,
+  hasCareerSave: false,
 
   // ─── Navigation ───
   navigateTo: (newScreen) => {
@@ -212,8 +214,29 @@ const useGameStore = create((set, get) => ({
     } else {
       set({ career: updater });
     }
+    // Auto-save career in progress
+    const { career, careerScreen } = get();
+    if (career && !career.retired && careerScreen !== 'create') {
+      saveCareerInProgress(career, careerScreen);
+    }
   },
-  setCareerScreen: (screen) => set({ careerScreen: screen }),
+  setCareerScreen: (screen) => {
+    set({ careerScreen: screen });
+    // Auto-save career in progress (skip on create/end screens)
+    const { career } = get();
+    if (career && screen !== 'create' && screen !== 'careerEnd') {
+      saveCareerInProgress(career, screen);
+      set({ hasCareerSave: true });
+    }
+  },
+
+  // ─── Resume saved career ───
+  resumeCareer: () => {
+    const saved = loadCareerInProgress();
+    if (!saved || !saved.career) return false;
+    set({ career: saved.career, careerScreen: saved.careerScreen || 'cards', screen: 'career', hasCareerSave: true });
+    return true;
+  },
 
   // ─── Career Metaprogression ───
   endCareerRun: () => {
@@ -263,8 +286,9 @@ const useGameStore = create((set, get) => ({
     };
     cgs.hallOfLegends = [...(cgs.hallOfLegends || []), entry].slice(-20); // keep last 20
 
-    set({ careerGlobalStats: cgs });
+    set({ careerGlobalStats: cgs, hasCareerSave: false });
     saveCareerGlobalStats(cgs);
+    deleteCareerInProgress();
   },
 
   unlockCareerLegacy: (nodeId) => {
@@ -527,6 +551,10 @@ const useGameStore = create((set, get) => ({
     deleteSave();
     set({ hasSave: false });
   },
+  deleteCareerSave: () => {
+    deleteCareerInProgress();
+    set({ hasCareerSave: false });
+  },
 
   initFromStorage: () => {
     const data = loadGame();
@@ -535,7 +563,7 @@ const useGameStore = create((set, get) => ({
     const cgs = loadCareerGlobalStats();
     if (cgs) set({ careerGlobalStats: cgs });
     if (data) set({ game: data.game, hasSave: true });
-    set({ storageReady: true });
+    set({ storageReady: true, hasCareerSave: hasCareerInProgress() });
   },
 
   // ─── Start new run ───

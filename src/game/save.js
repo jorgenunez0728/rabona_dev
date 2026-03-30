@@ -112,6 +112,32 @@ function validateGameState(game) {
   return true;
 }
 
+// ── Career In-Progress Save (Mi Leyenda mid-career persistence) ──
+
+const CAREER_SAVE_KEY = 'rabona-career-save';
+
+export function saveCareerInProgress(career, careerScreen) {
+  try {
+    localStorage.setItem(CAREER_SAVE_KEY, JSON.stringify({ career, careerScreen, timestamp: Date.now() }));
+  } catch(e) { console.warn('Career save failed:', e); }
+}
+
+export function loadCareerInProgress() {
+  try {
+    const raw = localStorage.getItem(CAREER_SAVE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+
+export function deleteCareerInProgress() {
+  localStorage.removeItem(CAREER_SAVE_KEY);
+}
+
+export function hasCareerInProgress() {
+  return !!localStorage.getItem(CAREER_SAVE_KEY);
+}
+
 // ── Career Global Stats (Mi Leyenda metaprogression) ──
 
 const CAREER_STATS_KEY = 'rabona-career-stats';
