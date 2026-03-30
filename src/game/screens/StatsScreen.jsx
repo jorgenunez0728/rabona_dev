@@ -6,7 +6,7 @@ import { SFX } from "@/game/audio";
 import { Haptics } from "@/game/haptics";
 import { TACTICAL_CARDS, CARD_RARITIES, getCollectionCards } from "@/game/data/cards.js";
 import { computeRecords, computeArchetypeAnalytics } from "@/game/data/runTracker.js";
-import { MANAGER_ARCHETYPES } from "@/game/data/archetypes.js";
+import { MANAGER_ARCHETYPES, getArchetypeSynergies } from "@/game/data/archetypes.js";
 import useGameStore from "@/game/store";
 
 export default function StatsScreen() {
@@ -26,6 +26,7 @@ export default function StatsScreen() {
     { k: 'cards',      l: '🎴', label: 'Cartas' },
     { k: 'fame',       l: '🌟', label: 'Fama' },
     { k: 'achieve',    l: '🏆', label: 'Logros' },
+    { k: 'synergies',  l: '🔗', label: 'Sinergias' },
   ];
 
   return (
@@ -516,6 +517,82 @@ export default function StatsScreen() {
             })}
           </div>
         )}
+
+        {tab === 'synergies' && (() => {
+          const discovered = gs.discoveredSynergies || [];
+          const totalSynergies = MANAGER_ARCHETYPES.reduce((sum, a) => sum + a.synergies.coaches.length + a.synergies.relics.length, 0);
+          const totalDiscovered = discovered.length;
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ textAlign: 'center', marginBottom: 4 }}>
+                <div className="text-gradient-gold" style={{ fontFamily: T.fontHeading, fontSize: 13, letterSpacing: 1 }}>
+                  {totalDiscovered}/{totalSynergies} Descubiertas
+                </div>
+                <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx4, marginTop: 4 }}>Usa arquetipos con coaches y reliquias compatibles para descubrir sinergias</div>
+              </div>
+              {MANAGER_ARCHETYPES.map(arch => {
+                const synergies = getArchetypeSynergies(arch.id);
+                const archDiscovered = discovered.filter(s => s.archetypeId === arch.id);
+                const archTotal = synergies.coaches.length + synergies.relics.length;
+                const archFound = archDiscovered.length;
+                return (
+                  <div key={arch.id} className="glass" style={{ borderRadius: 12, padding: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <span style={{ fontSize: 20 }}>{arch.i}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14, color: T.tx }}>{arch.n}</div>
+                        <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx4 }}>{archFound}/{archTotal} sinergias</div>
+                      </div>
+                      {archFound === archTotal && archTotal > 0 && <span style={{ fontSize: 14, color: T.gold }}>✦</span>}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {synergies.coaches.map(coachId => {
+                        const found = archDiscovered.some(s => s.type === 'coach' && s.targetId === coachId);
+                        const coach = COACHES.find(c => c.id === coachId);
+                        return (
+                          <div key={`c-${coachId}`} style={{
+                            display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
+                            background: found ? `${T.gold}0A` : T.bg1, borderRadius: 8,
+                            border: `1px solid ${found ? T.gold + '25' : T.border}`,
+                          }}>
+                            <span style={{ fontSize: 14, opacity: found ? 1 : 0.3 }}>{found && coach ? coach.i : '👤'}</span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontFamily: T.fontHeading, fontSize: 12, fontWeight: 600, color: found ? T.gold : T.tx4 }}>
+                                {found && coach ? coach.n : '???'}
+                              </div>
+                              <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx4 }}>Coach</div>
+                            </div>
+                            {found && <span style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.gold }}>✦</span>}
+                          </div>
+                        );
+                      })}
+                      {synergies.relics.map(relicId => {
+                        const found = archDiscovered.some(s => s.type === 'relic' && s.targetId === relicId);
+                        const relic = RELICS.find(r => r.id === relicId);
+                        return (
+                          <div key={`r-${relicId}`} style={{
+                            display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
+                            background: found ? `${T.gold}0A` : T.bg1, borderRadius: 8,
+                            border: `1px solid ${found ? T.gold + '25' : T.border}`,
+                          }}>
+                            <span style={{ fontSize: 14, opacity: found ? 1 : 0.3 }}>{found && relic ? relic.i : '📿'}</span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontFamily: T.fontHeading, fontSize: 12, fontWeight: 600, color: found ? T.gold : T.tx4 }}>
+                                {found && relic ? relic.n : '???'}
+                              </div>
+                              <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx4 }}>Reliquia</div>
+                            </div>
+                            {found && <span style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.gold }}>✦</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Back button */}

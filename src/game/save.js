@@ -161,6 +161,7 @@ export function loadGlobalStats() {
       gs.runsHistory = gs.runsHistory || [];
       gs.allTimeAssisters = gs.allTimeAssisters || {};
       gs.allTimeCleanSheets = gs.allTimeCleanSheets || {};
+      gs.discoveredSynergies = gs.discoveredSynergies || [];
       return gs;
     }
   } catch(e) {}
