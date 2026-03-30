@@ -164,23 +164,24 @@ const SOCIAL_ACCOUNTS = [
 const LIVE_TEMPLATES = [
   (m, ps, rs) => `Min ${m}' — HAL ${ps}-${rs}. ¡El partido está abierto!`,
   (m) => `${m}' Caliente el partido ahora mismo 🔥`,
-  (m, ps, rs) => ps > rs ? `${m}' Los Halcones mandan! ${ps}-${rs} 💙` : `${m}' El rival presiona, ${ps}-${rs}`,
+  (m, ps, rs, tn) => ps > rs ? `${m}' ${tn} manda! ${ps}-${rs} 💙` : `${m}' El rival presiona, ${ps}-${rs}`,
   () => `¿Están viendo esto? 👀 Increíble lo que pasa en la cancha`,
   (m) => `Min ${m}' — ¡Qué partido tan intenso!`,
   (m, ps, rs) => `${m}' Marcador: HAL ${ps} - RIV ${rs} #EnVivo`,
   () => `Se me va el corazón con este partido 😅`,
 ];
 
-export function generateLivePosts(league, minute, log, ps, rs, matchType) {
+export function generateLivePosts(league, minute, log, ps, rs, matchType, teamName) {
   if (minute < 5) return [];
   const accounts = SOCIAL_ACCOUNTS[Math.min(league, 6)];
   const posts = [];
+  const tn = teamName || 'Mi equipo';
   const numPosts = Math.min(3, Math.floor(minute / 15) + 1);
   for (let i = 0; i < numPosts; i++) {
     const acc = pick(accounts);
     const tmpl = pick(LIVE_TEMPLATES);
     posts.push({
-      acc, text: tmpl(minute, ps, rs),
+      acc, text: tmpl(minute, ps, rs, tn),
       likes: `${rnd(10, 999)}`, comments: rnd(1, 50), rt: rnd(0, 30),
       t: `${minute}'`, hot: ps !== rs && Math.random() < 0.3,
     });
@@ -190,7 +191,7 @@ export function generateLivePosts(league, minute, log, ps, rs, matchType) {
 
 const POST_TEMPLATES = {
   win: [
-    (hn, rn, ps, rs) => `¡¡VICTORIA!! ${hn} ${ps}-${rs} ${rn}. ¡Los Halcones siguen vivos! 🦅🔥`,
+    (hn, rn, ps, rs) => `¡¡VICTORIA!! ${hn} ${ps}-${rs} ${rn}. ¡Seguimos vivos! 🔥`,
     (hn, rn, ps, rs) => `${ps}-${rs} y tres puntos para casa. ¡Eso es lo que necesitábamos!`,
     () => `El equipo del barrio no para. 💪 Orgullo total.`,
   ],
@@ -213,9 +214,10 @@ const POST_TEMPLATES = {
   ],
 };
 
-export function generateSocialPosts(league, won, drew, rivalName, ps, rs, streak) {
+export function generateSocialPosts(league, won, drew, rivalName, ps, rs, streak, teamName) {
   const accounts = SOCIAL_ACCOUNTS[Math.min(league, 6)];
   const posts = [];
+  const tn = teamName || 'Mi equipo';
   const type = won ? 'win' : drew ? 'draw' : 'loss';
   const templates = POST_TEMPLATES[type];
   for (let i = 0; i < Math.min(4, accounts.length + 1); i++) {
@@ -223,7 +225,7 @@ export function generateSocialPosts(league, won, drew, rivalName, ps, rs, streak
     const tmpl = pick(templates);
     posts.push({
       account: acc,
-      text: tmpl('Halcones', rivalName, ps, rs, streak),
+      text: tmpl(tn, rivalName, ps, rs, streak),
       likes: `${rnd(100, 9999)}`,
       comments: rnd(5, 200),
       retweets: rnd(10, 500),
@@ -236,7 +238,7 @@ export function generateSocialPosts(league, won, drew, rivalName, ps, rs, streak
     const fab = pick(POST_TEMPLATES.fabrizio);
     posts.push({
       account: { n: '@FabrizioRomano', v: true, f: '18M', av: '📡', avImg: SOCIAL_EMOJIS.whistle },
-      text: fab('Halcones', rivalName),
+      text: fab(tn, rivalName),
       likes: `${rnd(5000, 50000)}`,
       comments: rnd(500, 5000),
       retweets: rnd(1000, 20000),
@@ -248,7 +250,7 @@ export function generateSocialPosts(league, won, drew, rivalName, ps, rs, streak
     const streakTmpl = pick(POST_TEMPLATES.streak);
     posts.push({
       account: pick(accounts),
-      text: streakTmpl('Halcones', rivalName, ps, rs, streak),
+      text: streakTmpl(tn, rivalName, ps, rs, streak),
       likes: `${rnd(1000, 20000)}`,
       comments: rnd(100, 1000),
       retweets: rnd(200, 5000),
@@ -259,18 +261,23 @@ export function generateSocialPosts(league, won, drew, rivalName, ps, rs, streak
   return posts;
 }
 
-// Kit colors for rival teams by league
-export function getRivalKit(league) {
+// Kit colors for rival teams by league (avoids clashing with player kit)
+export function getRivalKit(league, playerKitId) {
   const kits = [
-    ['#c62828', '#b71c1c'],
-    ['#6a1b9a', '#4a148c'],
-    ['#1565c0', '#0d47a1'],
-    ['#2e7d32', '#1b5e20'],
-    ['#e65100', '#bf360c'],
-    ['#37474f', '#263238'],
-    ['#4a148c', '#880e4f'],
+    { id: 'red',    c: ['#c62828', '#b71c1c'] },
+    { id: 'purple', c: ['#6a1b9a', '#4a148c'] },
+    { id: 'blue',   c: ['#1565c0', '#0d47a1'] },
+    { id: 'green',  c: ['#2e7d32', '#1b5e20'] },
+    { id: 'orange', c: ['#e65100', '#bf360c'] },
+    { id: 'black',  c: ['#37474f', '#263238'] },
+    { id: 'pink',   c: ['#ad1457', '#880e4f'] },
   ];
-  return kits[league % kits.length];
+  let kit = kits[league % kits.length];
+  // If rival kit clashes with player kit, pick next available
+  if (playerKitId && kit.id === playerKitId) {
+    kit = kits[(league + 1) % kits.length];
+  }
+  return kit.c;
 }
 
 // Pitch images (we'll generate gradient-based ones)

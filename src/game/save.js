@@ -4,7 +4,7 @@
 
 const SAVE_KEY = 'rabona-save';
 const STATS_KEY = 'rabona-stats';
-export const CURRENT_VERSION = '3.5';
+export const CURRENT_VERSION = '3.6';
 
 // ── Simple checksum for integrity ──
 // Not cryptographic — just detects corruption/tampering
@@ -82,6 +82,20 @@ const MIGRATIONS = {
     data.version = '3.5';
     return data;
   },
+  '3.5': (data) => {
+    const g = data.game;
+    // Team customization fields
+    g.teamName = g.teamName || 'Halcones FC';
+    g.kitColorId = g.kitColorId || 'blue';
+    g.shortsColorId = g.shortsColorId || 'blue';
+    // Update table entry name to match
+    if (Array.isArray(g.table)) {
+      const myTeam = g.table.find(t => t.you);
+      if (myTeam) myTeam.name = g.teamName;
+    }
+    data.version = '3.6';
+    return data;
+  },
 };
 
 export function migrateSave(data) {
@@ -110,6 +124,32 @@ function validateGameState(game) {
     if (!(field in game)) return false;
   }
   return true;
+}
+
+// ── Career In-Progress Save (Mi Leyenda mid-career persistence) ──
+
+const CAREER_SAVE_KEY = 'rabona-career-save';
+
+export function saveCareerInProgress(career, careerScreen) {
+  try {
+    localStorage.setItem(CAREER_SAVE_KEY, JSON.stringify({ career, careerScreen, timestamp: Date.now() }));
+  } catch(e) { console.warn('Career save failed:', e); }
+}
+
+export function loadCareerInProgress() {
+  try {
+    const raw = localStorage.getItem(CAREER_SAVE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+
+export function deleteCareerInProgress() {
+  localStorage.removeItem(CAREER_SAVE_KEY);
+}
+
+export function hasCareerInProgress() {
+  return !!localStorage.getItem(CAREER_SAVE_KEY);
 }
 
 // ── Career Global Stats (Mi Leyenda metaprogression) ──
@@ -161,6 +201,8 @@ export function loadGlobalStats() {
       gs.runsHistory = gs.runsHistory || [];
       gs.allTimeAssisters = gs.allTimeAssisters || {};
       gs.allTimeCleanSheets = gs.allTimeCleanSheets || {};
+      gs.discoveredSynergies = gs.discoveredSynergies || [];
+      gs.rufus = gs.rufus || null;
       return gs;
     }
   } catch(e) {}

@@ -5,7 +5,7 @@ import { saveGlobalStats } from "@/game/save";
 import useGameStore from "@/game/store";
 
 export default function ChampionScreen() {
-  const { game, globalStats, setGlobalStats, checkAchievements, handleDeleteSave, go, saveRunSnapshot } = useGameStore();
+  const { game, globalStats, setGlobalStats, checkAchievements, handleDeleteSave, go, saveRunSnapshot, saveRufusPhoto } = useGameStore();
 
   const cs = game.careerStats || {};
   const bestPlayer = game.roster.length > 0 ? [...game.roster].sort((a, b) => calcOvr(b) - calcOvr(a))[0] : null;
@@ -16,6 +16,7 @@ export default function ChampionScreen() {
       <div style={{ fontSize: 60, filter: 'drop-shadow(0 0 24px rgba(240,192,64,0.4))', animation: 'pulse 2s ease-in-out infinite' }}>🏆</div>
       <div className="text-gradient-gold" style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 32, textTransform: 'uppercase', textShadow: T.glowGold, marginTop: 8, letterSpacing: 2 }}>¡¡CAMPEONES!!</div>
       <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 22, color: T.tx, textTransform: 'uppercase', marginTop: 4 }}>Liga Intergaláctica</div>
+      {globalStats.rufus && <div className="fw-bounceIn" style={{ fontSize: 36, marginTop: 4 }}>🐕🎉</div>}
       <div style={{ maxWidth: 340, margin: '16px 0' }}>
         <div style={{ fontSize: 36 }}>👴</div>
         <div style={{ fontFamily: T.fontBody, fontSize: 17, color: T.tx, lineHeight: 1.5, fontStyle: 'italic', marginTop: 6 }}>"Lo logramos, mijo. Desde la cancha llanera hasta las estrellas."</div>
@@ -60,6 +61,10 @@ export default function ChampionScreen() {
         setGlobalStats(finalGS); saveGlobalStats(finalGS);
         // Save run to history
         saveRunSnapshot({ endType: 'champion', leagueName: 'Liga Intergaláctica', leagueIcon: '🛸', finalPosition: 1, immortalizedPlayer: bestPlayer ? { name: bestPlayer.name, pos: bestPlayer.pos, ovr: calcOvr(bestPlayer) } : null });
+        // Rufus trophy photo
+        if (finalGS.rufus) {
+          saveRufusPhoto({ runNum: finalGS.totalRuns, leagueName: 'Liga Intergaláctica', teamName: game.teamName || 'Mi equipo', accessories: { ...(finalGS.rufus.equipped || {}) }, timestamp: Date.now() });
+        }
         handleDeleteSave(); go('title');
       }} style={{ fontFamily: T.fontTitle, fontWeight: 600, fontSize: 16, padding: '14px 40px', background: T.gradientPrimary, color: T.bg, borderRadius: 10, cursor: 'pointer', textTransform: 'uppercase', marginTop: 16, boxShadow: T.glowGold, border: 'none', letterSpacing: 1 }}>🏆 Al Salón de la Fama</button>
     </div>

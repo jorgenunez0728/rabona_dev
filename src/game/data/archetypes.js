@@ -162,3 +162,17 @@ export function hasArchetypeSynergy(archetypeId, coachId) {
   if (!arch) return false;
   return arch.synergies.coaches.includes(coachId);
 }
+
+// Check if a relic synergizes with the archetype
+export function hasRelicSynergy(archetypeId, relicId) {
+  const arch = MANAGER_ARCHETYPES.find(a => a.id === archetypeId);
+  if (!arch) return false;
+  return arch.synergies.relics.includes(relicId);
+}
+
+// Get all synergies for an archetype (for codex display)
+export function getArchetypeSynergies(archetypeId) {
+  const arch = MANAGER_ARCHETYPES.find(a => a.id === archetypeId);
+  if (!arch) return { coaches: [], relics: [] };
+  return arch.synergies;
+}

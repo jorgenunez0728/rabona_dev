@@ -7,10 +7,12 @@ import {
   COACHES, ASCENSION_MODS, ACHIEVEMENTS, LEAGUES, RIVAL_NAMES,
   FORMATIONS, RELICS, STARTING_RELIC_PAIRS, CURSES, COACH_ABILITIES,
   LEGACY_TREE, hasLegacy, calcLegacyPoints, calcSpentLegacy, canUnlockLegacy,
+  TEAM_NAMES, KIT_COLORS,
   _usedNames, genPlayer, rnd, pick, calcOvr,
   CAREER_CAST, CAREER_CAST_UNLOCKABLE, CAREER_LEGACY_TREE,
 } from '@/game/data';
-import { MANAGER_ARCHETYPES } from '@/game/data/archetypes.js';
+import { MANAGER_ARCHETYPES, hasArchetypeSynergy } from '@/game/data/archetypes.js';
+import { INITIAL_RUFUS, getRufusLevelForXP } from '@/game/data/rufus.js';
 import { TACTICAL_CARDS } from '@/game/data/cards.js';
 import { calcMutatorLegacyBonus } from '@/game/data/mutators.js';
 import { getCareerCards, calcCareerLegacyPoints, initCareer } from '@/game/careerLogic';
@@ -18,6 +20,7 @@ import { buildRunSnapshot, addRunToHistory } from '@/game/data/runTracker.js';
 import {
   saveGame, loadGame, saveGlobalStats, loadGlobalStats, deleteSave,
   saveCareerGlobalStats, loadCareerGlobalStats,
+  saveCareerInProgress, loadCareerInProgress, deleteCareerInProgress, hasCareerInProgress,
 } from '@/game/save';
 
 // ── Initial state shapes ──
@@ -27,6 +30,8 @@ const INITIAL_GAME = {
   table: [], captain: null, chemistry: 0, matchesTogether: 0, lastLineup: null, coins: 0,
   rivalMemory: {}, streak: 0, currentObjectives: [], trainedIds: [],
   formation: 'clasica', relics: [], ascension: 0, copa: null, curses: [],
+  // Team customization
+  teamName: 'Halcones FC', kitColorId: 'blue', shortsColorId: 'blue',
   careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {}, assisters: {}, cleanSheets: {} },
   // Metaprogression v2
   archetype: null,          // manager archetype id
@@ -63,6 +68,8 @@ const INITIAL_GLOBAL_STATS = {
   cardCollection: [],         // permanently unlocked card ids
   curseMasteryProgress: {},   // { curseId: totalMatchesPlayed } persists across runs
   mutatorBonusTotal: 0,       // cumulative legacy bonus from mutator runs
+  discoveredSynergies: [],    // [{archetypeId, type:'relic'|'coach', targetId}] discovered combos
+  rufus: null,                // mascot state (lazy init via INITIAL_RUFUS)
   // Run tracker
   runsHistory: [],            // array of run snapshots, max 50
   allTimeAssisters: {},       // {name: totalAssists}
@@ -110,6 +117,7 @@ const useGameStore = create((set, get) => ({
   pendingRelicDraft: null,
   pendingLevelUp: null,
   debugAutoPlay: false,
+  hasCareerSave: false,
 
   // ─── Navigation ───
   navigateTo: (newScreen) => {
@@ -211,8 +219,29 @@ const useGameStore = create((set, get) => ({
     } else {
       set({ career: updater });
     }
+    // Auto-save career in progress
+    const { career, careerScreen } = get();
+    if (career && !career.retired && careerScreen !== 'create') {
+      saveCareerInProgress(career, careerScreen);
+    }
   },
-  setCareerScreen: (screen) => set({ careerScreen: screen }),
+  setCareerScreen: (screen) => {
+    set({ careerScreen: screen });
+    // Auto-save career in progress (skip on create/end screens)
+    const { career } = get();
+    if (career && screen !== 'create' && screen !== 'careerEnd') {
+      saveCareerInProgress(career, screen);
+      set({ hasCareerSave: true });
+    }
+  },
+
+  // ─── Resume saved career ───
+  resumeCareer: () => {
+    const saved = loadCareerInProgress();
+    if (!saved || !saved.career) return false;
+    set({ career: saved.career, careerScreen: saved.careerScreen || 'cards', screen: 'career', hasCareerSave: true });
+    return true;
+  },
 
   // ─── Career Metaprogression ───
   endCareerRun: () => {
@@ -262,8 +291,9 @@ const useGameStore = create((set, get) => ({
     };
     cgs.hallOfLegends = [...(cgs.hallOfLegends || []), entry].slice(-20); // keep last 20
 
-    set({ careerGlobalStats: cgs });
+    set({ careerGlobalStats: cgs, hasCareerSave: false });
     saveCareerGlobalStats(cgs);
+    deleteCareerInProgress();
   },
 
   unlockCareerLegacy: (nodeId) => {
@@ -415,6 +445,57 @@ const useGameStore = create((set, get) => ({
     saveGlobalStats(newGS);
   },
 
+  // ─── Discover a synergy (relic or coach) ───
+  discoverSynergy: (archetypeId, type, targetId) => {
+    const { globalStats } = get();
+    const synergies = [...(globalStats.discoveredSynergies || [])];
+    if (synergies.some(s => s.archetypeId === archetypeId && s.type === type && s.targetId === targetId)) return;
+    synergies.push({ archetypeId, type, targetId });
+    const newGS = { ...globalStats, discoveredSynergies: synergies };
+    set({ globalStats: newGS });
+    saveGlobalStats(newGS);
+  },
+
+  // ─── Rufus mascot actions ───
+  initRufus: () => {
+    const { globalStats } = get();
+    if (globalStats.rufus) return;
+    const newGS = { ...globalStats, rufus: { ...INITIAL_RUFUS } };
+    set({ globalStats: newGS });
+    saveGlobalStats(newGS);
+  },
+  getRufus: () => {
+    const { globalStats } = get();
+    return globalStats.rufus || INITIAL_RUFUS;
+  },
+  updateRufus: (updater) => {
+    const { globalStats } = get();
+    const rufus = { ...(globalStats.rufus || INITIAL_RUFUS) };
+    const updated = typeof updater === 'function' ? updater(rufus) : { ...rufus, ...updater };
+    updated.level = getRufusLevelForXP(updated.xp);
+    const newGS = { ...globalStats, rufus: updated };
+    set({ globalStats: newGS });
+    saveGlobalStats(newGS);
+  },
+  addAccessoryToInventory: (accessoryId) => {
+    const { globalStats } = get();
+    const rufus = { ...(globalStats.rufus || INITIAL_RUFUS) };
+    if (rufus.inventory.includes(accessoryId)) return;
+    rufus.inventory = [...rufus.inventory, accessoryId];
+    rufus.level = getRufusLevelForXP(rufus.xp);
+    const newGS = { ...globalStats, rufus };
+    set({ globalStats: newGS });
+    saveGlobalStats(newGS);
+  },
+  saveRufusPhoto: (photoData) => {
+    const { globalStats } = get();
+    const rufus = { ...(globalStats.rufus || INITIAL_RUFUS) };
+    rufus.photos = [...(rufus.photos || []), photoData].slice(-10);
+    const newGS = { ...globalStats, rufus };
+    set({ globalStats: newGS });
+    saveGlobalStats(newGS);
+  },
+
   // ─── Save curse mastery progress globally ───
   saveCurseMasteryProgress: () => {
     const { game, globalStats } = get();
@@ -515,6 +596,10 @@ const useGameStore = create((set, get) => ({
     deleteSave();
     set({ hasSave: false });
   },
+  deleteCareerSave: () => {
+    deleteCareerInProgress();
+    set({ hasCareerSave: false });
+  },
 
   initFromStorage: () => {
     const data = loadGame();
@@ -523,7 +608,7 @@ const useGameStore = create((set, get) => ({
     const cgs = loadCareerGlobalStats();
     if (cgs) set({ careerGlobalStats: cgs });
     if (data) set({ game: data.game, hasSave: true });
-    set({ storageReady: true });
+    set({ storageReady: true, hasCareerSave: hasCareerInProgress() });
   },
 
   // ─── Start new run ───
@@ -541,13 +626,15 @@ const useGameStore = create((set, get) => ({
       ...reservePositions.map(p => { const pl = genPlayer(p, minLv, Math.max(1, maxLv - 1)); pl.role = 'rs'; return pl; }),
     ];
     const rns = RIVAL_NAMES[leagueIdx] || RIVAL_NAMES[0];
+    const debugTeamName = pick(TEAM_NAMES);
     const table = [
-      { name: 'Halcones', you: true, w: 0, d: 0, l: 0, gf: 0, ga: 0 },
+      { name: debugTeamName, you: true, w: 0, d: 0, l: 0, gf: 0, ga: 0 },
       ...rns.map(n => ({ name: n, you: false, w: 0, d: 0, l: 0, gf: 0, ga: 0 })),
     ];
     const newG = {
       ...INITIAL_GAME, roster, captain: roster[0].id, table, league: leagueIdx, matchNum: 0,
       coins: 500, coach, ascension: 0, formation: 'clasica', relics: [],
+      teamName: debugTeamName, kitColorId: 'blue', shortsColorId: 'blue',
       chemistry: 10, curses: [], coachAbility: COACH_ABILITIES[coach.id] || COACH_ABILITIES.miguel,
       careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {}, assisters: {}, cleanSheets: {} },
       rivalMemory: {}, streak: 0, trainedIds: [],
@@ -633,7 +720,8 @@ const useGameStore = create((set, get) => ({
       ...reservePositions.map(p => { const pl = genPlayer(p, 1, 2); pl.role = 'rs'; return pl; }),
     ];
     const rns = RIVAL_NAMES[0];
-    const table = [{ name: 'Halcones', you: true, w: 0, d: 0, l: 0, gf: 0, ga: 0 }, ...rns.map(n => ({ name: n, you: false, w: 0, d: 0, l: 0, gf: 0, ga: 0 }))];
+    const teamName = pick(TEAM_NAMES);
+    const table = [{ name: teamName, you: true, w: 0, d: 0, l: 0, gf: 0, ga: 0 }, ...rns.map(n => ({ name: n, you: false, w: 0, d: 0, l: 0, gf: 0, ga: 0 }))];
     let startCoins = 50 + (ability.extraCoins || 0) + (archetype?.startMods?.extraCoins || 0);
     if (coach.fx === 'cheap') startCoins = 80;
     if (isAlien) startCoins = 100;
@@ -734,6 +822,7 @@ const useGameStore = create((set, get) => ({
       coins: startCoins, coach, ascension: ascLevel, formation: 'clasica', relics: startRelics,
       chemistry: startChem, curses: startCurses,
       coachAbility: ability,
+      teamName, kitColorId: 'blue', shortsColorId: 'blue',
       careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {}, assisters: {}, cleanSheets: {} },
       rivalMemory: {}, streak: 0, trainedIds: [], curseFreeRemoves: ability.curseFreeRemove || 0,
       // Metaprogression v2
@@ -746,6 +835,10 @@ const useGameStore = create((set, get) => ({
     };
     set({ game: newG, hasSave: true });
     autoSave(newG);
+    // Track coach synergy discovery
+    if (archetypeId && coach && hasArchetypeSynergy(archetypeId, coach.id)) {
+      get().discoverSynergy(archetypeId, 'coach', coach.id);
+    }
     get().go('table');
   },
 }));

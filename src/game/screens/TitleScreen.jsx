@@ -5,7 +5,7 @@ import MUSIC_TRACKS from '@/game/data/musicTracks';
 import useGameStore from '@/game/store';
 
 export default function TitleScreen() {
-  const { hasSave, globalStats, go, handleDeleteSave, setCareer, setCareerScreen } = useGameStore();
+  const { hasSave, hasCareerSave, globalStats, go, handleDeleteSave, deleteCareerSave, setCareer, setCareerScreen, resumeCareer } = useGameStore();
   const [musicStarted, setMusicStarted] = useState(Music.isPlaying());
   const [musicEnabled, setMusicEnabled] = useState(Music._enabled);
   const [currentTrack, setCurrentTrack] = useState(Music.getCurrentTrack());
@@ -37,14 +37,22 @@ export default function TitleScreen() {
         <div style={{ fontFamily: T.fontBody, fontWeight: 400, fontSize: 'clamp(11px,2.5vw,14px)', color: T.tx2, letterSpacing: 3, textTransform: 'uppercase' }}>Del Barrio a las Estrellas</div>
       </div>
       <div className="fw-anim-2 divider-gold" style={{ width: 60 }} />
+      {globalStats.rufus && (
+        <div className="fw-anim-2 fw-float" onClick={() => SFX.play('bark')} style={{ fontSize: 28, cursor: 'pointer', marginTop: 4, userSelect: 'none' }}>
+          🐕{globalStats.rufus.equipped?.head ? ((() => { const a = (globalStats.rufus.inventory || []).includes(globalStats.rufus.equipped.head) ? globalStats.rufus.equipped.head : null; return a ? '' : ''; })()) : ''}
+        </div>
+      )}
       <div className="fw-anim-3" style={{ fontFamily: T.fontBody, fontSize: 'clamp(11px,2.5vw,14px)', color: T.tx3, maxWidth: 300, lineHeight: 1.5, padding: '0 20px' }}>Arma tu equipo en una cancha llanera. Llévalo hasta conquistar la galaxia.</div>
       <div className="fw-anim-4" style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center', marginTop: 4 }}>
         {hasSave && <button className="fw-btn fw-btn-green" onClick={() => { SFX.play('click'); go('table'); }}>Continuar Mi Club</button>}
         <button className={`fw-btn ${hasSave ? 'fw-btn-glass' : 'fw-btn-primary'}`} onClick={() => { if (hasSave && !confirm('¿Borrar partida guardada?')) return; handleDeleteSave(); go('tutorial'); }} style={hasSave ? { fontSize: 12, padding: '8px 20px' } : {}}>Mi Club</button>
       </div>
-      <div className="fw-anim-5" style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-        {(globalStats.totalRuns || 0) > 0 && <button className="fw-btn fw-btn-glass" onClick={() => go('stats')} style={{ fontSize: 12, padding: '6px 16px' }}>Compendio</button>}
-        <button className="fw-btn fw-btn-glass" onClick={() => { setCareer(null); setCareerScreen('create'); go('career'); }} style={{ fontSize: 12, padding: '6px 16px' }}>Mi Leyenda</button>
+      <div className="fw-anim-5" style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', marginTop: 4 }}>
+        {hasCareerSave && <button className="fw-btn fw-btn-green" onClick={() => { SFX.play('click'); resumeCareer(); }} style={{ fontSize: 12, padding: '8px 20px' }}>Continuar Mi Leyenda</button>}
+        <div style={{ display: 'flex', gap: 8 }}>
+          {(globalStats.totalRuns || 0) > 0 && <button className="fw-btn fw-btn-glass" onClick={() => go('stats')} style={{ fontSize: 12, padding: '6px 16px' }}>Compendio</button>}
+          <button className="fw-btn fw-btn-glass" onClick={() => { if (hasCareerSave && !confirm('Tienes una carrera en progreso. ¿Empezar una nueva?')) return; deleteCareerSave(); setCareer(null); setCareerScreen('create'); go('career'); }} style={{ fontSize: 12, padding: '6px 16px' }}>Mi Leyenda</button>
+        </div>
       </div>
       {/* Music controls */}
       {MUSIC_TRACKS.length > 0 && (

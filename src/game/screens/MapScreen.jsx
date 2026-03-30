@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { SFX } from '@/game/audio';
 import { T, RELICS } from '@/game/data';
+import { generateAccessoryReward } from '@/game/data/rufus.js';
 import useGameStore from '@/game/store';
 import { pick, rnd } from '@/game/data/helpers.js';
 import { CURSES } from '@/game/data/progression.js';
@@ -61,6 +62,11 @@ const MAP_NODES = [
     d: 'Un extraño ofrece intercambiar reliquias.',
     weight: 0.4, requiresRelics: 3,
   },
+  {
+    id: 'rufus_encuentra', n: 'Rufus Olfatea Algo', i: '🐕', color: '#F59E0B',
+    d: 'Rufus encontró algo brillante entre la basura...',
+    weight: 0.5, requiresLeague: 0,
+  },
 ];
 
 function pickNodes(game, globalStats) {
@@ -89,7 +95,7 @@ function pickNodes(game, globalStats) {
 }
 
 // ── Node resolution effects ──
-function resolveNode(nodeId, game, setGame, go, addCurse, removeCurse, globalStats) {
+function resolveNode(nodeId, game, setGame, go, addCurse, removeCurse, globalStats, addAccessoryToInventory, updateRufus) {
   const roster = [...game.roster];
   const starters = roster.filter(p => p.role === 'st');
   let coins = game.coins;
@@ -248,13 +254,27 @@ function resolveNode(nodeId, game, setGame, go, addCurse, removeCurse, globalSta
         icon: '🎩' };
     }
 
+    case 'rufus_encuentra': {
+      const rufus = globalStats.rufus || { inventory: [] };
+      const acc = generateAccessoryReward(rufus.inventory);
+      if (acc) {
+        addAccessoryToInventory(acc.id);
+        updateRufus(r => ({ ...r, xp: (r.xp || 0) + 3 }));
+        SFX.play('bark_happy');
+        return { text: `Rufus olfateó algo entre la basura... ¡${acc.i} ${acc.n}! Nuevo accesorio desbloqueado.`, icon: '🐕' };
+      }
+      updateRufus(r => ({ ...r, xp: (r.xp || 0) + 2 }));
+      SFX.play('bark');
+      return { text: 'Rufus olfateó un rato pero solo encontró un hueso viejo. +2 XP para Rufus.', icon: '🐕' };
+    }
+
     default:
       return { text: 'Nada pasó.', icon: '⚽' };
   }
 }
 
 export default function MapScreen() {
-  const { game, globalStats, go, setGame, addCurse, removeCurse } = useGameStore();
+  const { game, globalStats, go, setGame, addCurse, removeCurse, addAccessoryToInventory, updateRufus } = useGameStore();
   const [nodes] = useState(() => pickNodes(game, globalStats));
   const [result, setResult] = useState(null);
   const [chosen, setChosen] = useState(null);
@@ -265,7 +285,7 @@ export default function MapScreen() {
     setChosen(node.id);
     // Reveal blind nodes
     const actualNode = node.blind ? pick(MAP_NODES.filter(n => !n.blind && !n.requiresCurse)) : node;
-    const res = resolveNode(actualNode.id, game, setGame, go, addCurse, removeCurse, globalStats);
+    const res = resolveNode(actualNode.id, game, setGame, go, addCurse, removeCurse, globalStats, addAccessoryToInventory, updateRufus);
     setResult({ ...res, nodeId: actualNode.id });
     // Track map choice for run history
     setGame(g => ({ ...g, mapChoices: [...(g.mapChoices || []), { matchNum: g.matchNum, nodeType: actualNode.id }] }));

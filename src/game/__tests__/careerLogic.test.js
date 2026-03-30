@@ -20,11 +20,11 @@ describe('initCareer', () => {
 
   it('has default bar values', () => {
     const c = initCareer('Test', 'GK');
-    expect(c.bars.rend).toBe(50);
-    expect(c.bars.fis).toBe(55);
+    expect(c.bars.rend).toBe(45);
+    expect(c.bars.fis).toBe(50);
     expect(c.bars.rel).toBe(50);
-    expect(c.bars.fam).toBe(20);
-    expect(c.bars.men).toBe(55);
+    expect(c.bars.fam).toBe(30);
+    expect(c.bars.men).toBe(50);
   });
 
   it('initializes with empty history and stats', () => {
