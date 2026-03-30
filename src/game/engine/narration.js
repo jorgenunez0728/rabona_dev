@@ -63,10 +63,10 @@ const NARR = {
     (ctx) => `🕐 Descanso: ${ctx.homeScore}-${ctx.awayScore}`,
   ],
   kickoff: [
-    (ctx) => `⚽ Arranca — Halcones vs ${ctx.rivalName} [${ctx.formation}]`,
+    (ctx) => `⚽ Arranca — ${ctx.homeName || 'Halcones FC'} vs ${ctx.rivalName} [${ctx.formation}]`,
   ],
   finalWhistle: [
-    (ctx) => `🏁 ¡Final! Halcones ${ctx.homeScore}-${ctx.awayScore} ${ctx.rivalName}`,
+    (ctx) => `🏁 ¡Final! ${ctx.homeName || 'Halcones FC'} ${ctx.homeScore}-${ctx.awayScore} ${ctx.rivalName}`,
   ],
   card: [
     (ctx) => `🟨 ${ctx.minute}' ¡Tarjeta!`,

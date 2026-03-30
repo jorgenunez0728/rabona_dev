@@ -21,23 +21,57 @@ export const LEAGUES=[
 export const CUP_STAGES=['group','semi','final'];
 export const CUP_RIVAL_NAMES=['Nova Stellaris','Andrómeda FC','Orión United','Nebula Rangers','Cosmos XI','Quasar City'];
 
-export function initCupState(){
+export function initCupState(teamName){
   const groupTeams=[
-    {name:'Halcones',you:true,w:0,d:0,l:0,gf:0,ga:0},
+    {name:teamName||'Halcones FC',you:true,w:0,d:0,l:0,gf:0,ga:0},
     ...CUP_RIVAL_NAMES.slice(0,3).map(n=>({name:n,you:false,w:0,d:0,l:0,gf:0,ga:0}))
   ];
   return {stage:'group',groupTable:groupTeams,matchInStage:0,bracket:{semi1:null,semi2:null,final:null},
     semiFoe:null,finalFoe:null,eliminated:false,champion:false};
 }
 
+// ── Team name pool (assigned randomly at run start) ──
+export const TEAM_NAMES = [
+  // Barrio flavor
+  'Hijos de Doña Lucy', 'Real Bañil', 'Atlético Rodilla', 'Los Tlacuaches',
+  'Chancletas FC', 'Deportivo Torta', 'Inter Compadres', 'Los Madrugadores',
+  'Club Tianguis', 'Tacos United', 'Los Chilaquiles', 'Deportivo Vecinos',
+  // Standard club vibes
+  'Atlético Juvenil', 'Juventud FC', 'Puros de Oficina', 'Sporting del Valle',
+  'Real Poniente', 'Club Aurora', 'Halcones FC', 'Dynamo Sur',
+  'Olimpia FC', 'Racing Norte', 'Fénix FC', 'Victoria FC',
+  'Cerro United', 'Sol Naciente', 'Cruz del Sur', 'Tempest FC',
+];
+
+// ── Kit color palette (primary, accent, label) ──
+export const KIT_COLORS = [
+  { id: 'blue',    primary: '#1565c0', accent: '#0d47a1', label: 'Azul' },
+  { id: 'red',     primary: '#c62828', accent: '#b71c1c', label: 'Rojo' },
+  { id: 'green',   primary: '#2e7d32', accent: '#1b5e20', label: 'Verde' },
+  { id: 'white',   primary: '#e0e0e0', accent: '#9e9e9e', label: 'Blanco' },
+  { id: 'black',   primary: '#37474f', accent: '#263238', label: 'Negro' },
+  { id: 'yellow',  primary: '#f9a825', accent: '#f57f17', label: 'Amarillo' },
+  { id: 'purple',  primary: '#6a1b9a', accent: '#4a148c', label: 'Morado' },
+  { id: 'orange',  primary: '#e65100', accent: '#bf360c', label: 'Naranja' },
+  { id: 'cyan',    primary: '#00838f', accent: '#006064', label: 'Cyan' },
+  { id: 'pink',    primary: '#ad1457', accent: '#880e4f', label: 'Rosa' },
+];
+
 export const RIVAL_NAMES=[
-  ['Los Panaderos','Chamacos FC','Dep. Herreros','Taquería Utd','Mecánicos FC'],
-  ['Municipal FC','Atl. Bomberos','Club Mercado','Inter Vecinos','Taxistas FC'],
-  ['Rayados','Potros FC','Águilas Reales','Guerreros','Titanes FC','Halcones B'],
-  ['Azteca FC','Club Industrial','Pumas Norte','Reyes del Sur','Centinelas','Jaguares'],
-  ['Estrellas','Cóndores Andinos','Jaguares Caribe','Ciclones FC','Leyendas','Quetzales'],
-  ['World United','Dragones Asia','Leones Europa','Faraones FC','Samurai FC','Berserkers','Vikings FC'],
-  ['Nebulosa FC','Andrómeda XI','Aliens United','Nova Galáctica','Dark Matter FC','Supernova','Quantum FC'],
+  // Liga Barrio — puro barrio, oficios, apodos
+  ['Los Panaderos','Chamacos FC','Dep. Herreros','Taquería Utd','Mecánicos FC','Los Chiquilines','Gordos FC','Tortillería Real'],
+  // Liga Municipal — semi-serios, instituciones locales
+  ['Municipal FC','Atl. Bomberos','Club Mercado','Inter Vecinos','Taxistas FC','Deportivo Correos','Sindicato United','Policía FC'],
+  // Liga Estatal — clubes de verdad, nombres serios
+  ['Rayados del Norte','Potros FC','Águilas Reales','Guerreros','Titanes FC','Sporting Estatal','Atlas Sur','Racing Oriente'],
+  // Liga Nacional — nombres de club grandes
+  ['Azteca FC','Club Industrial','Pumas Norte','Reyes del Sur','Centinelas','Jaguares','Nacional FC','Independiente'],
+  // Liga Continental — sabor internacional americano
+  ['Estrellas','Cóndores Andinos','Jaguares Caribe','Ciclones FC','Leyendas','Quetzales','Boca del Sur','Flamengo FC'],
+  // Liga Mundial — clubes globales épicos
+  ['World United','Dragones Asia','Leones Europa','Faraones FC','Samurai FC','Berserkers','Vikings FC','Pharos FC'],
+  // Liga Intergaláctica — sci-fi
+  ['Nebulosa FC','Andrómeda XI','Aliens United','Nova Galáctica','Dark Matter FC','Supernova','Quantum FC','Void Walkers'],
 ];
 
 export const RIVAL_COACHES=[

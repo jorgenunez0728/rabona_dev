@@ -36,7 +36,7 @@ function generateTopScorers(table, playerRoster) {
   if (playerRoster?.length) {
     const best = [...playerRoster].sort((a, b) => (b.goals || 0) - (a.goals || 0))[0];
     if (best && (best.goals || 0) > 0) {
-      scorers.push({ name: best.name, team: 'Halcones', goals: best.goals, you: true });
+      scorers.push({ name: best.name, team: game.teamName || 'Halcones FC', goals: best.goals, you: true });
     }
   }
   // Generate rival scorers
@@ -73,6 +73,7 @@ function generateTournamentFeed(league, table, matchNum, myPos) {
   const leader = sorted[0];
   const last = sorted[sorted.length - 1];
   const myTeam = sorted.find(t => t.you);
+  const tn = myTeam?.name || 'Mi equipo';
   const posts = [];
 
   const templates = {
@@ -81,18 +82,18 @@ function generateTournamentFeed(league, table, matchNum, myPos) {
       () => `Mi abuela juega mejor que el portero de ${last?.name} 💀`,
       () => `Se arma la carnita asada para ver el próximo partido de ${myTeam?.name || 'Halcones'} 🥩⚽`,
       () => `${last?.name} ya hasta da lástima, llevan ${last?.l || 0} derrotas 😭`,
-      () => myPos < 2 ? `Halcones viene volando alto, ¿serán los que ascienden? 👀` : `Halcones necesita reaccionar o se queda en el barrio 😬`,
+      () => myPos < 2 ? `${tn} viene volando alto, ¿serán los que ascienden? 👀` : `${tn} necesita reaccionar o se queda en el barrio 😬`,
     ],
     mid: [
       () => `TABLA | ${leader?.name} lidera con ${leader ? leader.w * 3 + leader.d : 0} puntos tras ${matchNum} jornadas`,
       () => `Análisis: La defensa de ${sorted[1]?.name || 'segundo'} ha sido clave en su campaña`,
-      () => myPos < 2 ? `Halcones se consolida en zona de ascenso, gran trabajo táctico` : `¿Alcanzará Halcones para meterse al top 2? Quedan ${(LEAGUES[league]?.m || 10) - matchNum} jornadas`,
+      () => myPos < 2 ? `${tn} se consolida en zona de ascenso, gran trabajo táctico` : `¿Alcanzará ${tn} para meterse al top 2? Quedan ${(LEAGUES[league]?.m || 10) - matchNum} jornadas`,
       () => `Sorpresa: ${sorted[Math.min(3, sorted.length - 1)]?.name} ha dado la campanada esta jornada`,
       () => `Golazo de la jornada cortesía de un jugador de ${pick(sorted)?.name || 'un equipo local'}`,
     ],
     high: [
       () => `BREAKING: ${leader?.name} encabeza la clasificación con ${leader ? leader.w * 3 + leader.d : 0} pts. Análisis completo →`,
-      () => myPos < 2 ? `Halcones se posiciona como serio candidato al ascenso. Cifras impresionantes.` : `Halcones debe mejorar números si quiere pelear el ascenso. Análisis táctico en vivo.`,
+      () => myPos < 2 ? `${tn} se posiciona como serio candidato al ascenso. Cifras impresionantes.` : `${tn} debe mejorar números si quiere pelear el ascenso. Análisis táctico en vivo.`,
       () => `Estadística: ${sorted[0]?.name} promedia ${sorted[0] ? (sorted[0].gf / Math.max(1, matchNum)).toFixed(1) : '?'} goles por partido`,
       () => `Debate: ¿Es esta la liga más competitiva en años? Solo ${(sorted[0]?.w * 3 + sorted[0]?.d) - (sorted[sorted.length - 1]?.w * 3 + sorted[sorted.length - 1]?.d)} pts separan al primero del último`,
       () => `Panel de expertos coincide: la jornada ${matchNum} fue de las más emocionantes del torneo`,
@@ -207,7 +208,7 @@ export default function TableScreen() {
             </div>
             {/* My position summary inside header */}
             <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(240,192,64,0.03)' }}>
-              <div style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.gold, fontWeight: 700 }}>#{myPos + 1} Halcones</div>
+              <div style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.gold, fontWeight: 700 }}>#{myPos + 1} {game.teamName || 'Mi equipo'}</div>
               <div style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.tx2 }}>{sorted[myPos]?.w * 3 + sorted[myPos]?.d} pts</div>
               <div style={{ fontFamily: T.fontBody, fontSize: 11, color: done ? (myPos < 2 ? T.win : T.lose) : T.purple }}>
                 {done ? (myPos < 2 ? 'Clasificado' : 'ELIMINADOS') : `${lg.m - game.matchNum} restantes`}
@@ -402,10 +403,10 @@ export default function TableScreen() {
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px',
                   borderTop: i > 0 ? `1px solid ${T.border}` : 'none',
-                  background: s.you || s.team === 'Halcones' ? 'rgba(240,192,64,0.04)' : 'transparent',
+                  background: s.you || s.you ? 'rgba(240,192,64,0.04)' : 'transparent',
                 }}>
                   <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: i < 3 ? T.gold : T.tx3, minWidth: 18, textAlign: 'center' }}>{i + 1}.</span>
-                  <span style={{ flex: 1, fontFamily: T.fontBody, fontSize: 11, color: s.you || s.team === 'Halcones' ? T.gold : T.tx, fontWeight: s.you || s.team === 'Halcones' ? 700 : 400 }}>{s.name}</span>
+                  <span style={{ flex: 1, fontFamily: T.fontBody, fontSize: 11, color: s.you || s.you ? T.gold : T.tx, fontWeight: s.you || s.you ? 700 : 400 }}>{s.name}</span>
                   <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>{s.team}</span>
                   <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: T.tx, minWidth: 24, textAlign: 'right' }}>{s.goals}</span>
                 </div>
@@ -418,10 +419,10 @@ export default function TableScreen() {
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px',
                   borderTop: i > 0 ? `1px solid ${T.border}` : 'none',
-                  background: s.team === 'Halcones' ? 'rgba(240,192,64,0.04)' : 'transparent',
+                  background: s.you ? 'rgba(240,192,64,0.04)' : 'transparent',
                 }}>
                   <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: i < 3 ? T.info : T.tx3, minWidth: 18, textAlign: 'center' }}>{i + 1}.</span>
-                  <span style={{ flex: 1, fontFamily: T.fontBody, fontSize: 11, color: s.team === 'Halcones' ? T.gold : T.tx, fontWeight: s.team === 'Halcones' ? 700 : 400 }}>{s.name}</span>
+                  <span style={{ flex: 1, fontFamily: T.fontBody, fontSize: 11, color: s.you ? T.gold : T.tx, fontWeight: s.you ? 700 : 400 }}>{s.name}</span>
                   <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>{s.team}</span>
                   <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: T.info, minWidth: 24, textAlign: 'right' }}>{s.assists}</span>
                 </div>
@@ -434,10 +435,10 @@ export default function TableScreen() {
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px',
                   borderTop: i > 0 ? `1px solid ${T.border}` : 'none',
-                  background: s.team === 'Halcones' ? 'rgba(240,192,64,0.04)' : 'transparent',
+                  background: s.you ? 'rgba(240,192,64,0.04)' : 'transparent',
                 }}>
                   <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: i < 3 ? T.win : T.tx3, minWidth: 18, textAlign: 'center' }}>{i + 1}.</span>
-                  <span style={{ flex: 1, fontFamily: T.fontBody, fontSize: 11, color: s.team === 'Halcones' ? T.gold : T.tx, fontWeight: s.team === 'Halcones' ? 700 : 400 }}>{s.name}</span>
+                  <span style={{ flex: 1, fontFamily: T.fontBody, fontSize: 11, color: s.you ? T.gold : T.tx, fontWeight: s.you ? 700 : 400 }}>{s.name}</span>
                   <span style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>{s.team} · {s.pos}</span>
                   <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: T.win, minWidth: 24, textAlign: 'right' }}>{s.cleanSheets}</span>
                 </div>

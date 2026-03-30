@@ -74,7 +74,7 @@ export default function PrematchScreen() {
           {/* VS layout */}
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 20 }}>
             <div style={{ flex: 1, textAlign: 'right' }}>
-              <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 24, color: T.tx, textTransform: 'uppercase', lineHeight: 1.1 }}>HALCONES</div>
+              <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 24, color: T.tx, textTransform: 'uppercase', lineHeight: 1.1 }}>{game.teamName || 'HALCONES FC'}</div>
             </div>
             <div style={{
               fontFamily: T.fontHeading, fontWeight: 700, fontSize: 28, color: T.tx4,
@@ -176,7 +176,7 @@ export default function PrematchScreen() {
 
       {/* Team comparison panels */}
       <div style={{ display: 'flex', gap: 8, padding: '0 10px 8px', flex: 1 }}>
-        {[{ t: 'Halcones', p: starters, c: game.coach, h: true }, { t: rivalName, p: rpRef.current, c: rcRef.current, h: false }].map((team, ti) => (
+        {[{ t: game.teamName || 'Halcones FC', p: starters, c: game.coach, h: true }, { t: rivalName, p: rpRef.current, c: rcRef.current, h: false }].map((team, ti) => (
           <div key={ti} className="glass" style={{ flex: 1, padding: 8, borderRadius: 10, border: `1px solid ${T.glassBorder}` }}>
             <div style={{
               fontFamily: T.fontHeading, fontWeight: 600, fontSize: 11,
@@ -205,7 +205,7 @@ export default function PrematchScreen() {
       <div className="glass" style={{ margin: '0 10px 8px', borderRadius: 10, padding: '10px 0', border: `1px solid ${T.glassBorder}` }}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 24 }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 }}>Halcones</div>
+            <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 }}>{game.teamName || 'Halcones FC'}</div>
             <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 30, color: T.info }}>{tp}</div>
           </div>
           <div style={{

@@ -49,6 +49,7 @@ export function* simulateMatch(config) {
     matchType = 'normal',
     playStyle = null,
     intensity = null,
+    teamName = 'Halcones FC',
     // Metaprogression v2
     tacticalCards = [],
     archetypeHooks = {},
@@ -61,7 +62,7 @@ export function* simulateMatch(config) {
   const formMods = formation.mods;
 
   // Build team objects
-  const home = { name: 'Halcones', players: starters };
+  const home = { name: teamName, players: starters };
   const away = { name: rival.name, players: rival.players };
 
   // Initialize systems

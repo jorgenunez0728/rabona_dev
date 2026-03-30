@@ -4,7 +4,7 @@
 
 const SAVE_KEY = 'rabona-save';
 const STATS_KEY = 'rabona-stats';
-export const CURRENT_VERSION = '3.5';
+export const CURRENT_VERSION = '3.6';
 
 // ── Simple checksum for integrity ──
 // Not cryptographic — just detects corruption/tampering
@@ -80,6 +80,20 @@ const MIGRATIONS = {
       g.careerStats.maxSimultaneousCurses = g.careerStats.maxSimultaneousCurses || 0;
     }
     data.version = '3.5';
+    return data;
+  },
+  '3.5': (data) => {
+    const g = data.game;
+    // Team customization fields
+    g.teamName = g.teamName || 'Halcones FC';
+    g.kitColorId = g.kitColorId || 'blue';
+    g.shortsColorId = g.shortsColorId || 'blue';
+    // Update table entry name to match
+    if (Array.isArray(g.table)) {
+      const myTeam = g.table.find(t => t.you);
+      if (myTeam) myTeam.name = g.teamName;
+    }
+    data.version = '3.6';
     return data;
   },
 };

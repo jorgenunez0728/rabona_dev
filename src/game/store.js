@@ -7,6 +7,7 @@ import {
   COACHES, ASCENSION_MODS, ACHIEVEMENTS, LEAGUES, RIVAL_NAMES,
   FORMATIONS, RELICS, STARTING_RELIC_PAIRS, CURSES, COACH_ABILITIES,
   LEGACY_TREE, hasLegacy, calcLegacyPoints, calcSpentLegacy, canUnlockLegacy,
+  TEAM_NAMES, KIT_COLORS,
   _usedNames, genPlayer, rnd, pick, calcOvr,
   CAREER_CAST, CAREER_CAST_UNLOCKABLE, CAREER_LEGACY_TREE,
 } from '@/game/data';
@@ -28,6 +29,8 @@ const INITIAL_GAME = {
   table: [], captain: null, chemistry: 0, matchesTogether: 0, lastLineup: null, coins: 0,
   rivalMemory: {}, streak: 0, currentObjectives: [], trainedIds: [],
   formation: 'clasica', relics: [], ascension: 0, copa: null, curses: [],
+  // Team customization
+  teamName: 'Halcones FC', kitColorId: 'blue', shortsColorId: 'blue',
   careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {}, assisters: {}, cleanSheets: {} },
   // Metaprogression v2
   archetype: null,          // manager archetype id
@@ -581,13 +584,15 @@ const useGameStore = create((set, get) => ({
       ...reservePositions.map(p => { const pl = genPlayer(p, minLv, Math.max(1, maxLv - 1)); pl.role = 'rs'; return pl; }),
     ];
     const rns = RIVAL_NAMES[leagueIdx] || RIVAL_NAMES[0];
+    const debugTeamName = pick(TEAM_NAMES);
     const table = [
-      { name: 'Halcones', you: true, w: 0, d: 0, l: 0, gf: 0, ga: 0 },
+      { name: debugTeamName, you: true, w: 0, d: 0, l: 0, gf: 0, ga: 0 },
       ...rns.map(n => ({ name: n, you: false, w: 0, d: 0, l: 0, gf: 0, ga: 0 })),
     ];
     const newG = {
       ...INITIAL_GAME, roster, captain: roster[0].id, table, league: leagueIdx, matchNum: 0,
       coins: 500, coach, ascension: 0, formation: 'clasica', relics: [],
+      teamName: debugTeamName, kitColorId: 'blue', shortsColorId: 'blue',
       chemistry: 10, curses: [], coachAbility: COACH_ABILITIES[coach.id] || COACH_ABILITIES.miguel,
       careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {}, assisters: {}, cleanSheets: {} },
       rivalMemory: {}, streak: 0, trainedIds: [],
@@ -673,7 +678,8 @@ const useGameStore = create((set, get) => ({
       ...reservePositions.map(p => { const pl = genPlayer(p, 1, 2); pl.role = 'rs'; return pl; }),
     ];
     const rns = RIVAL_NAMES[0];
-    const table = [{ name: 'Halcones', you: true, w: 0, d: 0, l: 0, gf: 0, ga: 0 }, ...rns.map(n => ({ name: n, you: false, w: 0, d: 0, l: 0, gf: 0, ga: 0 }))];
+    const teamName = pick(TEAM_NAMES);
+    const table = [{ name: teamName, you: true, w: 0, d: 0, l: 0, gf: 0, ga: 0 }, ...rns.map(n => ({ name: n, you: false, w: 0, d: 0, l: 0, gf: 0, ga: 0 }))];
     let startCoins = 50 + (ability.extraCoins || 0) + (archetype?.startMods?.extraCoins || 0);
     if (coach.fx === 'cheap') startCoins = 80;
     if (isAlien) startCoins = 100;
@@ -774,6 +780,7 @@ const useGameStore = create((set, get) => ({
       coins: startCoins, coach, ascension: ascLevel, formation: 'clasica', relics: startRelics,
       chemistry: startChem, curses: startCurses,
       coachAbility: ability,
+      teamName, kitColorId: 'blue', shortsColorId: 'blue',
       careerStats: { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, matchesPlayed: 0, bestStreak: 0, scorers: {}, assisters: {}, cleanSheets: {} },
       rivalMemory: {}, streak: 0, trainedIds: [], curseFreeRemoves: ability.curseFreeRemove || 0,
       // Metaprogression v2

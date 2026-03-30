@@ -7,7 +7,7 @@ import {
   generateLivePosts, generateSocialPosts, getRivalKit, drawSprite, getRivalSpriteVariant,
   FORMATIONS, getLevelUpChoices, applyRelicEffects,
   getRelicDraftOptions, PN, LEAGUES, genPlayer, TRAITS, getCanvasFormation,
-  preloadAllSprites,
+  preloadAllSprites, KIT_COLORS,
 } from "@/game/data";
 import { getStadiumPitch } from "@/assets/stadiums";
 import { simulateMatch, PLAY_STYLES, INTENSITIES, getManOfTheMatch } from "@/game/engine";
@@ -290,7 +290,7 @@ export default function Rabona() {
       const simRelics = game.relics || [];
       const sp = () => S.speed;
       function addLog(t, x) { S.log.push({ type: t, text: x }); if (S.log.length > 25) S.log.shift(); }
-      function narrate(type) { return legacyNarrate(type, 'Halcones', S.rivalName, starters); }
+      function narrate(type) { return legacyNarrate(type, game.teamName || 'Halcones FC', S.rivalName, starters); }
 
       // Resolve metaprogression data for engine
       const archetypeData = game.archetype ? MANAGER_ARCHETYPES.find(a => a.id === game.archetype) : null;
@@ -314,6 +314,7 @@ export default function Rabona() {
         league: game.league,
         chemistry: game.chemistry,
         captain: game.roster.find(p => p.id === game.captain),
+        teamName: game.teamName || 'Halcones FC',
         matchType,
         tacticalCards,
         archetypeHooks,
@@ -472,7 +473,7 @@ export default function Rabona() {
 
           case 'whistle':
             SFX.play('whistle_double'); Haptics.success();
-            addLog('event', ev.text || `🏁 ¡Final! Halcones ${S.ps}-${S.rs} ${S.rivalName}`);
+            addLog('event', ev.text || `🏁 ¡Final! ${game.teamName || 'Halcones FC'} ${S.ps}-${S.rs} ${S.rivalName}`);
             Crowd.stop();
             await sleep(sp() === 0 ? 600 : 2500);
             S.done = true;
@@ -806,7 +807,7 @@ export default function Rabona() {
       const snapRoster = allRoster.filter(p => !stolen || p.id !== stolen.id);
       const goals = S.log.filter(e => e.type === 'goal' || e.type === 'goalRival');
       const cards = S.log.filter(e => e.type === 'card');
-      const socialPosts = generateSocialPosts(game.league, won, drew, S.rivalName, ps, rs, game.streak);
+      const socialPosts = generateSocialPosts(game.league, won, drew, S.rivalName, ps, rs, game.streak, game.teamName);
 
       // Engine-enhanced stats
       const engStats = engineResult?.stats || null;
@@ -994,7 +995,7 @@ export default function Rabona() {
       const rivalAnim = S.animState === 'kick' ? 'idle' : (S.animState === 'celebrate' ? 'idle' : 'run');
       // Use cached stable-sorted starters (updated on match start and substitutions)
       const hStarters = hStartersRef.current;
-      const rKit = getRivalKit(game.league || 0);
+      const rKit = getRivalKit(game.league || 0, game.kitColorId);
       const TEAM_SIZE = 7;
       // Home team sprites (fut7: GK + 6)
       for (let i = 0; i < TEAM_SIZE; i++) {
@@ -1009,7 +1010,8 @@ export default function Rabona() {
           ctx.fill();
         }
         ctx.globalAlpha = 1;
-        drawSprite(ctx, px, py, '#1565c0', '#0d47a1', f, i + 100, isGK, 'home', 'red', currentAnim);
+        const pKit = KIT_COLORS.find(k => k.id === game.kitColorId) || KIT_COLORS[0];
+        drawSprite(ctx, px, py, pKit.primary, pKit.accent, f, i + 100, isGK, 'home', 'red', currentAnim);
         ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText(hStarters[i] ? hStarters[i].name.split(' ').pop().substring(0, 7) : '', px, py + 18);
         ctx.restore();
@@ -1090,7 +1092,7 @@ export default function Rabona() {
     const socialCacheRef = useRef({ posts: [], lastUpdate: 0, lastMinute: 0 });
     const nowTime = Date.now();
     if (nowTime - socialCacheRef.current.lastUpdate > 3000 || display.minute !== socialCacheRef.current.lastMinute) {
-      socialCacheRef.current = { posts: generateLivePosts(game.league, display.minute, display.log, display.ps, display.rs, matchType), lastUpdate: nowTime, lastMinute: display.minute };
+      socialCacheRef.current = { posts: generateLivePosts(game.league, display.minute, display.log, display.ps, display.rs, matchType, game.teamName), lastUpdate: nowTime, lastMinute: display.minute };
     }
     const livePosts = socialCacheRef.current.posts;
 
@@ -1118,7 +1120,7 @@ export default function Rabona() {
           {/* Scoreboard overlay — premium glass */}
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 15, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(8,12,20,0.82)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', padding: '6px 10px', minHeight: 46, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderRadius: 6, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
-              <div style={{ padding: '5px 10px', background: 'linear-gradient(135deg,#1565c0,#1976d2)', fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: '#fff', letterSpacing: 0.5 }}>HAL</div>
+              <div style={{ padding: '5px 10px', background: `linear-gradient(135deg,${(KIT_COLORS.find(k => k.id === game.kitColorId) || KIT_COLORS[0]).primary},${(KIT_COLORS.find(k => k.id === game.kitColorId) || KIT_COLORS[0]).accent})`, fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: '#fff', letterSpacing: 0.5 }}>{(game.teamName || 'HAL').substring(0, 3).toUpperCase()}</div>
               <div style={{ padding: '5px 12px', background: T.bg1, fontFamily: T.fontHeading, fontWeight: 700, fontSize: 20, color: '#fff', minWidth: 52, textAlign: 'center' }}>{display.ps}-{display.rs}</div>
               <div style={{ padding: '5px 10px', background: 'linear-gradient(135deg,#c62828,#d32f2f)', fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: '#fff', letterSpacing: 0.5 }}>{match.rival?.name?.substring(0, 4) || 'RIV'}</div>
               <div style={{ padding: '5px 8px', background: T.gradientGreen, fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12, color: '#080C14' }}>{display.minute}'</div>
@@ -1154,9 +1156,9 @@ export default function Rabona() {
               <span style={{ fontFamily: T.fontHeading, fontSize: 10, color: T.tx2, textTransform: 'uppercase', letterSpacing: 0.5 }}>Jornada {(game.matchNum || 0) + 1}</span>
               <div style={{ flex: 1 }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ fontFamily: "'Oswald'", fontSize: 9, color: '#4DABF7' }}>HAL {winProb}%</span>
+                <span style={{ fontFamily: "'Oswald'", fontSize: 9, color: (KIT_COLORS.find(k => k.id === game.kitColorId) || KIT_COLORS[0]).primary }}>{(game.teamName || 'HAL').substring(0, 3).toUpperCase()} {winProb}%</span>
                 <div style={{ display: 'flex', width: 32, height: 3, borderRadius: 2, overflow: 'hidden' }}>
-                  <div style={{ width: `${winProb}%`, background: 'linear-gradient(90deg,#1565c0,#4DABF7)', transition: 'width 0.5s' }} />
+                  <div style={{ width: `${winProb}%`, background: `linear-gradient(90deg,${(KIT_COLORS.find(k => k.id === game.kitColorId) || KIT_COLORS[0]).primary},${(KIT_COLORS.find(k => k.id === game.kitColorId) || KIT_COLORS[0]).accent})`, transition: 'width 0.5s' }} />
                   <div style={{ flex: 1, background: 'linear-gradient(90deg,#FF6B6B,#c62828)' }} />
                 </div>
                 <span style={{ fontFamily: "'Oswald'", fontSize: 9, color: '#FF6B6B' }}>{100 - winProb}%</span>

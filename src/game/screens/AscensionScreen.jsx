@@ -31,7 +31,7 @@ export default function AscensionScreen() {
       <button className="fw-btn fw-btn-primary" onClick={() => {
         SFX.play('reward');
         const rns = RIVAL_NAMES[nL] || RIVAL_NAMES[0];
-        const table = [{ name: 'Halcones', you: true, w: 0, d: 0, l: 0, gf: 0, ga: 0 }, ...rns.map(n => ({ name: n, you: false, w: 0, d: 0, l: 0, gf: 0, ga: 0 }))];
+        const table = [{ name: game.teamName || 'Halcones FC', you: true, w: 0, d: 0, l: 0, gf: 0, ga: 0 }, ...rns.map(n => ({ name: n, you: false, w: 0, d: 0, l: 0, gf: 0, ga: 0 }))];
         setGame(g => ({ ...g, league: nL, matchNum: 0, table }));
         setPendingLeague(null); go('table');
       }} style={{ fontFamily: T.fontTitle, fontWeight: 600, fontSize: 14, padding: '14px 40px', background: T.gradientPrimary, color: T.bg, borderRadius: 10, cursor: 'pointer', textTransform: 'uppercase', marginTop: 14, boxShadow: T.glowGold, border: 'none', letterSpacing: 1 }}>Comenzar {toLg.n}</button>
