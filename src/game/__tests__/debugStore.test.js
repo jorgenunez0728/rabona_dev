@@ -63,7 +63,7 @@ describe('debugStartCareer', () => {
     expect(career.age).toBe(16);
     expect(career.season).toBe(1);
     expect(career.team).toBe(0);
-    expect(career.bars).toEqual({ rend: 50, fis: 55, rel: 50, fam: 20, men: 55 });
+    expect(career.bars).toEqual({ rend: 45, fis: 50, rel: 50, fam: 30, men: 50 });
     expect(careerScreen).toBe('cards');
     expect(screen).toBe('career');
   });
@@ -140,7 +140,7 @@ describe('debugExportState', () => {
     const parsed = JSON.parse(json);
     expect(parsed).toHaveProperty('game');
     expect(parsed).toHaveProperty('globalStats');
-    expect(parsed).toHaveProperty('_v', 1);
+    expect(parsed).toHaveProperty('_v', 2);
   });
 
   it('includes career state when active', () => {
