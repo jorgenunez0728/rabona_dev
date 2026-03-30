@@ -12,6 +12,7 @@ import {
   CAREER_CAST, CAREER_CAST_UNLOCKABLE, CAREER_LEGACY_TREE,
 } from '@/game/data';
 import { MANAGER_ARCHETYPES, hasArchetypeSynergy } from '@/game/data/archetypes.js';
+import { INITIAL_RUFUS, getRufusLevelForXP } from '@/game/data/rufus.js';
 import { TACTICAL_CARDS } from '@/game/data/cards.js';
 import { calcMutatorLegacyBonus } from '@/game/data/mutators.js';
 import { getCareerCards, calcCareerLegacyPoints, initCareer } from '@/game/careerLogic';
@@ -68,6 +69,7 @@ const INITIAL_GLOBAL_STATS = {
   curseMasteryProgress: {},   // { curseId: totalMatchesPlayed } persists across runs
   mutatorBonusTotal: 0,       // cumulative legacy bonus from mutator runs
   discoveredSynergies: [],    // [{archetypeId, type:'relic'|'coach', targetId}] discovered combos
+  rufus: null,                // mascot state (lazy init via INITIAL_RUFUS)
   // Run tracker
   runsHistory: [],            // array of run snapshots, max 50
   allTimeAssisters: {},       // {name: totalAssists}
@@ -450,6 +452,46 @@ const useGameStore = create((set, get) => ({
     if (synergies.some(s => s.archetypeId === archetypeId && s.type === type && s.targetId === targetId)) return;
     synergies.push({ archetypeId, type, targetId });
     const newGS = { ...globalStats, discoveredSynergies: synergies };
+    set({ globalStats: newGS });
+    saveGlobalStats(newGS);
+  },
+
+  // ─── Rufus mascot actions ───
+  initRufus: () => {
+    const { globalStats } = get();
+    if (globalStats.rufus) return;
+    const newGS = { ...globalStats, rufus: { ...INITIAL_RUFUS } };
+    set({ globalStats: newGS });
+    saveGlobalStats(newGS);
+  },
+  getRufus: () => {
+    const { globalStats } = get();
+    return globalStats.rufus || INITIAL_RUFUS;
+  },
+  updateRufus: (updater) => {
+    const { globalStats } = get();
+    const rufus = { ...(globalStats.rufus || INITIAL_RUFUS) };
+    const updated = typeof updater === 'function' ? updater(rufus) : { ...rufus, ...updater };
+    updated.level = getRufusLevelForXP(updated.xp);
+    const newGS = { ...globalStats, rufus: updated };
+    set({ globalStats: newGS });
+    saveGlobalStats(newGS);
+  },
+  addAccessoryToInventory: (accessoryId) => {
+    const { globalStats } = get();
+    const rufus = { ...(globalStats.rufus || INITIAL_RUFUS) };
+    if (rufus.inventory.includes(accessoryId)) return;
+    rufus.inventory = [...rufus.inventory, accessoryId];
+    rufus.level = getRufusLevelForXP(rufus.xp);
+    const newGS = { ...globalStats, rufus };
+    set({ globalStats: newGS });
+    saveGlobalStats(newGS);
+  },
+  saveRufusPhoto: (photoData) => {
+    const { globalStats } = get();
+    const rufus = { ...(globalStats.rufus || INITIAL_RUFUS) };
+    rufus.photos = [...(rufus.photos || []), photoData].slice(-10);
+    const newGS = { ...globalStats, rufus };
     set({ globalStats: newGS });
     saveGlobalStats(newGS);
   },

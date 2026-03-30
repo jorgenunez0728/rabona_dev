@@ -4,13 +4,14 @@ import { Haptics } from '@/game/haptics';
 import useGameStore from '@/game/store';
 
 // Screens that show the bottom nav (hub screens only, not during match/events)
-const NAV_SCREENS = new Set(['table', 'roster', 'training', 'market', 'stats']);
+const NAV_SCREENS = new Set(['table', 'roster', 'training', 'market', 'stats', 'mascot']);
 
 const TABS = [
   { screen: 'table',    label: 'Tabla',   icon: '⬡' },
   { screen: 'roster',   label: 'Roster',  icon: '◈' },
   { screen: 'training', label: 'Entreno', icon: '△' },
   { screen: 'market',   label: 'Mercado', icon: '◇' },
+  { screen: 'mascot',   label: 'Rufus',   icon: '🐕' },
   { screen: 'stats',    label: 'Legado',  icon: '☆' },
 ];
 

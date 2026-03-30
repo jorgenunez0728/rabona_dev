@@ -37,6 +37,11 @@ export default function TitleScreen() {
         <div style={{ fontFamily: T.fontBody, fontWeight: 400, fontSize: 'clamp(11px,2.5vw,14px)', color: T.tx2, letterSpacing: 3, textTransform: 'uppercase' }}>Del Barrio a las Estrellas</div>
       </div>
       <div className="fw-anim-2 divider-gold" style={{ width: 60 }} />
+      {globalStats.rufus && (
+        <div className="fw-anim-2 fw-float" onClick={() => SFX.play('bark')} style={{ fontSize: 28, cursor: 'pointer', marginTop: 4, userSelect: 'none' }}>
+          🐕{globalStats.rufus.equipped?.head ? ((() => { const a = (globalStats.rufus.inventory || []).includes(globalStats.rufus.equipped.head) ? globalStats.rufus.equipped.head : null; return a ? '' : ''; })()) : ''}
+        </div>
+      )}
       <div className="fw-anim-3" style={{ fontFamily: T.fontBody, fontSize: 'clamp(11px,2.5vw,14px)', color: T.tx3, maxWidth: 300, lineHeight: 1.5, padding: '0 20px' }}>Arma tu equipo en una cancha llanera. Llévalo hasta conquistar la galaxia.</div>
       <div className="fw-anim-4" style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center', marginTop: 4 }}>
         {hasSave && <button className="fw-btn fw-btn-green" onClick={() => { SFX.play('click'); go('table'); }}>Continuar Mi Club</button>}

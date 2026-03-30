@@ -236,6 +236,16 @@ export const SFX = {
         Crowd.roar(4);
         break;
       }
+      case 'bark':
+        this._noise.triggerAttackRelease('0.04', now);
+        w.triggerAttackRelease('E5', '16n', now + 0.04);
+        break;
+      case 'bark_happy':
+        this._noise.triggerAttackRelease('0.03', now);
+        w.triggerAttackRelease('E5', '16n', now + 0.04);
+        this._noise.triggerAttackRelease('0.03', now + 0.18);
+        w.triggerAttackRelease('G5', '16n', now + 0.22);
+        break;
     }} catch(e) {}
   }
 };

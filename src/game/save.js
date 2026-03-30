@@ -202,6 +202,7 @@ export function loadGlobalStats() {
       gs.allTimeAssisters = gs.allTimeAssisters || {};
       gs.allTimeCleanSheets = gs.allTimeCleanSheets || {};
       gs.discoveredSynergies = gs.discoveredSynergies || [];
+      gs.rufus = gs.rufus || null;
       return gs;
     }
   } catch(e) {}
