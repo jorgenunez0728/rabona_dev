@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import useGameStore from '@/game/store';
 import { POS_COLORS, T, PN, calcOvr } from '@/game/data';
 import { SFX } from '@/game/audio';
+import { Haptics } from '@/game/haptics';
+import { SectionHeader, EmptyState } from '@/game/components/ui';
 
 export default function MarketScreen() {
   const { game, setGame, market, setMarket, go, markVisited } = useGameStore();
@@ -11,12 +13,15 @@ export default function MarketScreen() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', overflow: 'auto', background: T.bg }}>
       {/* Header with stadium atmosphere */}
-      <div className="stadium-glow" style={{ width: '100%', padding: '20px 14px 16px', textAlign: 'center', borderBottom: `1px solid ${T.border}`, marginBottom: 8 }}>
+      <div className="stadium-glow fw-anim-1" style={{ width: '100%', padding: '20px 14px 16px', textAlign: 'center', borderBottom: `1px solid ${T.border}`, marginBottom: 8 }}>
         <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 22, color: T.tx, textTransform: 'uppercase', letterSpacing: 2 }}>Mercado de Fichajes</div>
         {/* Balance display */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 8, padding: '6px 16px', borderRadius: 20, background: 'linear-gradient(135deg, rgba(240,192,64,0.15), rgba(212,160,23,0.08))', border: '1px solid rgba(240,192,64,0.25)' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 8, padding: '6px 16px', borderRadius: T.rFull, background: 'linear-gradient(135deg, rgba(240,192,64,0.15), rgba(212,160,23,0.08))', border: '1px solid rgba(240,192,64,0.25)' }}>
           <span style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 18, background: T.gradientPrimary, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{game.coins}</span>
           <span style={{ fontFamily: T.fontBody, fontSize: 12, color: T.gold, textTransform: 'uppercase', letterSpacing: 0.5 }}>monedas</span>
+        </div>
+        <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, marginTop: 6 }}>
+          Plantilla: {game.roster.length}/12
         </div>
       </div>
 
@@ -25,7 +30,7 @@ export default function MarketScreen() {
         {market.players.map((p, idx) => {
           const canBuy = game.coins >= p.price && game.roster.length < 12;
           return (
-            <div key={p.id} className="card-premium anim-stagger-1" style={{
+            <div key={p.id} className={`card-premium anim-stagger-${Math.min(idx + 1, 6)}`} style={{
               background: T.bg1,
               border: `1px solid ${T.glassBorder}`,
               borderRadius: 10,
@@ -59,28 +64,22 @@ export default function MarketScreen() {
                   {p.name}
                 </div>
                 <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.purple, marginTop: 1 }}>{p.trait.n}</div>
-                {/* Stat badges */}
-                <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-                  <span style={{
-                    fontFamily: T.fontBody, fontWeight: 600, fontSize: 10,
-                    color: T.lose, background: 'rgba(239,68,68,0.12)',
-                    padding: '2px 6px', borderRadius: 4
-                  }}>ATK {p.atk}</span>
-                  <span style={{
-                    fontFamily: T.fontBody, fontWeight: 600, fontSize: 10,
-                    color: T.info, background: 'rgba(59,130,246,0.12)',
-                    padding: '2px 6px', borderRadius: 4
-                  }}>DEF {p.def}</span>
-                  <span style={{
-                    fontFamily: T.fontBody, fontWeight: 600, fontSize: 10,
-                    color: T.win, background: 'rgba(34,197,94,0.12)',
-                    padding: '2px 6px', borderRadius: 4
-                  }}>VEL {p.spd}</span>
-                  {p.pos === 'GK' && <span style={{
-                    fontFamily: T.fontBody, fontWeight: 600, fontSize: 10,
-                    color: T.goldLight, background: 'rgba(240,192,64,0.12)',
-                    padding: '2px 6px', borderRadius: 4
-                  }}>PAR {p.sav}</span>}
+                {/* Stat bars */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 }}>
+                  {[
+                    { v: p.atk, l: 'ATK', c: T.lose },
+                    { v: p.def, l: 'DEF', c: T.info },
+                    { v: p.spd, l: 'VEL', c: T.win },
+                    ...(p.pos === 'GK' ? [{ v: p.sav, l: 'PAR', c: T.goldLight }] : []),
+                  ].map(({ v, l, c }) => (
+                    <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontFamily: T.fontHeading, fontSize: 9, fontWeight: 600, color: c, minWidth: 22 }}>{l}</span>
+                      <div className="stat-bar stat-bar-animated" style={{ flex: 1, height: 3 }}>
+                        <div className="stat-bar-fill" style={{ width: `${Math.min(100, v)}%`, background: c }} />
+                      </div>
+                      <span style={{ fontFamily: T.fontHeading, fontSize: 9, fontWeight: 700, color: T.tx, minWidth: 16, textAlign: 'right' }}>{v}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -102,11 +101,12 @@ export default function MarketScreen() {
                   background: canBuy ? T.gradientPrimary : T.bg3,
                   color: canBuy ? T.bg : T.tx4,
                   cursor: canBuy ? 'pointer' : 'not-allowed',
-                  borderRadius: 6,
+                  borderRadius: T.r2,
                   marginTop: 6,
                   boxShadow: canBuy ? T.glowGold : 'none',
-                  transition: 'transform 0.15s, box-shadow 0.15s',
-                  letterSpacing: 0.5
+                  transition: `transform ${T.transQuick}, box-shadow ${T.transQuick}`,
+                  letterSpacing: 0.5,
+                  touchAction: 'manipulation',
                 }}>
                   {p.price}
                 </button>
@@ -116,9 +116,7 @@ export default function MarketScreen() {
         })}
 
         {market.players.length === 0 && (
-          <div className="glass" style={{ borderRadius: 10, padding: 20, textAlign: 'center' }}>
-            <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx3 }}>No hay jugadores disponibles</div>
-          </div>
+          <EmptyState icon="🏪" title="Mercado vacío" message="No hay jugadores disponibles en este momento" />
         )}
 
         {game.roster.length >= 12 && (

@@ -8,6 +8,7 @@ import { CURSES } from '@/game/data/progression.js';
 import { hasLegacy } from '@/game/data/progression.js';
 import { TACTICAL_CARDS, getUnlockableCards } from '@/game/data/cards.js';
 import { MANAGER_ARCHETYPES } from '@/game/data/archetypes.js';
+import { SectionHeader } from '@/game/components/ui';
 
 // ── Node definitions for between-matchday events ──
 const MAP_NODES = [
@@ -304,7 +305,7 @@ export default function MapScreen() {
       <div className="stadium-glow" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 200, pointerEvents: 'none', zIndex: 0 }} />
 
       {/* Header */}
-      <div style={{ width: '100%', padding: '20px 16px 12px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+      <div className="fw-anim-1" style={{ width: '100%', padding: '20px 16px 12px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
         <div style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 22, color: T.tx, textTransform: 'uppercase', letterSpacing: 3 }}>
           Entre Jornadas
         </div>
@@ -360,69 +361,98 @@ export default function MapScreen() {
         </div>
       )}
 
-      {/* Map Nodes */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '8px 16px', width: '100%', maxWidth: 400, position: 'relative', zIndex: 1 }}>
-        {/* Visual: connecting lines */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 4 }}>
-          {nodes.map((_, i) => (
-            <div key={i} style={{ width: 2, height: 24, background: T.border, borderRadius: 1 }} />
-          ))}
-        </div>
-
+      {/* Map Nodes — vertical path layout */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '8px 16px', width: '100%', maxWidth: 400, position: 'relative', zIndex: 1 }}>
         {nodes.map((node, i) => {
           const isChosen = chosen === node.id;
           const disabled = chosen && !isChosen;
           return (
-            <div
-              key={i}
-              onClick={() => !disabled && handleChoose(node)}
-              className={isChosen ? 'card-gold' : 'glass'}
-              style={{
-                borderRadius: 10,
-                padding: '16px 14px',
-                cursor: disabled ? 'not-allowed' : 'pointer',
-                opacity: disabled ? 0.25 : 1,
-                transition: 'all 0.25s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                minHeight: 64,
-                touchAction: 'manipulation',
-                transform: isChosen ? 'scale(1.02)' : 'scale(1)',
-                borderColor: isChosen ? T.gold : disabled ? 'rgba(255,255,255,0.03)' : T.glassBorder,
-                boxShadow: isChosen ? T.glowGold : T.shadow,
-              }}
-            >
-              <div style={{
-                fontSize: 30, minWidth: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: `${node.color}15`, borderRadius: 10, flexShrink: 0,
-              }}>{node.i}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15, color: isChosen ? T.gold : T.tx, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  {node.n}
-                </div>
-                <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx3, lineHeight: 1.4, marginTop: 3 }}>
-                  {node.d}
-                </div>
-              </div>
-              {!chosen && (
-                <div style={{ fontSize: 18, color: T.tx4, fontWeight: 300 }}>›</div>
+            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+              {/* Connecting line from previous node */}
+              {i > 0 && (
+                <div style={{
+                  width: 2, height: 20,
+                  background: chosen ? (isChosen ? T.gold : 'rgba(255,255,255,0.03)') : `linear-gradient(${T.border}, ${node.color}40)`,
+                  borderRadius: 1, transition: `all ${T.transBase}`,
+                }} />
               )}
+              {/* Node card */}
+              <div
+                onClick={() => !disabled && handleChoose(node)}
+                className={`${isChosen ? 'card-gold' : 'glass'} anim-stagger-${Math.min(i + 1, 6)}`}
+                style={{
+                  borderRadius: T.r3,
+                  padding: '16px 16px',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  opacity: disabled ? 0.2 : 1,
+                  transition: `all ${T.transBase}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                  minHeight: 72,
+                  width: '100%',
+                  touchAction: 'manipulation',
+                  transform: isChosen ? 'scale(1.02)' : 'scale(1)',
+                  borderColor: isChosen ? T.gold : disabled ? 'rgba(255,255,255,0.03)' : T.glassBorder,
+                  boxShadow: isChosen ? T.glowGold : T.elev2,
+                }}
+              >
+                {/* Large icon circle */}
+                <div style={{
+                  fontSize: 32, width: 52, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: `linear-gradient(145deg, ${node.color}20, ${node.color}08)`,
+                  border: `1px solid ${node.color}30`,
+                  borderRadius: T.r3, flexShrink: 0,
+                  boxShadow: isChosen ? `0 0 16px ${node.color}30` : 'none',
+                  transition: `all ${T.transBase}`,
+                }}>{node.i}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15, color: isChosen ? T.gold : T.tx, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    {node.n}
+                  </div>
+                  <div style={{ fontFamily: T.fontBody, fontSize: 12, color: T.tx3, lineHeight: 1.4, marginTop: 3 }}>
+                    {node.d}
+                  </div>
+                </div>
+                {!chosen && (
+                  <div style={{
+                    fontSize: 20, color: node.color, fontWeight: 600, opacity: 0.6,
+                    transition: `opacity ${T.transQuick}`,
+                  }}>›</div>
+                )}
+              </div>
             </div>
           );
         })}
       </div>
 
-      {/* Continue button - appears right after header when result is ready */}
+      {/* Result display */}
       {result && (
-        <div style={{ width: '100%', maxWidth: 400, padding: '0 16px 4px', position: 'relative', zIndex: 1 }}>
+        <div className="fw-anim-1" style={{ width: '100%', maxWidth: 400, padding: '12px 16px', position: 'relative', zIndex: 1 }}>
+          <div className="glass-heavy" style={{
+            borderRadius: T.r3,
+            padding: '20px 18px',
+            textAlign: 'center',
+            borderColor: T.glassBorder,
+          }}>
+            <div style={{ fontSize: 36, marginBottom: 8 }}>{result.icon}</div>
+            <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx, lineHeight: 1.6 }}>
+              {result.text}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Continue button */}
+      {result && (
+        <div style={{ width: '100%', maxWidth: 400, padding: '4px 16px', position: 'relative', zIndex: 1 }}>
           <button
             onClick={handleContinue}
-            className="fw-btn fw-btn-green"
+            className="fw-btn fw-btn-green fw-glow-pulse"
             style={{
               width: '100%', fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15,
               padding: '14px 24px', textTransform: 'uppercase', letterSpacing: 1.5,
-              touchAction: 'manipulation', borderRadius: 10,
+              touchAction: 'manipulation', borderRadius: T.r3,
               boxShadow: '0 4px 20px rgba(34,197,94,0.25)',
             }}
           >
@@ -431,37 +461,20 @@ export default function MapScreen() {
         </div>
       )}
 
-      {/* Skip option - visible without scrolling */}
+      {/* Skip option */}
       {!chosen && (
-        <div style={{ width: '100%', maxWidth: 400, padding: '0 16px 4px', position: 'relative', zIndex: 1 }}>
+        <div style={{ width: '100%', maxWidth: 400, padding: '8px 16px 4px', position: 'relative', zIndex: 1 }}>
           <button
             onClick={() => { SFX.play('click'); go('prematch'); }}
             className="fw-btn fw-btn-outline"
             style={{
               width: '100%', fontFamily: T.fontHeading, fontWeight: 600, fontSize: 12,
               padding: '11px 20px', textTransform: 'uppercase', letterSpacing: 1,
-              touchAction: 'manipulation', borderRadius: 10,
+              touchAction: 'manipulation', borderRadius: T.r3,
             }}
           >
             Saltar directo al partido →
           </button>
-        </div>
-      )}
-
-      {/* Result display */}
-      {result && (
-        <div style={{ width: '100%', maxWidth: 400, padding: '8px 16px', position: 'relative', zIndex: 1 }}>
-          <div className="glass-heavy" style={{
-            borderRadius: 12,
-            padding: '16px 18px',
-            textAlign: 'center',
-            borderColor: T.glassBorder,
-          }}>
-            <div style={{ fontSize: 32, marginBottom: 6 }}>{result.icon}</div>
-            <div style={{ fontFamily: T.fontBody, fontSize: 14, color: T.tx, lineHeight: 1.5 }}>
-              {result.text}
-            </div>
-          </div>
         </div>
       )}
 

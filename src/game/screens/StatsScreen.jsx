@@ -35,20 +35,22 @@ export default function StatsScreen() {
       <div className="stadium-glow" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 200, pointerEvents: 'none', zIndex: 0 }} />
 
       {/* Header */}
-      <div style={{ width: '100%', padding: '16px 16px 8px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
-        <div className="text-gradient-gold" style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 24, textTransform: 'uppercase', letterSpacing: 2 }}>Compendio</div>
+      <div className="fw-anim-1" style={{ width: '100%', padding: '16px 16px 8px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+        <div className="text-gradient-gold" style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 24, textTransform: 'uppercase', letterSpacing: 3 }}>Compendio</div>
       </div>
 
-      {/* Tab Bar - Horizontally scrollable */}
-      <div style={{ display: 'flex', width: '100%', maxWidth: 440, position: 'relative', zIndex: 1, borderBottom: `1px solid ${T.border}`, overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+      {/* Tab Bar - Horizontally scrollable with improved styling */}
+      <div className="fw-anim-2" style={{ display: 'flex', width: '100%', maxWidth: 440, position: 'relative', zIndex: 1, borderBottom: `1px solid ${T.border}`, overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
         {tabs.map(t => (
-          <div key={t.k} onClick={() => setTab(t.k)} style={{
+          <div key={t.k} onClick={() => { Haptics.light(); setTab(t.k); }} style={{
             flex: '0 0 auto', minWidth: 55, padding: '10px 6px 8px', textAlign: 'center', cursor: 'pointer',
             borderBottom: tab === t.k ? `2px solid ${T.gold}` : '2px solid transparent',
-            transition: 'all 0.2s ease',
+            background: tab === t.k ? 'rgba(240,192,64,0.04)' : 'transparent',
+            transition: `all ${T.transBase}`,
+            touchAction: 'manipulation',
           }}>
-            <div style={{ fontSize: 16, marginBottom: 2 }}>{t.l}</div>
-            <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 10, color: tab === t.k ? T.gold : T.tx4, textTransform: 'uppercase', letterSpacing: 0.5, transition: 'color 0.2s' }}>{t.label}</div>
+            <div style={{ fontSize: 16, marginBottom: 2, transition: `transform ${T.transQuick}`, transform: tab === t.k ? 'scale(1.1)' : 'scale(1)' }}>{t.l}</div>
+            <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 10, color: tab === t.k ? T.gold : T.tx4, textTransform: 'uppercase', letterSpacing: 0.5, transition: `color ${T.transQuick}` }}>{t.label}</div>
           </div>
         ))}
       </div>
@@ -70,8 +72,8 @@ export default function StatsScreen() {
                   { l: 'Racha', v: (gs.bestStreak || 0) + '🔥', c: T.draw },
                   { l: 'Ascensión', v: (gs.ascensionLevel || 0) + '/7', c: T.gold },
                 ].map((s, i) => (
-                  <div key={i} className="glass-light" style={{ borderRadius: 8, padding: '10px 6px', textAlign: 'center' }}>
-                    <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 20, color: s.c, lineHeight: 1.2 }}>{s.v}</div>
+                  <div key={i} className="glass-light" style={{ borderRadius: T.r2, padding: '10px 6px', textAlign: 'center', transition: `all ${T.transQuick}` }}>
+                    <div className="anim-number-roll" style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 20, color: s.c, lineHeight: 1.2 }}>{s.v}</div>
                     <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 4 }}>{s.l}</div>
                   </div>
                 ))}
@@ -319,18 +321,22 @@ export default function StatsScreen() {
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {/* Points display */}
-              <div className="card-gold" style={{ borderRadius: 12, padding: 14, textAlign: 'center' }}>
+              <div className="card-gold anim-stagger-1" style={{ borderRadius: T.r3, padding: 16, textAlign: 'center' }}>
                 <div style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.gold, textTransform: 'uppercase', letterSpacing: 1.5 }}>Puntos de Legado</div>
-                <div className="text-gradient-gold" style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 36, lineHeight: 1.2, marginTop: 4 }}>{availPts}</div>
-                <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, marginTop: 4 }}>Ganados: {totalPts} · Gastados: {spentPts}</div>
+                <div className="text-gradient-gold anim-number-roll" style={{ fontFamily: T.fontTitle, fontWeight: 700, fontSize: 40, lineHeight: 1.2, marginTop: 4 }}>{availPts}</div>
+                <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, marginTop: 6 }}>
+                  Ganados: <span style={{ color: T.tx2, fontWeight: 600 }}>{totalPts}</span> · Gastados: <span style={{ color: T.tx2, fontWeight: 600 }}>{spentPts}</span>
+                </div>
               </div>
 
               {/* Branch trees */}
               {LEGACY_BRANCHES.map(branch => {
                 const nodes = Object.values(LEGACY_TREE).filter(n => n.branch === branch).sort((a, b) => a.tier - b.tier);
                 return (
-                  <div key={branch} className="glass" style={{ borderRadius: 12, padding: 12 }}>
-                    <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14, color: T.tx, marginBottom: 8, letterSpacing: 0.5 }}>{branchNames[branch] || branch}</div>
+                  <div key={branch} className="glass anim-stagger-2" style={{ borderRadius: T.r3, padding: 12 }}>
+                    <div className="section-header" style={{ padding: '4px 0 8px' }}>
+                      <span>{branchNames[branch] || branch}</span>
+                    </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                       {nodes.map((node, ni) => {
                         const owned = hasLegacy(gs, node.id);
@@ -347,10 +353,10 @@ export default function StatsScreen() {
                               display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
                               background: owned ? `${T.win}12` : canBuy ? `${T.gold}0A` : T.bg2,
                               border: `1.5px solid ${owned ? T.win + '50' : canBuy ? T.gold + '50' : T.border}`,
-                              borderRadius: 10, cursor: canBuy ? 'pointer' : 'default', opacity: owned || canBuy ? 1 : 0.35,
+                              borderRadius: T.r3, cursor: canBuy ? 'pointer' : 'default', opacity: owned || canBuy ? 1 : 0.35,
                               touchAction: 'manipulation', minHeight: 52,
                               boxShadow: owned ? `0 0 16px ${T.win}20` : canBuy ? T.glowGold : 'none',
-                              transition: 'all 0.25s ease',
+                              transition: `all ${T.transBase}`,
                             }}>
                               <div style={{ fontSize: 24, minWidth: 36, textAlign: 'center', filter: owned ? 'none' : 'grayscale(0.5)' }}>{node.i}</div>
                               <div style={{ flex: 1 }}>
