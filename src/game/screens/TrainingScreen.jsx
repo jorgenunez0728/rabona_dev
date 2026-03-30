@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { SFX } from "@/game/audio";
 import { T, POS_COLORS, PN, TRAINING_OPTIONS, calcOvr, rnd } from "@/game/data";
 import useGameStore from "@/game/store";
+import { Haptics } from "@/game/haptics";
+import { SectionHeader, EmptyState } from '@/game/components/ui';
 
 export default function TrainingScreen() {
   const { game, setGame, go, markVisited } = useGameStore();
@@ -60,7 +62,7 @@ export default function TrainingScreen() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', overflow: 'auto', background: T.bg }}>
       {/* Header */}
-      <div style={{ width: '100%', padding: '18px 14px 14px', textAlign: 'center', borderBottom: `1px solid ${T.border}`, marginBottom: 8 }}>
+      <div className="fw-anim-1" style={{ width: '100%', padding: '18px 14px 14px', textAlign: 'center', borderBottom: `1px solid ${T.border}`, marginBottom: 8 }}>
         <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 22, color: T.tx, textTransform: 'uppercase', letterSpacing: 2 }}>Entrenamiento</div>
         <div style={{
           fontFamily: T.fontBody, fontSize: 12, marginTop: 6,
@@ -108,10 +110,10 @@ export default function TrainingScreen() {
 
             {/* Player selector */}
             {!selected && reserves.map((p, idx) => (
-              <div key={p.id} onClick={() => setSelected(p.id)} className="card-premium" style={{
+              <div key={p.id} onClick={() => { Haptics.light(); setSelected(p.id); }} className={`card-premium anim-stagger-${Math.min(idx + 1, 6)}`} style={{
                 background: T.bg1,
                 border: `1px solid ${T.glassBorder}`,
-                borderRadius: 10,
+                borderRadius: T.r3,
                 padding: 10,
                 cursor: 'pointer',
                 display: 'flex',
@@ -119,7 +121,7 @@ export default function TrainingScreen() {
                 gap: 10,
                 position: 'relative',
                 overflow: 'hidden',
-                transition: 'border-color 0.2s'
+                transition: `border-color ${T.transQuick}`,
               }}>
                 {/* Position accent */}
                 <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: POS_COLORS[p.pos], borderRadius: '10px 0 0 10px' }} />
@@ -130,7 +132,7 @@ export default function TrainingScreen() {
                   color: '#fff',
                   background: POS_COLORS[p.pos],
                   padding: '3px 8px',
-                  borderRadius: 4,
+                  borderRadius: T.r1,
                   minWidth: 32,
                   textAlign: 'center',
                   textTransform: 'uppercase'
@@ -138,12 +140,22 @@ export default function TrainingScreen() {
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 14, color: T.tx, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                  {/* Stat badges */}
-                  <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-                    {statBadge('ATK', p.atk, T.lose)}
-                    {statBadge('DEF', p.def, T.info)}
-                    {statBadge('VEL', p.spd, T.win)}
-                    {p.pos === 'GK' && statBadge('PAR', p.sav, T.goldLight)}
+                  {/* Stat bars */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 }}>
+                    {[
+                      { v: p.atk, l: 'ATK', c: T.lose },
+                      { v: p.def, l: 'DEF', c: T.info },
+                      { v: p.spd, l: 'VEL', c: T.win },
+                      ...(p.pos === 'GK' ? [{ v: p.sav, l: 'PAR', c: T.goldLight }] : []),
+                    ].map(({ v, l, c }) => (
+                      <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontFamily: T.fontHeading, fontSize: 9, fontWeight: 600, color: c, minWidth: 22 }}>{l}</span>
+                        <div className="stat-bar stat-bar-animated" style={{ flex: 1, height: 3 }}>
+                          <div className="stat-bar-fill" style={{ width: `${Math.min(100, v)}%`, background: c }} />
+                        </div>
+                        <span style={{ fontFamily: T.fontHeading, fontSize: 9, fontWeight: 700, color: T.tx, minWidth: 16, textAlign: 'right' }}>{v}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -174,14 +186,14 @@ export default function TrainingScreen() {
                   {TRAINING_OPTIONS.map((opt, idx) => {
                     const canAfford = game.coins >= opt.cost;
                     return (
-                      <div key={opt.id} onClick={() => canAfford && setTraining(opt.id)} className="card-premium" style={{
+                      <div key={opt.id} onClick={() => { if (canAfford) { Haptics.light(); setTraining(opt.id); } }} className={`card-premium anim-stagger-${Math.min(idx + 1, 6)}`} style={{
                         background: canAfford ? T.bg1 : T.bg2,
                         border: `1px solid ${canAfford ? T.glassBorder : T.border}`,
-                        borderRadius: 10,
+                        borderRadius: T.r3,
                         padding: 14,
                         cursor: canAfford ? 'pointer' : 'not-allowed',
                         opacity: canAfford ? 1 : 0.4,
-                        transition: 'border-color 0.2s, transform 0.15s'
+                        transition: `border-color ${T.transQuick}, transform ${T.transQuick}`,
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15, color: T.gold }}>{opt.name}</div>

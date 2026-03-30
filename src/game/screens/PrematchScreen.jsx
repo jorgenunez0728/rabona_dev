@@ -54,7 +54,7 @@ export default function PrematchScreen() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'auto', background: T.bg }}>
 
       {/* Stadium glow background + VS header */}
-      <div style={{ position: 'relative', background: T.gradientDark, borderBottom: `1px solid ${T.glassBorder}` }}>
+      <div className="bg-stadium-ambient" style={{ position: 'relative', background: T.gradientDark, borderBottom: `1px solid ${T.glassBorder}` }}>
         {/* Stadium atmosphere */}
         <div style={{ position: 'absolute', inset: 0, background: T.gradientStadium, pointerEvents: 'none' }} />
 
@@ -77,10 +77,11 @@ export default function PrematchScreen() {
               <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 24, color: T.tx, textTransform: 'uppercase', lineHeight: 1.1 }}>{game.teamName || 'HALCONES FC'}</div>
             </div>
             <div style={{
-              fontFamily: T.fontHeading, fontWeight: 700, fontSize: 28, color: T.tx4,
-              width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: `1px solid ${T.glassBorder}`, borderRadius: 8,
-              background: T.glass
+              fontFamily: T.fontHeading, fontWeight: 700, fontSize: 28, color: T.tx3,
+              width: 52, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: `1px solid ${T.glassBorder}`, borderRadius: T.r3,
+              background: 'rgba(15,25,35,0.8)', backdropFilter: 'blur(12px)',
+              boxShadow: `0 0 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)`,
             }}>VS</div>
             <div style={{ flex: 1, textAlign: 'left' }}>
               <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 24, color: T.tx, textTransform: 'uppercase', lineHeight: 1.1 }}>{rivalName}</div>
@@ -103,7 +104,7 @@ export default function PrematchScreen() {
               padding: '9px 18px', color: T.tx2, textTransform: 'uppercase',
               letterSpacing: 0.8, borderRadius: 8
             }}>Roster</button>
-            <button className={`fw-btn ${injuredStarters.length > 0 ? 'fw-btn-danger' : ''}`} onClick={() => {
+            <button className={`fw-btn ${injuredStarters.length > 0 ? 'fw-btn-danger' : ''} fw-glow-pulse`} onClick={() => {
               const objs = objRef.current || [];
               setGame(g => ({ ...g, currentObjectives: objs }));
               setMatch({ ps: 0, rs: 0, minute: 0, speed: 2, running: true, rival: { name: rivalName }, rivalPlayers: rpRef.current, rivalCoach: rcRef.current, ballX: .5, ballY: .5, possession: true, log: [], eventPopup: null });
@@ -139,7 +140,7 @@ export default function PrematchScreen() {
       )}
 
       {/* Formation Selector */}
-      <div className="glass-light" style={{ margin: '8px 10px', borderRadius: 10, padding: '10px 12px' }}>
+      <div className="glass-light anim-stagger-1" style={{ margin: '8px 10px', borderRadius: T.r3, padding: '10px 12px' }}>
         <div style={{ fontFamily: T.fontHeading, fontSize: 11, color: T.tx3, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8, fontWeight: 600 }}>Formacion</div>
         <div style={{ display: 'flex', gap: 5 }}>
           {FORMATIONS.map(f => {

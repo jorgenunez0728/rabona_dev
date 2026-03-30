@@ -5,6 +5,7 @@ import {
   LEAGUES, FORMATIONS, RELICS, POS_ORDER, POS_COLORS, T, PN,
   getBoardEvents, effectiveOvr, COPA_NAMES, rnd, pick,
 } from '@/game/data';
+import { Trophy, ChevronRight } from 'lucide-react';
 
 // ─── Generate matchday results from table ───
 function generateMatchResults(table, matchNum) {
@@ -200,36 +201,69 @@ export default function TableScreen() {
       <div style={{ flex: 1, overflow: 'auto', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: 420, margin: '0 auto', padding: '8px 10px 16px' }}>
 
-          {/* League header card */}
-          <div className="glass bg-metallic-shine" style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.glassBorder}`, marginBottom: 8 }}>
-            <div style={{ background: T.gradientDark, padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${T.border}` }}>
-              <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 13, color: T.tx, textTransform: 'uppercase', letterSpacing: 1 }}>{lg.i} {lg.n}</div>
-              <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx2 }}>{game.coins} monedas · J{game.matchNum}/{lg.m}</div>
+          {/* League header card — Hero dashboard */}
+          <div className="glass bg-metallic-shine anim-stagger-1" style={{ borderRadius: T.r3, overflow: 'hidden', border: `1px solid ${T.glassBorder}`, marginBottom: 10 }}>
+            {/* League name + resources */}
+            <div style={{ padding: '10px 14px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 20 }}>{lg.i}</span>
+                <div>
+                  <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 15, color: T.tx, textTransform: 'uppercase', letterSpacing: 0.8 }}>{lg.n}</div>
+                  <div style={{ fontFamily: T.fontBody, fontSize: 10, color: T.tx3 }}>Jornada {game.matchNum}/{lg.m}</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14, color: T.gold }}>{game.coins} <span style={{ fontSize: 10, color: T.tx3 }}>💰</span></div>
+                </div>
+              </div>
             </div>
-            {/* My position summary inside header */}
-            <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(240,192,64,0.03)' }}>
-              <div style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.gold, fontWeight: 700 }}>#{myPos + 1} {game.teamName || 'Mi equipo'}</div>
-              <div style={{ fontFamily: T.fontHeading, fontSize: 12, color: T.tx2 }}>{sorted[myPos]?.w * 3 + sorted[myPos]?.d} pts</div>
-              <div style={{ fontFamily: T.fontBody, fontSize: 11, color: done ? (myPos < 2 ? T.win : T.lose) : T.purple }}>
-                {done ? (myPos < 2 ? 'Clasificado' : 'ELIMINADOS') : `${lg.m - game.matchNum} restantes`}
+            {/* My team position hero */}
+            <div style={{
+              padding: '8px 14px 12px', display: 'flex', alignItems: 'center', gap: 12,
+              background: 'rgba(240,192,64,0.04)', borderTop: `1px solid ${T.border}`,
+            }}>
+              <div style={{
+                fontFamily: T.fontHeading, fontWeight: 700, fontSize: 32, color: T.gold, lineHeight: 1,
+                minWidth: 44, textAlign: 'center',
+              }}>
+                {myPos + 1}<span style={{ fontSize: 12, verticalAlign: 'super', color: T.tx3 }}>°</span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: T.fontHeading, fontWeight: 700, fontSize: 14, color: T.tx, letterSpacing: 0.5 }}>{game.teamName || 'Mi equipo'}</div>
+                <div style={{ fontFamily: T.fontBody, fontSize: 11, color: T.tx3, marginTop: 1 }}>
+                  {sorted[myPos]?.w * 3 + sorted[myPos]?.d} pts · {sorted[myPos]?.gf || 0} GF
+                </div>
+              </div>
+              <div style={{
+                fontFamily: T.fontHeading, fontWeight: 700, fontSize: 11,
+                color: done ? (myPos < 2 ? T.win : T.lose) : T.purple,
+                background: done ? (myPos < 2 ? `${T.win}12` : `${T.lose}12`) : `${T.purple}10`,
+                padding: '4px 10px', borderRadius: T.r2,
+                border: `1px solid ${done ? (myPos < 2 ? `${T.win}25` : `${T.lose}25`) : `${T.purple}20`}`,
+                textTransform: 'uppercase', letterSpacing: 0.5,
+              }}>
+                {done ? (myPos < 2 ? '✓ Ascenso' : '✗ Eliminado') : `${lg.m - game.matchNum} rest.`}
               </div>
             </div>
           </div>
 
           {/* Primary CTA - Siguiente button - prominent, above everything */}
-          <button onClick={handleNext} className={`fw-btn ${ctaClass}`} style={{
-            width: '100%', marginBottom: 8, fontFamily: T.fontHeading, fontWeight: 700, fontSize: 16,
-            padding: '14px 24px', textTransform: 'uppercase', letterSpacing: 1.5, borderRadius: 10,
-            background: ctaDisabled ? T.bg3 : done ? undefined : 'linear-gradient(135deg, #F0C040, #D4A017)',
+          <button onClick={handleNext} className={`fw-btn ${ctaClass} anim-stagger-2${!ctaDisabled ? ' fw-glow-pulse' : ''}`} style={{
+            width: '100%', marginBottom: 10, fontFamily: T.fontHeading, fontWeight: 700, fontSize: 16,
+            padding: '16px 24px', textTransform: 'uppercase', letterSpacing: 1.5, borderRadius: T.r3,
+            background: ctaDisabled ? T.bg3 : done ? undefined : 'linear-gradient(135deg, #D4A017, #F0C040, #D4A017)',
             color: ctaDisabled ? T.tx4 : done ? undefined : '#1a1a2e',
             border: ctaDisabled ? `1px solid ${T.border}` : done ? undefined : '1px solid rgba(240,192,64,0.6)',
-            boxShadow: ctaDisabled ? 'none' : done ? undefined : '0 4px 20px rgba(240,192,64,0.25)',
+            boxShadow: ctaDisabled ? 'none' : done ? undefined : '0 4px 24px rgba(240,192,64,0.3)',
             opacity: ctaDisabled ? 0.5 : 1,
             cursor: ctaDisabled ? 'not-allowed' : 'pointer',
             touchAction: 'manipulation',
-            transition: 'all 0.2s ease',
+            transition: `all ${T.transBase}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           }}>
             {ctaLabel}
+            {!ctaDisabled && <ChevronRight size={18} strokeWidth={3} />}
           </button>
 
           {/* Hub navigation row with visit indicators */}
@@ -246,7 +280,7 @@ export default function TableScreen() {
           </div>
 
           {/* League table */}
-          <div className="glass" style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.glassBorder}`, marginBottom: 8 }}>
+          <div className="glass anim-stagger-3" style={{ borderRadius: T.r3, overflow: 'hidden', border: `1px solid ${T.glassBorder}`, marginBottom: 10 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr style={{ borderBottom: `1px solid ${T.border}` }}>
                 {['#', 'Equipo', 'G', 'E', 'P', 'DG', 'PTS'].map(h => (<th key={h} style={{ fontFamily: T.fontHeading, fontWeight: 600, fontSize: 11, color: T.tx3, padding: '5px 2px', textAlign: h === 'Equipo' ? 'left' : 'center', textTransform: 'uppercase', letterSpacing: 1 }}>{h}</th>))}
@@ -257,7 +291,7 @@ export default function TableScreen() {
                 const isBottom = i >= totalTeams - 2;
                 const isTop = i < 2;
                 const leftBorder = t.you ? `3px solid ${T.gold}` : isTop ? `3px solid ${T.win}` : isBottom ? `3px solid ${T.lose}` : '3px solid transparent';
-                const rowBg = t.you ? 'rgba(240,192,64,0.04)' : i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
+                const rowBg = t.you ? 'rgba(240,192,64,0.06)' : i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
                 return (
                   <tr key={t.name} style={{ background: rowBg, borderBottom: `1px solid rgba(255,255,255,0.03)` }}>
                     <td style={{ padding: '4px 2px', textAlign: 'center', fontFamily: T.fontHeading, fontWeight: 600, fontSize: 11, color: isTop ? T.win : isBottom ? T.lose : T.tx3, borderLeft: leftBorder }}>{i + 1}</td>

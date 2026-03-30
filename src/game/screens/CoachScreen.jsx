@@ -102,19 +102,19 @@ export default function CoachScreen() {
   return (
     <div className="stadium-glow" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, position: 'relative' }}>
       {/* Step indicator — connected dots with gold progress line */}
-      <div style={{ padding: '16px 20px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0 }}>
+      <div className="fw-anim-1" style={{ padding: '16px 20px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0 }}>
         {STEPS.map((s, i) => (
           <div key={s.id} style={{ display: 'flex', alignItems: 'center' }}>
             {/* Dot */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 48 }}>
               <div style={{
-                width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: T.fontHeading, fontWeight: 700, fontSize: 11,
+                width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: T.fontHeading, fontWeight: 700, fontSize: 12,
                 background: i < step ? T.gradientPrimary : i === step ? `${T.gold}20` : T.bg2,
                 color: i < step ? T.bg : i === step ? T.gold : T.tx4,
                 border: `2px solid ${i <= step ? T.gold : T.border}`,
-                boxShadow: i === step ? T.glowGold : 'none',
-                transition: 'all 0.3s ease',
+                boxShadow: i === step ? `${T.glowGold}, 0 0 0 4px rgba(240,192,64,0.08)` : 'none',
+                transition: `all ${T.transBase}`,
               }}>
                 {i < step ? '✓' : i + 1}
               </div>
